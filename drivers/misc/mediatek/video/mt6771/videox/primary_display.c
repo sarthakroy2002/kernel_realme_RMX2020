@@ -109,8 +109,6 @@
 */
 #include <soc/oppo/oppo_project.h>
 #include <linux/leds.h>
-/* Ling.Guo@PSW.MM.Display.LCD.Machine, 2018/12/03,add for mm kevent fb. */
-#include <linux/oppo_mm_kevent_fb.h>
 #include <linux/time.h>
 #include <linux/timekeeping.h>
 #include <linux/jiffies.h>
@@ -5544,10 +5542,6 @@ int force_back_to_full_roi(void)
 int primary_display_suspend(void)
 {
 	enum DISP_STATUS ret = DISP_STATUS_OK;
-	#ifdef VENDOR_EDIT
-	/* Ling.Guo@PSW.MM.Display.LCD.Machine, 2018/12/03,add for mm kevent fb. */
-	unsigned char payload[100] = "";
-	#endif
 
 	DISPCHECK("%s begin\n", __func__);
 

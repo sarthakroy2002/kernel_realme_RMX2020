@@ -16,7 +16,6 @@
 ******************************************************************/
 #include "oppo_display_private_api.h"
 #include "disp_drv_log.h"
-#include <linux/oppo_mm_kevent_fb.h>
 #include <linux/fb.h>
 #include <linux/time.h>
 #include <linux/timekeeping.h>
@@ -294,9 +293,6 @@ static ssize_t LCM_HBM_store(struct device *dev,
 			hbm_on_start = hbm_time_on.tv_sec;
 		} else if (HBM_pre_mode == 8 && HBM_mode != 8) {
 			get_monotonic_boottime(&hbm_time_off);
-			scnprintf(payload, sizeof(payload), "EventID@@%d$$hbm@@hbm state on time = %ld sec$$ReportLevel@@%d",
-				OPPO_MM_DIRVER_FB_EVENT_ID_HBM,(hbm_time_off.tv_sec - hbm_on_start),OPPO_MM_DIRVER_FB_EVENT_REPORTLEVEL_LOW);
-			upload_mm_kevent_fb_data(OPPO_MM_DIRVER_FB_EVENT_MODULE_DISPLAY,payload);
 		}
 	}
 	return num;
