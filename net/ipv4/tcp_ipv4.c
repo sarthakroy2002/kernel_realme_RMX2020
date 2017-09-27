@@ -2561,6 +2561,8 @@ static int __net_init tcp_sk_init(struct net *net)
         //PengHao@CONNECTIVITY.WIFI.INTERNET.1854960,2019/03/30,add for disable tcp random timestamp,some networks limit tcp syn before login
 	net->ipv4.sysctl_tcp_random_timestamp = 1;
 	#endif /* OPLUS_BUG_STABILITY */
+	net->ipv4.sysctl_tcp_fastopen = TFO_CLIENT_ENABLE;
+
 	return 0;
 fail:
 	tcp_sk_exit(net);
