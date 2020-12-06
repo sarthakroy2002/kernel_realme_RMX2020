@@ -119,3 +119,5 @@ obj-$(CONFIG_PROCESS_RECLAIM_ENHANCE) += process_mm_reclaim.o
 #/* Huacai.Zhou@PSW.BSP.Kernel.MM, 2018-07-07, add alloc wait monitor support*/
 obj-$(CONFIG_OPPO_MEM_MONITOR) += memory_monitor.o
 #endif /*VENDOR_EDIT*/
+
+CFLAGS_kmemleak.o += -DCONFIG_DEBUG_FS
