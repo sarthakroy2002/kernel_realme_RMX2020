@@ -617,6 +617,7 @@ void fuse_conn_init(struct fuse_conn *fc)
 {
 	memset(fc, 0, sizeof(*fc));
 	spin_lock_init(&fc->lock);
+	spin_lock_init(&fc->passthrough_req_lock);
 	init_rwsem(&fc->killsb);
 	refcount_set(&fc->count, 1);
 	atomic_set(&fc->dev_count, 1);
@@ -626,6 +627,7 @@ void fuse_conn_init(struct fuse_conn *fc)
 	INIT_LIST_HEAD(&fc->bg_queue);
 	INIT_LIST_HEAD(&fc->entry);
 	INIT_LIST_HEAD(&fc->devices);
+	idr_init(&fc->passthrough_req);
 	atomic_set(&fc->num_waiting, 0);
 	fc->max_background = FUSE_DEFAULT_MAX_BACKGROUND;
 	fc->congestion_threshold = FUSE_DEFAULT_CONGESTION_THRESHOLD;
@@ -944,6 +946,12 @@ static void process_init_reply(struct fuse_conn *fc, struct fuse_req *req)
 				fc->posix_acl = 1;
 				fc->sb->s_xattr = fuse_acl_xattr_handlers;
 			}
+			if (arg->flags & FUSE_PASSTHROUGH) {
+				fc->passthrough = 1;
+				/* Prevent further stacking */
+				fc->sb->s_stack_depth =
+					FILESYSTEM_MAX_STACK_DEPTH;
+			}
 		} else {
 			ra_pages = fc->max_read / PAGE_SIZE;
 			fc->no_lock = 1;
@@ -977,11 +985,11 @@ static void fuse_send_init(struct fuse_conn *fc, struct fuse_req *req)
 #ifdef CONFIG_OPLUS_FEATURE_FUSE_FS_SHORTCIRCUIT
 //shubin@BSP.Kernel.FS 2020/08/20 improving fuse storage performance
 		FUSE_PARALLEL_DIROPS | FUSE_HANDLE_KILLPRIV | FUSE_POSIX_ACL |
-		FUSE_SHORTCIRCUIT;
+		FUSE_PASSTHROUGH | FUSE_SHORTCIRCUIT;
 #else
-		FUSE_PARALLEL_DIROPS | FUSE_HANDLE_KILLPRIV | FUSE_POSIX_ACL;
+		FUSE_PARALLEL_DIROPS | FUSE_HANDLE_KILLPRIV | FUSE_POSIX_ACL |
+		FUSE_PASSTHROUGH;
 #endif /* CONFIG_OPLUS_FEATURE_FUSE_FS_SHORTCIRCUIT */
-
 	req->in.h.opcode = FUSE_INIT;
 	req->in.numargs = 1;
 	req->in.args[0].size = sizeof(*arg);
@@ -997,9 +1005,16 @@ static void fuse_send_init(struct fuse_conn *fc, struct fuse_req *req)
 	fuse_request_send_background(fc, req);
 }
 
+static int free_fuse_passthrough(int id, void *p, void *data)
+{
+	return 0;
+}
+
 static void fuse_free_conn(struct fuse_conn *fc)
 {
 	WARN_ON(!list_empty(&fc->devices));
+	idr_for_each(&fc->passthrough_req, free_fuse_passthrough, NULL);
+	idr_destroy(&fc->passthrough_req);
 	kfree_rcu(fc, rcu);
 }
 
