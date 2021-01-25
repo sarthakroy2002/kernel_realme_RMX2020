@@ -2185,12 +2185,14 @@ static const struct vm_operations_struct fuse_file_vm_ops = {
 
 static int fuse_file_mmap(struct file *file, struct vm_area_struct *vma)
 {
-#ifdef CONFIG_OPLUS_FEATURE_FUSE_FS_SHORTCIRCUIT
 	struct fuse_file *ff = file->private_data;
-
+#ifdef CONFIG_OPLUS_FEATURE_FUSE_FS_SHORTCIRCUIT
 	if (ff->rw_lower_file)
 		return fuse_shortcircuit_mmap(file, vma);
 #endif /* CONFIG_OPLUS_FEATURE_FUSE_FS_SHORTCIRCUIT */
+
+	if (ff->passthrough.filp)
+		return fuse_passthrough_mmap(file, vma);
 
 	if ((vma->vm_flags & VM_SHARED) && (vma->vm_flags & VM_MAYWRITE))
 		fuse_link_write_file(file);
