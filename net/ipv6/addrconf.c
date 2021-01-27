@@ -3330,7 +3330,7 @@ static void addrconf_dev_config(struct net_device *dev)
 	    (dev->type != ARPHRD_IPGRE) &&
 	    (dev->type != ARPHRD_TUNNEL) &&
 	    (dev->type != ARPHRD_NONE) &&
-	    (dev->type != ARPHRD_PUREIP)) {
+	    (dev->type != ARPHRD_RAWIP)) {
 		/* Alas, we support only Ethernet autoconfiguration. */
 		idev = __in6_dev_get(dev);
 		if (!IS_ERR_OR_NULL(idev) && dev->flags & IFF_UP &&
@@ -3345,6 +3345,10 @@ static void addrconf_dev_config(struct net_device *dev)
 
 	/* mobile device doesn't need auto-linklocal addr */
 	if (dev->type == ARPHRD_PUREIP)
+		return;
+
+	/* mobile device doesn't need auto-linklocal addr */
+	if (dev->type == ARPHRD_RAWIP)
 		return;
 
 	/* this device type has no EUI support */
