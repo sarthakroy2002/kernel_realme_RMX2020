@@ -63,7 +63,7 @@ obj-$(CONFIG_MEDIATEK_SOLUTION) += mediatek/
 
 #ifdef VENDOR_EDIT
 # xing.xiong@BSP.Kernel.Debug, 2018/10/01, Add for motor
-obj-y				+= motor.o
+#obj-y				+= motor.o
 #endif
 
 
