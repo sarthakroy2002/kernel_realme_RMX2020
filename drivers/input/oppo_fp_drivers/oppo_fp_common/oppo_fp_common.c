@@ -53,7 +53,8 @@
 #elif CONFIG_OPPO_FINGERPRINT_PLATFORM == 855 || CONFIG_OPPO_FINGERPRINT_PLATFORM == 6125 || CONFIG_OPPO_FINGERPRINT_PLATFORM == 7150
 #include <linux/uaccess.h>
 #else
-#include <soc/qcom/smem.h>
+#include <linux/soc/qcom/smem.h>
+#include <linux/uaccess.h>
 #endif
 #include <soc/oppo/oppo_project.h>
 #include <linux/slab.h>
@@ -124,7 +125,7 @@ fp_module_config_t fp_module_config_list[] = {
 fp_module_config_t fp_module_config_list[] = {
     {{1, -1, -1},  FP_UNKNOWN,    	CHIP_UNKNOWN,     ENGINEER_MENU_FPC1023},
     {{1, -1, -1},  FP_UNKNOWN,    	CHIP_UNKNOWN,     ENGINEER_MENU_FPC1023},
-
+};
 #endif
 
 static int fp_request_named_gpio(struct fp_data *fp_data,
