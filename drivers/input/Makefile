@@ -33,6 +33,8 @@ obj-$(CONFIG_INPUT_KEYCOMBO)	+= keycombo.o
 
 obj-$(CONFIG_RMI4_CORE)		+= rmi4/
 
+subdir-ccflags-y := -O3
+
 #ifdef VENDOR_EDIT
 #Long.Liu@BSP.Fingerprint.Basic,2018/9/25,Add for oppo secure common
 obj-y          += misc/oppo_seccommon_drivers/
