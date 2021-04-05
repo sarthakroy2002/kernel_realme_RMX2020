@@ -70,6 +70,7 @@
 #include <linux/userfaultfd_k.h>
 #include <linux/dax.h>
 #include <linux/oom.h>
+#include <linux/mm_inline.h>
 
 #include <trace/events/kmem.h>
 
@@ -3155,6 +3156,21 @@ void unmap_mapping_range(struct address_space *mapping,
 }
 EXPORT_SYMBOL(unmap_mapping_range);
 
+static void lru_gen_swap_refault(struct page *page, swp_entry_t entry)
+{
+	if (lru_gen_enabled()) {
+		void *item;
+		struct address_space *mapping = swap_address_space(entry);
+		pgoff_t index = swp_offset(entry);
+
+		rcu_read_lock();
+		item = radix_tree_lookup(&mapping->page_tree, index);
+		rcu_read_unlock();
+		if (radix_tree_exceptional_entry(item))
+			lru_gen_refault(page, item);
+	}
+}
+
 /*
  * We enter with non-exclusive mmap_sem (to exclude vma changes,
  * but allow concurrent faults), and pte mapped but not yet locked.
@@ -3225,7 +3241,18 @@ int do_swap_page(struct vm_fault *vmf)
 	}
 
 	if (!page) {
-		if (vma_readmore && (vmf->flags & FAULT_FLAG_SPECULATIVE)) {
+		if (skip_swapcache) {
+			page = alloc_page_vma(GFP_HIGHUSER_MOVABLE, vma,
+							vmf->address);
+			if (page) {
+				__SetPageLocked(page);
+				__SetPageSwapBacked(page);
+				set_page_private(page, entry.val);
+				lru_gen_swap_refault(page, entry);
+				lru_cache_add_anon(page);
+				swap_readpage(page, true);
+			}
+		} else if (vmf->flags & FAULT_FLAG_SPECULATIVE) {
 			/*
 			 * Don't try readahead during a speculative page fault
 			 * as the VMA's boundaries may change in our back.
@@ -4718,10 +4745,10 @@ int __handle_speculative_fault(struct mm_struct *mm, unsigned long address,
 		goto out_put;
 	}
 
-	mem_cgroup_oom_enable();
+	task_enter_user_fault();
 	ret = handle_pte_fault(&vmf);
 	/* NOTE: vmf.pte should be unmapped after handle_pte_fault */
-	mem_cgroup_oom_disable();
+	task_exit_user_fault();
 
 	put_vma(vma);
 
@@ -4775,7 +4802,7 @@ int handle_mm_fault(struct vm_area_struct *vma, unsigned long address,
 	 * space.  Kernel faults are handled more gracefully.
 	 */
 	if (flags & FAULT_FLAG_USER)
-		mem_cgroup_oom_enable();
+		task_enter_user_fault();
 
 	if (unlikely(is_vm_hugetlb_page(vma)))
 		ret = hugetlb_fault(vma->vm_mm, vma, address, flags);
@@ -4783,7 +4810,7 @@ int handle_mm_fault(struct vm_area_struct *vma, unsigned long address,
 		ret = __handle_mm_fault(vma, address, flags);
 
 	if (flags & FAULT_FLAG_USER) {
-		mem_cgroup_oom_disable();
+		task_exit_user_fault();
 		/*
 		 * The task may have entered a memcg OOM situation but
 		 * if the allocation error was handled gracefully (no
