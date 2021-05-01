@@ -164,6 +164,15 @@ unsigned int ext4_fsync_enable_status = 0;
 unsigned long sysctl_blkdev_issue_flush_count = 0;
 #endif /*VENDOR_EDIT*/
 
+#ifdef VENDOR_EDIT
+/*tianwen@PSW.BSP.Kernel.Storage, 2020-01-08, add async discard switch*/
+#ifdef CONFIG_EXT4_ASYNC_DISCARD_SUPPORT
+unsigned int sysctl_ext4_async_discard_enable = 1;
+#else
+unsigned int sysctl_ext4_async_discard_enable = 0;
+#endif
+#endif /*VENDOR_EDIT*/
+
 #ifdef CONFIG_PRINTK
 static int ten_thousand = 10000;
 #endif
@@ -385,6 +394,17 @@ static struct ctl_table kern_table[] = {
 		.procname	= "blkdev_issue_flush_count",
 		.data		= &sysctl_blkdev_issue_flush_count,
 		.maxlen		= sizeof(unsigned long),
+		.mode		= 0644,
+		.proc_handler	= proc_dointvec,
+},
+#endif
+
+#ifdef VENDOR_EDIT
+/*tianwen@PSW.BSP.Kernel.Storage, 2020-01-08, add async discard switch*/
+{
+		.procname	= "ext4_async_discard_enable",
+		.data		= &sysctl_ext4_async_discard_enable,
+		.maxlen		= sizeof(unsigned int),
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec,
 },
