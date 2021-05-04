@@ -60,8 +60,8 @@ int do_wlan_drv_init(int chip_id)
 	case 0x6765:
 	case 0x6632:
 		/* WLAN driver init */
-		ret = mtk_wcn_wlan_gen4_init();
-		WMT_DETECT_PR_INFO("WLAN-GEN4 driver init, ret:%d\n", ret);
+		ret = mtk_wcn_wlan_gen2_init();
+		WMT_DETECT_PR_INFO("WLAN-GEN2 driver init, ret:%d\n", ret);
 		break;
 
 	case 0x6630:
@@ -77,8 +77,8 @@ int do_wlan_drv_init(int chip_id)
 
 	default:
 		/* WLAN driver init */
-		ret = mtk_wcn_wlan_gen2_init();
-		WMT_DETECT_PR_INFO("WLAN-GEN2 driver init, ret:%d\n", ret);
+		ret = mtk_wcn_wlan_gen4_init();
+		WMT_DETECT_PR_INFO("WLAN-GEN4 driver init, ret:%d\n", ret);
 		break;
 	}
 
