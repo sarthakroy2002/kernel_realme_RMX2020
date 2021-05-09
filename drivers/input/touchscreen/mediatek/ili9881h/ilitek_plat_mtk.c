@@ -134,7 +134,7 @@ void ilitek_plat_input_register(void)
 	input_set_capability(idev->input, EV_KEY, KEY_GESTURE_Z);
 	input_set_capability(idev->input, EV_KEY, KEY_GESTURE_C);
 	input_set_capability(idev->input, EV_KEY, KEY_GESTURE_F);
-	input_set_capability(idev->input, EV_KEY, KEY_F4);
+	input_set_capability(idev->input, EV_KEY, KEY_WAKEUP);
 
 	__set_bit(KEY_GESTURE_POWER, idev->input->keybit);
 	__set_bit(KEY_GESTURE_UP, idev->input->keybit);
@@ -150,7 +150,7 @@ void ilitek_plat_input_register(void)
 	__set_bit(KEY_GESTURE_Z, idev->input->keybit);
 	__set_bit(KEY_GESTURE_C, idev->input->keybit);
 	__set_bit(KEY_GESTURE_F, idev->input->keybit);
-	__set_bit(KEY_F4, idev->input->keybit);
+	__set_bit(KEY_WAKEUP, idev->input->keybit);
 	
 }
 
