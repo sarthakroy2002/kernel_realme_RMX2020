@@ -21,7 +21,6 @@
 
 #ifdef CONFIG_CPU_FREQ_TIMES
 void cpufreq_task_times_init(struct task_struct *p);
-void cpufreq_task_times_alloc(struct task_struct *p);
 void cpufreq_task_times_exit(struct task_struct *p);
 int proc_time_in_state_show(struct seq_file *m, struct pid_namespace *ns,
 			    struct pid *pid, struct task_struct *p);
@@ -37,7 +36,6 @@ void midas_get_pid_state(void *data, int type);
 #endif /* CONFIG_OPLUS_FEATURE_MIDAS */
 #else
 static inline void cpufreq_task_times_init(struct task_struct *p) {}
-static inline void cpufreq_task_times_alloc(struct task_struct *p) {}
 static inline void cpufreq_task_times_exit(struct task_struct *p) {}
 static inline void cpufreq_acct_update_power(struct task_struct *p,
 					     u64 cputime) {}
