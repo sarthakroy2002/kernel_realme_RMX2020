@@ -4183,7 +4183,9 @@ static int mmc_rpmb_chrdev_open(struct inode *inode, struct file *filp)
 
 	get_device(&rpmb->dev);
 	filp->private_data = rpmb;
-	mmc_blk_get(rpmb->md->disk);
+	mutex_lock(&open_lock);
+	rpmb->md->usage++;
+	mutex_unlock(&open_lock);
 
 	return nonseekable_open(inode, filp);
 }
@@ -4194,7 +4196,9 @@ static int mmc_rpmb_chrdev_release(struct inode *inode, struct file *filp)
 						  struct mmc_rpmb_data, chrdev);
 
 	put_device(&rpmb->dev);
-	mmc_blk_put(rpmb->md);
+	mutex_lock(&open_lock);
+	rpmb->md->usage--;
+	mutex_unlock(&open_lock);
 
 	return 0;
 }
@@ -4210,13 +4214,6 @@ static const struct file_operations mmc_rpmb_fileops = {
 #endif
 };
 
-static void mmc_blk_rpmb_device_release(struct device *dev)
-{
-	struct mmc_rpmb_data *rpmb = dev_get_drvdata(dev);
-
-	ida_simple_remove(&mmc_rpmb_ida, rpmb->id);
-	kfree(rpmb);
-}
 
 static int mmc_blk_alloc_rpmb_part(struct mmc_card *card,
 				   struct mmc_blk_data *md,
@@ -4235,10 +4232,8 @@ static int mmc_blk_alloc_rpmb_part(struct mmc_card *card,
 		return devidx;
 
 	rpmb = kzalloc(sizeof(*rpmb), GFP_KERNEL);
-	if (!rpmb) {
-		ida_simple_remove(&mmc_rpmb_ida, devidx);
+	if (!rpmb)
 		return -ENOMEM;
-	}
 
 	snprintf(rpmb_name, sizeof(rpmb_name),
 		 "mmcblk%u%s", card->host->index, subname ? subname : "");
@@ -4249,7 +4244,6 @@ static int mmc_blk_alloc_rpmb_part(struct mmc_card *card,
 	rpmb->dev.bus = &mmc_rpmb_bus_type;
 	rpmb->dev.devt = MKDEV(MAJOR(mmc_rpmb_devt), rpmb->id);
 	rpmb->dev.parent = &card->dev;
-	rpmb->dev.release = mmc_blk_rpmb_device_release;
 	device_initialize(&rpmb->dev);
 	dev_set_drvdata(&rpmb->dev, rpmb);
 	rpmb->md = md;
@@ -4259,7 +4253,7 @@ static int mmc_blk_alloc_rpmb_part(struct mmc_card *card,
 	ret = cdev_device_add(&rpmb->chrdev, &rpmb->dev);
 	if (ret) {
 		pr_err("%s: could not add character device\n", rpmb_name);
-		goto out_put_device;
+		goto out_remove_ida;
 	}
 
 	list_add(&rpmb->node, &md->rpmbs);
@@ -4274,16 +4268,18 @@ static int mmc_blk_alloc_rpmb_part(struct mmc_card *card,
 
 	return 0;
 
-out_put_device:
-	put_device(&rpmb->dev);
+out_remove_ida:
+	ida_simple_remove(&mmc_rpmb_ida, rpmb->id);
+	kfree(rpmb);
 	return ret;
 }
 
 static void mmc_blk_remove_rpmb_part(struct mmc_rpmb_data *rpmb)
-
 {
 	cdev_device_del(&rpmb->chrdev, &rpmb->dev);
-	put_device(&rpmb->dev);
+	device_del(&rpmb->dev);
+	ida_simple_remove(&mmc_rpmb_ida, rpmb->id);
+	kfree(rpmb);
 }
 
 /* MMC Physical partitions consist of two boot partitions and
