@@ -79,8 +79,8 @@
 
 #ifdef CONFIG_MTK_ENG_BUILD
 #define BINDER_WATCHDOG		"v0.1"
-#endif
 #define BINDER_USER_TRACKING	1
+#endif
 
 #ifdef BINDER_USER_TRACKING
 #include <linux/rtc.h>
