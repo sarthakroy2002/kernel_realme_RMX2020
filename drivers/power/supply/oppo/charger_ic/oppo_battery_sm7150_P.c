@@ -11277,10 +11277,6 @@ static int oppochg_usbtemp_monitor_main(void *data)
 	bool critical_rise1 = false, critical_rise2 = false, dischg_enable = false, high_temp_version = false;
 	struct timeval time1, time2;
 
-#ifdef CONFIG_HIGH_TEMP_VERSION
-	high_temp_version = true;
-#endif
-
 	if (!g_oppo_chip) {
 		chg_err("fail to init oppo_chip\n");
 		return 0;

@@ -8445,7 +8445,6 @@ static int oppo_usbtemp_dischg_action(struct oppo_chg_chip *chip)
     struct smb_charger *chg = NULL;
 
     chg = &chip->pmic_spmi.smb5_chip->chg;
-#ifndef CONFIG_HIGH_TEMP_VERSION
     oppo_set_usb_status(USB_TEMP_HIGH);
     oppo_ccdetect_disable();
     if (oppo_vooc_get_fastchg_started() == true) {
@@ -8457,14 +8456,8 @@ static int oppo_usbtemp_dischg_action(struct oppo_chg_chip *chip)
     usleep_range(10000,10000);///msleep(10);
     chip->chg_ops->charger_suspend();
     usleep_range(20000,20000);
-#endif
     mutex_lock(&chg->pinctrl_mutex);
-#ifdef CONFIG_HIGH_TEMP_VERSION
-    chg_err(" CONFIG_HIGH_TEMP_VERSION enable here,do not set vbus down \n");
-    pinctrl_select_state(chip->normalchg_gpio.pinctrl, chip->normalchg_gpio.dischg_disable);
-#else
     pinctrl_select_state(chip->normalchg_gpio.pinctrl, chip->normalchg_gpio.dischg_enable);
-#endif
     mutex_unlock(&chg->pinctrl_mutex);
     //oppo_set_otg_switch_status(false);
 

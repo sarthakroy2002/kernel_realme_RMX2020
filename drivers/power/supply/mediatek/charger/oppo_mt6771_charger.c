@@ -171,12 +171,10 @@ void oppo_wake_up_usbtemp_thread(void);
 #define USB_RESERVE4		0x10//bit4
 #define USB_DONOT_USE		0x80000000//bit31
 static int usb_status = 0;
-#ifndef CONFIG_HIGH_TEMP_VERSION
 static void oppo_set_usb_status(int status)
 {
 	usb_status = usb_status | status;
 }
-#endif
 //static void oppo_clear_usb_status(int status)
 //{
 //	usb_status = usb_status & (~status);
@@ -1126,7 +1124,6 @@ static int oppo_usbtemp_monitor_main(void *data)
 					dischg_flag = true;
 					chg_err("dischg enable...usb_temp[%d,%d], usb_volt[%d,%d]\n",
 							chip->usb_temp_r, chip->usb_temp_l, chip->usbtemp_volt_r, chip->usbtemp_volt_l);
-#ifndef CONFIG_HIGH_TEMP_VERSION
 					oppo_set_usb_status(USB_TEMP_HIGH);
 					if (oppo_chg_get_otg_online() == true) {
 						oppo_set_otg_switch_status(false);
@@ -1143,7 +1140,6 @@ static int oppo_usbtemp_monitor_main(void *data)
 					chip->chg_ops->charger_suspend();
 					usleep_range(10000, 11000);
 					pinctrl_select_state(chip->normalchg_gpio.pinctrl, chip->normalchg_gpio.dischg_enable);
-#endif
 				}
 			}
 
@@ -1175,7 +1171,6 @@ static int oppo_usbtemp_monitor_main(void *data)
 							dischg_flag = true;
 							chg_err("dischg enable...current_usb_temp[%d,%d], last_usb_temp[%d,%d], count[%d]\n",
 									chip->usb_temp_r, chip->usb_temp_l, last_usb_temp_r, last_usb_temp_l, count);
-#ifndef CONFIG_HIGH_TEMP_VERSION
 							oppo_set_usb_status(USB_TEMP_HIGH);
 							if (oppo_chg_get_otg_online() == true) {
 								oppo_set_otg_switch_status(false);
@@ -1192,7 +1187,6 @@ static int oppo_usbtemp_monitor_main(void *data)
 							chip->chg_ops->charger_suspend();
 							usleep_range(10000, 11000);
 							pinctrl_select_state(chip->normalchg_gpio.pinctrl, chip->normalchg_gpio.dischg_enable);
-#endif
 						}
 					}
 					count_r = 0;

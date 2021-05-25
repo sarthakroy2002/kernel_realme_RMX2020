@@ -1579,51 +1579,34 @@ int oppo_chg_parse_charger_dt(struct oppo_chg_chip *chip)
 		chip->limits.input_current_cdp_ma = OPCHG_INPUT_CURRENT_LIMIT_USB_MA;
 	}
 
-#ifdef CONFIG_HIGH_TEMP_VERSION
-	chip->limits.input_current_led_ma = OPCHG_INPUT_CURRENT_LIMIT_CHARGER_MA;
-	chg_err(" CONFIG_HIGH_TEMP_VERSION enable here,led on current 2A \n");
-#else
 	rc = of_property_read_u32(node, "qcom,input_current_led_ma", &chip->limits.input_current_led_ma);
 	if (rc) {
 		chip->limits.input_current_led_ma = OPCHG_INPUT_CURRENT_LIMIT_LED_MA;
 	}
-#endif
 
-#ifdef CONFIG_HIGH_TEMP_VERSION
-	chip->limits.input_current_led_ma_high = OPCHG_INPUT_CURRENT_LIMIT_CHARGER_MA;
-	chg_err(" CONFIG_HIGH_TEMP_VERSION enable here, led_ma_high on current 2A \n");
-#else
 	rc = of_property_read_u32(node, "qcom,input_current_led_ma_high", &chip->limits.input_current_led_ma_high);
 	if (rc) {
 		chip->limits.input_current_led_ma_high = chip->limits.input_current_led_ma;
 	}
-#endif
 	rc = of_property_read_u32(node, "qcom,led_high_bat_decidegc", &chip->limits.led_high_bat_decidegc);
 	if (rc) {
 		chip->limits.led_high_bat_decidegc = 370;
 	}
-#ifdef CONFIG_HIGH_TEMP_VERSION
-	chip->limits.input_current_led_ma_warm = OPCHG_INPUT_CURRENT_LIMIT_CHARGER_MA;
-	chg_err(" CONFIG_HIGH_TEMP_VERSION enable here, led_ma_warm on current 2A \n");
-#else
+
 	rc = of_property_read_u32(node, "qcom,input_current_led_ma_warm", &chip->limits.input_current_led_ma_warm);
 	if (rc) {
 		chip->limits.input_current_led_ma_warm = chip->limits.input_current_led_ma;
 	}
-#endif
+
 	rc = of_property_read_u32(node, "qcom,led_warm_bat_decidegc", &chip->limits.led_warm_bat_decidegc);
 	if (rc) {
 		chip->limits.led_warm_bat_decidegc = 350;
 	}
-#ifdef CONFIG_HIGH_TEMP_VERSION
-	chip->limits.input_current_led_ma_normal = OPCHG_INPUT_CURRENT_LIMIT_CHARGER_MA;
-	chg_err(" CONFIG_HIGH_TEMP_VERSION enable here, led_ma_normal on current 2A \n");
-#else
+
 	rc = of_property_read_u32(node, "qcom,input_current_led_ma_normal", &chip->limits.input_current_led_ma_normal);
 	if (rc) {
 		chip->limits.input_current_led_ma_normal = chip->limits.input_current_led_ma;;
 	}
-#endif
 
         rc = of_property_read_u32(node, "qcom,input_current_camera_ma", &chip->limits.input_current_camera_ma);
         if (rc) {
@@ -1656,19 +1639,12 @@ int oppo_chg_parse_charger_dt(struct oppo_chg_chip *chip)
         }
 
 /*-3~0 C*/
-		#ifdef CONFIG_HIGH_TEMP_VERSION
-        chg_err(" CONFIG_HIGH_TEMP_VERSION enable here,disable low tbat chg \n");
-        batt_cold_degree_negative = 170;
-        chip->limits.cold_bat_decidegc = -batt_cold_degree_negative;
-		#else
-        chg_err(" CONFIG_HIGH_TEMP_VERSION disabled\n");
         rc = of_property_read_u32(node, "qcom,cold_bat_decidegc", &batt_cold_degree_negative);
         if (rc < 0) {
         		chip->limits.cold_bat_decidegc = -EINVAL;
         } else {
         		chip->limits.cold_bat_decidegc = -batt_cold_degree_negative;		
         }
-		#endif
 
         rc = of_property_read_u32(node, "qcom,temp_cold_vfloat_mv", &chip->limits.temp_cold_vfloat_mv);
         if (rc < 0) {

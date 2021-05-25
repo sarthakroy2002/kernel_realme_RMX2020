@@ -13372,12 +13372,10 @@ static void get_usb_temp(struct oppo_chg_chip *chip)
 #define USB_RESERVE4    0x10//bit4
 #define USB_DONOT_USE   0x80000000//bit31
 static int usb_status = 0;
-#ifndef CONFIG_HIGH_TEMP_VERSION
 static void oppo_set_usb_status(int status)
 {
         usb_status = usb_status | status;
 }
-#endif
 
 static int oppo_get_usb_status(void)
 {
@@ -13439,15 +13437,11 @@ static int oppo_usbtemp_monitor_main(void *data)
                                         if (!IS_ERR_OR_NULL(chip->normalchg_gpio.dischg_enable)) {
                                                 dischg_flag = true;
                                                 chg_err("dischg enable1...[%d,%d]\n", chip->usb_temp_r, chip->usb_temp_l);
-					#ifdef CONFIG_HIGH_TEMP_VERSION
-                                                pinctrl_select_state(chip->normalchg_gpio.pinctrl, chip->normalchg_gpio.dischg_disable);
-					#else
 						oppo_set_usb_status(USB_TEMP_HIGH);
                                                 chip->chg_ops->charger_suspend();
                                                 usleep_range(20000,20000);
                                                 pinctrl_select_state(chip->normalchg_gpio.pinctrl, chip->normalchg_gpio.dischg_enable);
 						oppo_set_otg_switch_status(false);
-					#endif
                                         }
                                 }
                                 count_r = 1;
@@ -13483,15 +13477,11 @@ static int oppo_usbtemp_monitor_main(void *data)
                                                                 dischg_flag = true;
                                                                 chg_err("dischg enable3...,current_temp=[%d,%d],last_usb_temp=[%d,%d],last_usb_tempcount =%d\n",
                                                                      	current_temp_r,current_temp_l,last_usb_temp_r,last_usb_temp_l,count);
-							#ifdef CONFIG_HIGH_TEMP_VERSION
-								pinctrl_select_state(chip->normalchg_gpio.pinctrl, chip->normalchg_gpio.dischg_disable);
-							#else
 								oppo_set_usb_status(USB_TEMP_HIGH);
                                                                 chip->chg_ops->charger_suspend();
                                                                 usleep_range(20000,20000);
                                                                 pinctrl_select_state(chip->normalchg_gpio.pinctrl, chip->normalchg_gpio.dischg_enable);
 								oppo_set_otg_switch_status(false);
-							#endif
                                                         }
                                                 }
                                                 count_r = 1;

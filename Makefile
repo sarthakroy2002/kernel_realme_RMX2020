@@ -272,25 +272,6 @@ else
 scripts/Kbuild.include: ;
 include scripts/Kbuild.include
 
-
-#ifdef VENDOR_EDIT
-#fanhui@PhoneSW.BSP, 2016-05-18, add for DeathHealer only used in release
-ifneq ($(filter user,$(TARGET_BUILD_VARIANT)),)
-KBUILD_CFLAGS += -DOPPO_RELEASE_FLAG
-KBUILD_CPPFLAGS += -DOPPO_RELEASE_FLAG
-endif
-#endif /* VENDOR_EDIT */
-
-#ifdef  VENDOR_EDIT
-#ye.zhang@Sensor.config,2016-09-09, add for CTSI support external storage or not
-ifneq ($(OPPO_BUILD_CUSTOMIZE),)
-KBUILD_CFLAGS += -DMOUNT_EXSTORAGE_IF
-KBUILD_CPPFLAGS += -DMOUNT_EXSTORAGE_IF
-CFLAGS_KERNEL += -DMOUNT_EXSTORAGE_IF
-CFLAGS_MODULE += -DMOUNT_EXSTORAGE_IF
-endif
-#endif//VENDOR_EDIT
-
 # Read KERNELRELEASE from include/config/kernel.release (if it exists)
 KERNELRELEASE = $(shell cat include/config/kernel.release 2> /dev/null)
 KERNELVERSION = $(VERSION)$(if $(PATCHLEVEL),.$(PATCHLEVEL)$(if $(SUBLEVEL),.$(SUBLEVEL)))$(EXTRAVERSION)
@@ -463,16 +444,6 @@ KBUILD_CPPFLAGS += -DVENDOR_EDIT
 CFLAGS_KERNEL +=   -DVENDOR_EDIT
 CFLAGS_MODULE +=   -DVENDOR_EDIT
 #endif /* VENDOR_EDIT */
-
-#ifdef VENDOR_EDIT
-#zhouhengguo@PSW.BSP.Kernel.Stablity, 2019/11/05, add daily build
-ifneq ($(TARGET_BUILD_VARIANT), user)
-KBUILD_CFLAGS   += -DOPPO_TARGET_BUILD_DAILY
-KBUILD_CPPFLAGS += -DOPPO_TARGET_BUILD_DAILY
-CFLAGS_KERNEL   += -DOPPO_TARGET_BUILD_DAILY
-CFLAGS_MODULE   += -DOPPO_TARGET_BUILD_DAILY
-endif
-#endif /*VENDOR_EDIT*/
 
 #ifdef VENDOR_EDIT
 #//Liang.Zhang@PSW.TECH.Bootup, 2018/10/19, Add for kernel monitor whole bootup

@@ -1239,12 +1239,6 @@ static void mmc_sd_detect(struct mmc_host *host)
 		printk(KERN_ERR "%s(%s): Unable to re-detect card (%d)\n",
 		       __func__, mmc_hostname(host), err);
 	}
-#if defined(MOUNT_EXSTORAGE_IF)
-	/*ye.zhang@BSP, 2016-05-01, add for CTSI support external storage or not*/
-	if (retries) {
-		err = _mmc_detect_card_removed(host);
-	}
-#endif//MOUNT_EXSTORAGE_IF
 #else
 	err = _mmc_detect_card_removed(host);
 #endif

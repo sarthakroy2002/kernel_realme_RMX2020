@@ -24,11 +24,7 @@
 #include <linux/seq_file.h>
 #include <linux/slab.h>
 
-#ifdef CONFIG_OPPO_REALEASE_BUILD
 static int enable_audit = 0;
-#else
-static int enable_audit = 1;
-#endif
 
 static struct proc_dir_entry *denied_procdir;
 

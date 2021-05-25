@@ -54,25 +54,8 @@ static void sdhci_finish_data(struct sdhci_host *);
 
 static void sdhci_enable_preset_value(struct sdhci_host *host, bool enable);
 
-#ifdef VENDOR_EDIT 
-//yixue.ge@BSP.drv 2014-06-04 modify for disable sdcard log
-#ifndef CONFIG_OPPO_DAILY_BUILD
-static int flag = 0;
-#endif
-#endif
-
 void sdhci_dumpregs(struct sdhci_host *host)
 {
-#ifdef VENDOR_EDIT 
-	//yixue.ge@BSP.drv 2014-06-04 modify for disable sdcard log
-#ifndef CONFIG_OPPO_DAILY_BUILD
-	if(!flag)
-		flag++;
-	else
-		return;
-#endif
-#endif
-
 	SDHCI_DUMP("============ SDHCI REGISTER DUMP ===========\n");
 
 	SDHCI_DUMP("Sys addr:  0x%08x | Version:  0x%08x\n",

@@ -49,11 +49,6 @@ int oppo_gauge_get_batt_temperature(void)
                 return 250;
         } else {
 				batt_temp = g_gauge_chip->gauge_ops->get_battery_temperature();
-                #ifdef CONFIG_HIGH_TEMP_VERSION
-                printk(KERN_ERR "[OPPO_CHG]CONFIG_HIGH_TEMP_VERSION enable here,disable high tbat shutdown \n");
-                if (batt_temp > 690)
-                    batt_temp = 690;
-                #endif
                 return batt_temp;
         }
 }
@@ -191,11 +186,6 @@ int oppo_gauge_get_prev_batt_temperature(void)
 		return 250;
 	else {
 		batt_temp = g_gauge_chip->gauge_ops->get_prev_battery_temperature();
-		#ifdef CONFIG_HIGH_TEMP_VERSION
-        printk(KERN_ERR "[OPPO_CHG]CONFIG_HIGH_TEMP_VERSION enable here,disable high tbat shutdown \n");
-        if (batt_temp > 690)
-            batt_temp = 690;
-		#endif
 
 		 return batt_temp;
     }
