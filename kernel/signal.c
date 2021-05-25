@@ -1130,12 +1130,6 @@ static int __send_signal(int sig, struct siginfo *info, struct task_struct *t,
 		process_event_notifier_call_chain_atomic(PROCESS_EVENT_SIGNAL_FROZEN, &pe_data);
 	}
 #endif
-#if defined(VENDOR_EDIT) && defined(CONFIG_DEATH_HEALER)
-/*fanhui@PhoneSW.BSP, 2016-06-21, DeathHealer, record the SIGSTOP sender*/
-	if (sig == SIGSTOP && (!strncmp(t->comm,"main", TASK_COMM_LEN) ||
-		!strncmp(t->comm,"system_server", TASK_COMM_LEN) || !strncmp(t->comm,"surfaceflinger", TASK_COMM_LEN)))
-		snprintf(last_stopper_comm, 64, "%s[%d]", current->comm, current->pid);
-#endif
 
 #ifdef VENDOR_EDIT
 //Haoran.Zhang@PSW.AD.Kernel.1052210, 2015/11/04, Modify for the sender who kill system_server

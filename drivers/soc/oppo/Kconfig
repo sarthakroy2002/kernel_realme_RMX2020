@@ -21,8 +21,3 @@ config OPPO_DEVICE_IFNO
 
 source "drivers/soc/oppo/oppo_project/Kconfig"
 source "drivers/soc/oppo/oppo_devinfo/Kconfig"
-
-#ifdef VENDOR_EDIT
-#//wenbin.liu@PSW.Kernel.MM, 2018/05/23, Add for Healthinfo monitor
-source "drivers/soc/oppo/oppo_healthinfo/Kconfig"
-#endif /* VENDOR_EDIT */

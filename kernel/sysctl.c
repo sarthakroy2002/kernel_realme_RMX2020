@@ -196,10 +196,6 @@ static const int cap_last_cap = CAP_LAST_CAP;
 /*this is needed for proc_doulongvec_minmax of sysctl_hung_task_timeout_secs */
 #ifdef CONFIG_DETECT_HUNG_TASK
 static unsigned long hung_task_timeout_max = (LONG_MAX/HZ);
-#if defined(VENDOR_EDIT) && defined(CONFIG_DEATH_HEALER)
-/* Wen.Luo@BSP.Kernel.Stability, 2019/01/12, DeathHealer , Foreground background optimization,change max io count */
-static int five = 5;
-#endif
 #endif
 
 #ifdef CONFIG_INOTIFY_USER
@@ -1310,27 +1306,6 @@ static struct ctl_table kern_table[] = {
 		.proc_handler	= proc_dointvec_minmax,
 		.extra1		= &neg_one,
 	},
-#if defined(VENDOR_EDIT) && defined(CONFIG_DEATH_HEALER)
-/* fanhui@PhoneSW.BSP, 2016/02/02, DeathHealer, record the hung task killing */
-	{
-		.procname	= "hung_task_oppo_kill",
-		.data		= &sysctl_hung_task_oppo_kill,
-		.maxlen		= 128,
-		.mode		= 0666,
-		.proc_handler	= proc_dostring,
-	},
-#endif
-#if defined(VENDOR_EDIT) && defined(CONFIG_DEATH_HEALER)
-/* Wen.Luo@BSP.Kernel.Stability, 2019/01/12, DeathHealer , Foreground background optimization,change max io count */
-	{
-		.procname	= "hung_task_maxiowait_count",
-		.data		= &sysctl_hung_task_maxiowait_count,
-		.maxlen		= sizeof(int),
-		.mode		= 0644,
-		.proc_handler	= proc_dointvec_minmax,
-		.extra1		= &five,
-	},
-#endif
 #endif
 #ifdef CONFIG_RT_MUTEXES
 	{
