@@ -6,7 +6,4 @@ obj-y += oppo_custom/
 #ifdef VENDOR_EDIT
 #//wenbin.liu@PSW.Kernel.MM, 2018/05/23, Add for Healthinfo monitor
 obj-y     +=  oppo_healthinfo/
-#endif /* VENDOR_EDIT */
-#Liang.Zhang@TECH.Storage.Stability.OPPO_SHUTDOWN_DETECT, 2019/04/28, Add for shutdown detect
-obj-$(CONFIG_OPPO_SHUTDOWN_DETECT)  +=  oppo_shutdown_detect/
 obj-$(CONFIG_OPPO_HYPNUS)       +=  oppo_hypnus/
