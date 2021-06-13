@@ -1148,6 +1148,9 @@ static struct page *compaction_alloc(struct page *migratepage,
 {
 	struct compact_control *cc = (struct compact_control *)data;
 	struct page *freepage;
+	
+	if(data <= 0)
+	      return NULL;
 
 	/*
 	 * Isolate free pages if necessary, and if we are not aborting due to
