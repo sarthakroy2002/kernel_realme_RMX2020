@@ -1049,10 +1049,17 @@ static int spi_transfer_one_message(struct spi_controller *ctlr,
 			if (ret > 0) {
 				ret = 0;
 				ms = 8LL * 1000LL * xfer->len;
+				#ifndef VENDOR_EDIT
+				/* Yangzhenxuan@BSP.TP.FUNCTION, 2018/12/29,
+				* esd recovery need more tolerance for tp re-flash fw */
 				do_div(ms, xfer->speed_hz);
 				/* Increase spi transfer tolerance to 2s */
 				/* To aviod timeout when OS is busy.*/
 				ms += 2000;
+				#else
+				do_div(ms, xfer->speed_hz);
+				ms += ms + 1500; /* some tolerance */
+				#endif /* VENDOR_EDIT */
 
 				if (ms > UINT_MAX)
 					ms = UINT_MAX;
