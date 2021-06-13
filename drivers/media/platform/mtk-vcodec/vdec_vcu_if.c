@@ -146,12 +146,11 @@ inline void close_mapped_fd(unsigned int target_fd)
 	struct files_struct *f = NULL;
 	vcu_get_file_lock();
 	vcu_get_task(&task, &f, 0);
-	if (task == NULL || f == NULL) {
-		vcu_put_file_lock();
-		return;
-	}
-	__close_fd(f, target_fd);
 	vcu_put_file_lock();
+	if (task == NULL || f == NULL)
+		return;
+
+	__close_fd(f, target_fd);
 #endif
 }
 
