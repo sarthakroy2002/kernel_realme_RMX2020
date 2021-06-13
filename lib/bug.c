@@ -49,7 +49,6 @@
 #include <linux/rculist.h>
 
 extern struct bug_entry __start___bug_table[], __stop___bug_table[];
-
 static inline unsigned long bug_addr(const struct bug_entry *bug)
 {
 #ifndef CONFIG_GENERIC_BUG_RELATIVE_POINTERS
@@ -136,7 +135,6 @@ struct bug_entry *find_bug(unsigned long bugaddr)
 	for (bug = __start___bug_table; bug < __stop___bug_table; ++bug)
 		if (bugaddr == bug_addr(bug))
 			return bug;
-
 	return module_find_bug(bugaddr);
 }
 
