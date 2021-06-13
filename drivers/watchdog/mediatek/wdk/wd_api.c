@@ -25,6 +25,11 @@
 #include <sec_hal.h>
 #endif
 
+#ifdef ODM_WT_EDIT
+/* Hui.Yuan@ODM_WT.System.Kernel.Boot, 2019/10/17, Add for reboot kernel panic mode */
+extern int is_kernel_panic;
+#endif
+
 static int wd_cpu_hot_plug_on_notify(int cpu);
 static int wd_cpu_hot_plug_off_notify(int cpu);
 static int spmwdt_mode_config(enum wk_req_en en, enum wk_req_mode mode);
@@ -688,13 +693,43 @@ void arch_reset(char mode, const char *cmd)
 		reboot = WD_SW_RESET_BYPASS_PWR_KEY;
 	} else if (cmd && !strcmp(cmd, "kpoc")) {
 		rtc_mark_kpoc();
+	}
+	#ifdef VENDOR_EDIT
+	/* Bin.Li@EXP.BSP.bootloader.bootflow, 2017/05/24,, Add for reboot kernel panic mode */
+	else if (cmd && !strcmp(cmd, "silence")) {
+		oppo_rtc_mark_silence();
+		reboot = 1;
+	}else if (cmd && !strcmp(cmd, "sau")) {
+		oppo_rtc_mark_sau();
+	}else if (cmd && !strcmp(cmd, "meta")) {
+		oppo_rtc_mark_meta();
+	} else if (cmd && !strcmp(cmd, "ftm")) {
+		oppo_rtc_mark_factory();
+	} else if (cmd && !strcmp(cmd, "safe")) {
+		oppo_rtc_mark_safe();
+	//xiaofan.yang@PSW.TECH.AgingTest, 2019/09/09,Add for factory agingtest
+	} else if (cmd && !strcmp(cmd, "sblmemtest")) {
+		oppo_rtc_mark_agingtest();
+#endif /* ODM_WT_EDIT */
 	} else {
 		reboot = WD_SW_RESET_BYPASS_PWR_KEY;
 	}
 
+	#ifdef VENDOR_EDIT
+	/* Bin.Li@EXP.BSP.bootloader.bootflow, 2017/05/24,, Add for reboot kernel panic mode */
+	if(is_kernel_panic) {
+		oppo_rtc_mark_reboot_kernel();
+	}
+	#endif
 	if (cmd && !strcmp(cmd, "ddr-reserve"))
 		reboot |= WD_SW_RESET_KEEP_DDR_RESERVE;
-
+#ifdef ODM_WT_EDIT
+	/* Hui.Yuan@ODM_WT.System.Kernel.Boot, 2019/10/17, Add for reboot kernel panic mode */
+	if(is_kernel_panic)
+	{
+		oppo_rtc_mark_reboot_kernel();
+	}
+#endif /* ODM_WT_EDIT */
 	if (res) {
 		pr_notice("%s, get wd api error %d\n", __func__, res);
 	} else {
