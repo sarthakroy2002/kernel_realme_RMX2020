@@ -236,7 +236,6 @@ static int ion_mm_pool_total(struct ion_system_heap *heap,
 static int ion_get_domain_id(int from_kernel, int *port)
 {
 	int domain_idx = 0;
-	unsigned int port_id = *port;
 
 #ifdef CONFIG_MTK_IOMMU_V2
 	if (port_id >= M4U_PORT_UNKNOWN) {
@@ -904,6 +903,10 @@ static struct ion_heap_ops ion_mm_heap_ops = {
 	.map_user = ion_heap_map_user,
 	.phys = ion_mm_heap_phys,
 	.shrink = ion_mm_heap_shrink,
+#if defined(VENDOR_EDIT)
+//wangtao@Swdp.shanghai, 2019/02/11, fix null point error when port elsa
+	.page_pool_total = ion_mm_heap_pool_total,
+#endif
 };
 
 struct dump_fd_data {
@@ -1498,6 +1501,60 @@ size_t ion_mm_heap_total_memory(void)
 {
 	return (size_t)(atomic64_read(&page_sz_cnt) * 4096);
 }
+
+#ifdef VENDOR_EDIT
+//fangpan@Swdp.shanghai, 2016/02/02, add ion memory status interface
+size_t ion_mm_heap_pool_total_size(void)
+{
+	struct ion_heap *heap = ion_drv_get_heap(g_ion_device, ION_HEAP_TYPE_MULTIMEDIA, 1);
+        if (NULL != heap) {
+                return heap->ops->page_pool_total(heap);
+        } else {
+                return 0;
+        }
+}
+EXPORT_SYMBOL(ion_mm_heap_pool_total_size);
+#endif
+
+#ifdef VENDOR_EDIT
+/* Wen.Luo@BSP.Kernel.Stability, 2019/04/26, Add for Process memory statistics */
+size_t get_ion_heap_by_pid(pid_t pid)
+{
+	struct ion_device *dev = g_ion_device;
+	struct rb_node *n, *m;
+	int buffer_size = 0;
+	unsigned int id = 0;
+	enum mtk_ion_heap_type cam_heap = ION_HEAP_TYPE_MULTIMEDIA_FOR_CAMERA;
+	enum mtk_ion_heap_type mm_heap = ION_HEAP_TYPE_MULTIMEDIA;
+
+	if (!down_read_trylock(&dev->lock))
+		return 0;
+	for (n = rb_first(&dev->clients); n; n = rb_next(n)) {
+		struct ion_client *client = rb_entry(n, struct ion_client, node);
+		if(client->pid == pid) {
+			mutex_lock(&client->lock);
+			for (m = rb_first(&client->handles); m;
+			     m = rb_next(m)) {
+				struct ion_handle *handle =
+				    rb_entry(m, struct ion_handle,
+					     node);
+				id = handle->buffer->heap->id;
+
+				if ((id == mm_heap || id == cam_heap) &&
+				    (handle->buffer->handle_count) != 0) {
+					buffer_size +=
+					    (int)(handle->buffer->size) /
+					    (handle->buffer->handle_count);
+				}
+			}
+			mutex_unlock(&client->lock);
+		}
+	}
+	up_read(&dev->lock);
+	return buffer_size/1024;
+}
+EXPORT_SYMBOL(get_ion_heap_by_pid);
+#endif
 
 struct ion_heap *ion_mm_heap_create(struct ion_platform_heap *unused)
 {
