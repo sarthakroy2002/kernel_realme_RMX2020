@@ -57,6 +57,11 @@ extern void mtk_pdc_check_cable_impedance(struct charger_manager *info);
 extern void mtk_pdc_reset(struct charger_manager *info);
 extern bool mtk_pdc_check_leave(struct charger_manager *info);
 
+#ifdef ODM_WT_EDIT
+//Junbo.Guo@ODM_WT.BSP.CHG, 2019/12/9, Modify for PD
+extern int oppo_pdc_setup(struct charger_manager *info,int vbus);
+#endif
+
 #ifdef CONFIG_MTK_PUMP_EXPRESS_PLUS_SUPPORT
 
 

@@ -65,22 +65,49 @@ int mtk_pe20_reset_ta_vchr(struct charger_manager *pinfo)
 				charger_dev_enable(pinfo->chg2_dev, false);
 		}
 
+#ifdef ODM_WT_EDIT
+		//Junbo.Guo@ODM_WT.BSP.CHG, 2019/12/9, Modify for 9v 3.3 spec
+		chr_volt = pe20_get_vbus();
+		if(chr_volt > pe20->ta_vchr_org + 1000000){
+		   ret = charger_dev_reset_ta(pinfo->chg1_dev);
+		   msleep(250);
+		}
+			
+#else
 		ret = charger_dev_reset_ta(pinfo->chg1_dev);
 		msleep(250);
-
+#endif
 		/* Check charger's voltage */
 		chr_volt = pe20_get_vbus();
 		if (abs(chr_volt - pe20->ta_vchr_org) <= 1000000) {
 			pe20->vbus = chr_volt;
 			pe20->idx = -1;
+#ifndef ODM_WT_EDIT
+//Junbo.Guo@ODM_WT.BSP.CHG, 2019/12/9, Modify for 9v 3.3 spec
 			pe20->is_connect = false;
+#else
+			pe20->ta_reset_ok = true;
+#endif
 			break;
 		}
 
 		retry_cnt++;
 	} while (retry_cnt < 3);
+	
+#ifdef ODM_WT_EDIT
+//Junbo.Guo@ODM_WT.BSP.CHG, 2019/11/11, Modify for subcharger	
+	if (pinfo->chg2_dev) {
+		if (chg2_chip_enabled)
+			charger_dev_enable(pinfo->chg2_dev, true);
+	}
+#endif
 
+#ifdef ODM_WT_EDIT
+//Junbo.Guo@ODM_WT.BSP.CHG, 2019/12/23, Modify for PE reset
+	if (!pe20->ta_reset_ok) {
+#else
 	if (pe20->is_connect) {
+#endif
 		chr_err("%s: failed, ret = %d\n", __func__, ret);
 		pe20_set_mivr(pinfo, pe20->vbus - 500000);
 		return ret;
@@ -98,6 +125,8 @@ int mtk_pe20_reset_ta_vchr(struct charger_manager *pinfo)
 static int pe20_enable_vbus_ovp(struct charger_manager *pinfo, bool enable)
 {
 	int ret = 0;
+#ifndef ODM_WT_EDIT
+	//Junbo.Guo@ODM_WT.BSP.CHG, 2019/11/11, Modify for pe20
 
 	/* Enable/Disable HW(PMIC) OVP */
 	ret = pmic_enable_hw_vbus_ovp(enable);
@@ -107,7 +136,7 @@ static int pe20_enable_vbus_ovp(struct charger_manager *pinfo, bool enable)
 	}
 
 	charger_enable_vbus_ovp(pinfo, enable);
-
+#endif
 	return ret;
 }
 
@@ -143,11 +172,20 @@ static int pe20_leave(struct charger_manager *pinfo)
 
 	chr_debug("%s: starts\n", __func__);
 	ret = mtk_pe20_reset_ta_vchr(pinfo);
+ #ifdef ODM_WT_EDIT
+	 //Junbo.Guo@ODM_WT.BSP.CHG, 2019/12/23, Modify for PE reset
+ 	if (ret < 0 || !pe20->ta_reset_ok) {
+		chr_err("%s: failed, ta_reset_ok = %d, ret = %d\n",
+			__func__, pe20->ta_reset_ok, ret);
+		return ret;
+	}
+#else
 	if (ret < 0 || pe20->is_connect) {
 		chr_err("%s: failed, is_connect = %d, ret = %d\n",
 			__func__, pe20->is_connect, ret);
 		return ret;
 	}
+#endif
 
 	pe20_enable_vbus_ovp(pinfo, true);
 	pe20_set_mivr(pinfo, pinfo->data.min_charger_voltage);
@@ -158,11 +196,18 @@ static int pe20_leave(struct charger_manager *pinfo)
 static int pe20_check_leave_status(struct charger_manager *pinfo)
 {
 	int ret = 0;
+#ifdef ODM_WT_EDIT
+//Junbo.Guo@ODM_WT.BSP.CHG, 2019/12/9, Modify for 9v 3.3 spec
+	int ichg = 0;
+#else
 	int ichg = 0, vchr = 0;
+#endif
 	struct mtk_pe20 *pe20 = &pinfo->pe2;
 
 	chr_debug("%s: starts\n", __func__);
 
+#ifndef ODM_WT_EDIT
+//Junbo.Guo@ODM_WT.BSP.CHG, 2019/12/9, Modify for 9v 3.3 spec
 	/* PE+ leaves unexpectedly */
 	vchr = pe20_get_vbus();
 	if (abs(vchr - pe20->ta_vchr_org) < 1000000) {
@@ -174,15 +219,29 @@ static int pe20_check_leave_status(struct charger_manager *pinfo)
 
 		return ret;
 	}
-
+#endif
 	ichg = pe20_get_ibat();
 
 	/* Check SOC & Ichg */
+#ifdef ODM_WT_EDIT
+//Junbo.Guo@ODM_WT.BSP.CHG, 2019/12/9, Modify for 9v 3.3 spec
+	if (battery_get_soc() > pinfo->data.ta_stop_battery_soc &&
+	    ichg > 0 && ichg < pinfo->data.pe20_ichg_level_threshold
+		&&pe20_get_vbat() > 4420000) {
+#else
 	if (battery_get_soc() > pinfo->data.ta_stop_battery_soc &&
 	    ichg > 0 && ichg < pinfo->data.pe20_ichg_level_threshold) {
+#endif		
 		ret = pe20_leave(pinfo);
+ #ifdef ODM_WT_EDIT
+//Junbo.Guo@ODM_WT.BSP.CHG, 2019/12/23, Modify for PE reset
+		if (ret < 0 || !pe20->ta_reset_ok)
+			goto _err;
+#else
+
 		if (ret < 0 || pe20->is_connect)
 			goto _err;
+#endif
 		chr_info("%s: OK, SOC = (%d,%d), stop PE+20\n", __func__,
 			battery_get_soc(), pinfo->data.ta_stop_battery_soc);
 	}
@@ -221,6 +280,14 @@ static int __pe20_set_ta_vchr(struct charger_manager *pinfo, u32 chr_volt)
 		chr_err("%s: failed, ret = %d\n", __func__, ret);
 		return ret;
 	}
+
+#ifdef ODM_WT_EDIT
+//Junbo.Guo@ODM_WT.BSP.CHG, 2019/11/11, Modify for subcharger	
+	if (pinfo->chg2_dev) {
+		if (chg2_chip_enabled)
+			charger_dev_enable(pinfo->chg2_dev, true);
+	}
+#endif
 
 	chr_info("%s: OK\n", __func__);
 
@@ -508,11 +575,20 @@ int mtk_pe20_check_charger(struct charger_manager *pinfo)
 	 * Not standard charger or
 	 * SOC is not in range
 	 */
+#ifdef ODM_WT_EDIT
+//Junbo.Guo@ODM_WT.BSP.CHG, 2019/12/9, Modify for 9v 3.3 spec
+    pe20->ta_reset_ok = 0;
+
+	if (!pe20->to_check_chr_type ||
+	    mt_get_charger_type() != STANDARD_CHARGER)
+		goto out;
+#else
 	if (!pe20->to_check_chr_type ||
 	    mt_get_charger_type() != STANDARD_CHARGER ||
 	    battery_get_soc() < pinfo->data.ta_start_battery_soc ||
 	    battery_get_soc() >= pinfo->data.ta_stop_battery_soc)
 		goto out;
+#endif
 
 	ret = pe20_init_ta(pinfo);
 	if (ret < 0)
@@ -609,10 +685,19 @@ int mtk_pe20_start_algorithm(struct charger_manager *pinfo)
 	pre_idx = pe20->idx;
 
 	ret = pe20_check_leave_status(pinfo);
+ #ifdef ODM_WT_EDIT
+	//Junbo.Guo@ODM_WT.BSP.CHG, 2019/12/23, Modify for PE reset
+	if (pe20->ta_reset_ok || ret < 0) {
+		pes = 1;
+		goto out;
+	}
+#else
+
 	if (!pe20->is_connect || ret < 0) {
 		pes = 1;
 		goto out;
 	}
+#endif
 
 	size = ARRAY_SIZE(pe20->profile);
 	for (i = 0; i < size; i++) {
@@ -752,6 +837,10 @@ int mtk_pe20_init(struct charger_manager *pinfo)
 	pinfo->pe2.profile[7].vchr = 9500000;
 	pinfo->pe2.profile[8].vchr = 10000000;
 	pinfo->pe2.profile[9].vchr = 10000000;
+	#ifdef ODM_WT_EDIT
+	//Junbo.Guo@ODM_WT.BSP.CHG, 2019/12/23, Modify for PE reset
+	pinfo->pe2.ta_reset_ok = 0;
+   #endif
 
 	ret = charger_dev_set_pe20_efficiency_table(pinfo->chg1_dev);
 	if (ret != 0)

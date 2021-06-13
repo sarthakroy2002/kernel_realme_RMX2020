@@ -20,6 +20,7 @@
 #include <linux/device.h>
 #include <linux/platform_device.h>
 #include <linux/alarmtimer.h>
+#include <linux/suspend.h>
 
 #include <mt-plat/charger_type.h>
 #include <mt-plat/mtk_battery.h>
@@ -32,6 +33,10 @@
 #include <mtk_gauge_time_service.h>
 #include "mtk_battery_internal.h"
 
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/11/23, add for shutdown use oppo uisoc*/
+extern int oppo_chg_get_ui_soc(void);
+#endif /*ODM_WT_EDIT*/
 
 struct shutdown_condition {
 	bool is_overheat;
@@ -143,6 +148,10 @@ int disable_shutdown_cond(int shutdown_cond)
 	}
 	return 0;
 }
+#ifdef VENDOR_EDIT
+//Qiao.Hu@BSP.BaseDrv.CHG.Basic, 2017/12/12, add for sdc.lock null pointer.
+extern int oppo_is_vooc_project(void);
+#endif /*VENDOR_EDIT*/
 
 int set_shutdown_cond(int shutdown_cond)
 {
@@ -172,15 +181,26 @@ int set_shutdown_cond(int shutdown_cond)
 		shutdown_cond, enable_lbat_shutdown,
 		now_is_kpoc, now_current, now_is_charging,
 		shutdown_cond_flag, vbat);
-
+#ifdef VENDOR_EDIT
+//Qiao.Hu@BSP.BaseDrv.CHG.Basic, 2017/12/14, add for sdc.lock null pointer.
+	if (oppo_is_vooc_project() == 1) {
+		pr_err("%s:vooc_project,return directly\n",__func__);
+		return 0;
+	}
+#endif /*VENDOR_EDIT*/
 	if (shutdown_cond_flag == 1)
 		return 0;
 
 	if (shutdown_cond_flag == 2 && shutdown_cond != LOW_BAT_VOLT)
 		return 0;
 
-	if (shutdown_cond_flag == 3 && shutdown_cond != DLPT_SHUTDOWN)
+#ifdef VENDOR_EDIT
+/* Jianchao.Shi@PSW.BSP.CHG.Basic, 2018/10/16, sjc Add for remove dlpt shutdown */
+	if (shutdown_cond == DLPT_SHUTDOWN) {
+		bm_err("[%s], DLPT_SHUTDOWN, return directly\n", __func__);
 		return 0;
+	}
+#endif /* VENDOR_EDIT */
 
 	switch (shutdown_cond) {
 	case OVERHEAT:
@@ -188,7 +208,9 @@ int set_shutdown_cond(int shutdown_cond)
 		sdc.shutdown_status.is_overheat = true;
 		mutex_unlock(&sdc.lock);
 		bm_err("[%s]OVERHEAT shutdown!\n", __func__);
+		mutex_lock(&pm_mutex);
 		kernel_power_off();
+		mutex_unlock(&pm_mutex);
 		break;
 	case SOC_ZERO_PERCENT:
 		if (sdc.shutdown_status.is_soc_zero_percent != true) {
@@ -278,7 +300,12 @@ static int shutdown_event_handler(struct shutdown_controller *sdd)
 	static int ui_zero_time_flag;
 	static int down_to_low_bat;
 	int now_current = 0;
+#ifndef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/11/23, add for shutdown use oppo uisoc*/
 	int current_ui_soc = battery_get_uisoc();
+#else  /*ODM_WT_EDIT*/
+	int current_ui_soc = oppo_chg_get_ui_soc();
+#endif /*ODM_WT_EDIT*/
 	int current_soc = battery_get_soc();
 	int vbat = battery_get_bat_voltage();
 	int tmp = 25;
@@ -305,7 +332,9 @@ static int shutdown_event_handler(struct shutdown_controller *sdd)
 			polling++;
 			if (duraction.tv_sec >= SHUTDOWN_TIME) {
 				bm_err("soc zero shutdown\n");
+				mutex_lock(&pm_mutex);
 				kernel_power_off();
+				mutex_unlock(&pm_mutex);
 				return next_waketime(polling);
 
 			}
@@ -327,7 +356,9 @@ static int shutdown_event_handler(struct shutdown_controller *sdd)
 			polling++;
 			if (duraction.tv_sec >= SHUTDOWN_TIME) {
 				bm_err("uisoc one percent shutdown\n");
+				mutex_lock(&pm_mutex);
 				kernel_power_off();
+				mutex_unlock(&pm_mutex);
 				return next_waketime(polling);
 			}
 		} else if (now_current > 0 && current_soc > 0) {
@@ -347,7 +378,12 @@ static int shutdown_event_handler(struct shutdown_controller *sdd)
 		polling++;
 		if (duraction.tv_sec >= SHUTDOWN_TIME) {
 			bm_err("dlpt shutdown\n");
+#ifndef VENDOR_EDIT
+/* Jianchao.Shi@PSW.BSP.CHG.Basic, 2018/10/16, sjc Delete for remove dlpt shutdown */
+			mutex_lock(&pm_mutex);
 			kernel_power_off();
+			mutex_unlock(&pm_mutex);
+#endif			
 			return next_waketime(polling);
 		}
 	}
@@ -414,7 +450,9 @@ static int shutdown_event_handler(struct shutdown_controller *sdd)
 				if (duraction.tv_sec >= SHUTDOWN_TIME) {
 					bm_err("low bat shutdown, over %d second\n",
 						SHUTDOWN_TIME);
+					mutex_lock(&pm_mutex);
 					kernel_power_off();
+					mutex_unlock(&pm_mutex);
 					return next_waketime(polling);
 				}
 			}
@@ -500,9 +538,12 @@ static int power_misc_routine_thread(void *arg)
 			sdd->overheat = false;
 			bm_err("%s battery overheat~ power off\n",
 				__func__);
+			mutex_lock(&pm_mutex);
 			kernel_power_off();
+			mutex_unlock(&pm_mutex);
 			fix_coverity = 1;
 			return 1;
+
 		}
 		if (fix_coverity == 1)
 			break;
@@ -543,10 +584,11 @@ void mtk_power_misc_init(struct platform_device *pdev)
 	alarm_init(&sdc.kthread_fgtimer, ALARM_BOOTTIME,
 		power_misc_kthread_fgtimer_func);
 	init_waitqueue_head(&sdc.wait_que);
-
-	kthread_run(power_misc_routine_thread, &sdc, "power_misc_thread");
-
+#ifndef VENDOR_EDIT
+/* Qiao.Hu@EXP.BSP.BaseDrv.CHG.Basic, 2017/08/02, Add for charger memory electricity */
 	sdc.psy_nb.notifier_call = mtk_power_misc_psy_event;
 	power_supply_reg_notifier(&sdc.psy_nb);
+#endif
+	kthread_run(power_misc_routine_thread, &sdc, "power_misc_thread");
 }
 

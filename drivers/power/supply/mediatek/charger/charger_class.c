@@ -512,6 +512,18 @@ int charger_dev_enable_otg(struct charger_device *chg_dev, bool en)
 }
 EXPORT_SYMBOL(charger_dev_enable_otg);
 
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/15,set second chg hz mode,when otg*/
+int charger_dev_enable_hz(struct charger_device *chg_dev, bool en)
+{
+	if (chg_dev != NULL && chg_dev->ops != NULL && chg_dev->ops->enable_hz)
+		return chg_dev->ops->enable_hz(chg_dev, en);
+
+	return -ENOTSUPP;
+}
+EXPORT_SYMBOL(charger_dev_enable_hz);
+#endif/*ODM_WT_EDIT*/
+
 int charger_dev_enable_discharge(struct charger_device *chg_dev, bool en)
 {
 	if (chg_dev != NULL && chg_dev->ops != NULL &&
@@ -651,6 +663,38 @@ int charger_dev_enable_hidden_mode(struct charger_device *charger_dev, bool en)
 	return -ENOTSUPP;
 }
 EXPORT_SYMBOL(charger_dev_enable_hidden_mode);
+
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/28, add for hvdcp charge*/
+int charger_dev_send_hvdcp_pattern_ex(struct charger_device *charger_dev, bool en)
+{
+	if (charger_dev != NULL && charger_dev->ops != NULL &&
+					   charger_dev->ops->send_hvdcp_pattern_ex)
+		return charger_dev->ops->send_hvdcp_pattern_ex(charger_dev, en);
+
+	return -ENOTSUPP;
+}
+EXPORT_SYMBOL(charger_dev_send_hvdcp_pattern_ex);
+
+int charger_dev_reset_hvdcp_ta_ex(struct charger_device *chg_dev)
+{
+	if (chg_dev != NULL && chg_dev->ops != NULL &&
+	    chg_dev->ops->reset_hvdcp_ta_ex)
+		return chg_dev->ops->reset_hvdcp_ta_ex(chg_dev);
+
+	return -ENOTSUPP;
+}
+EXPORT_SYMBOL(charger_dev_reset_hvdcp_ta_ex);
+
+int charger_dev_hvdcp_can_enabled(struct charger_device *chg_dev, bool *en)
+{
+	if (chg_dev != NULL && chg_dev->ops != NULL && chg_dev->ops->hvdcp_can_enabled)
+		return chg_dev->ops->hvdcp_can_enabled(chg_dev, en);
+
+	return -ENOTSUPP;
+}
+EXPORT_SYMBOL(charger_dev_hvdcp_can_enabled);
+#endif /*ODM_WT_EDIT*/
 
 static DEVICE_ATTR(name, 0444, charger_show_name, NULL);
 

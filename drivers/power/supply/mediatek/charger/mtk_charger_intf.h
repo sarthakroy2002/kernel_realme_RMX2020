@@ -35,6 +35,10 @@ struct charger_manager;
 #include "mtk_pe20_intf.h"
 #include "mtk_pe40_intf.h"
 #include "mtk_pdc_intf.h"
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/28, add for hvdcp charge*/
+#include "mtk_hvdcp_intf.h"
+#endif /*ODM_WT_EDIT*/
 #include "adapter_class.h"
 
 #define CHARGING_INTERVAL 10
@@ -347,7 +351,10 @@ struct charger_manager {
 	/* pe 2.0 */
 	bool enable_pe_2;
 	struct mtk_pe20 pe2;
-
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/28, add for hvdcp charge*/
+	struct hvdcp_v20 hvdcp;
+#endif /*ODM_WT_EDIT*/
 	/* pe 4.0 */
 	bool enable_pe_4;
 	struct mtk_pe40 pe4;
@@ -391,6 +398,15 @@ struct charger_manager {
 
 	/* dynamic mivr */
 	bool enable_dynamic_mivr;
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/07, add custom battery node*/
+	bool charging_limit_current_fm;
+	int usb_charging_limit_current_fm;
+	int ac_charging_limit_current_fm;
+	bool charging_call_mode;
+	bool charging_lcd_on_mode;
+	bool charge_timeout;
+#endif /* ODM_WT_EDIT */
 };
 
 /* charger related module interface */
