@@ -1534,6 +1534,7 @@ struct ext4_sb_info {
 	/* Barrier between changing inodes' journal flags and writepages ops. */
 	struct percpu_rw_semaphore s_journal_flag_rwsem;
 	struct dax_device *s_daxdev;
+	/* for discard command control */
 };
 
 static inline struct ext4_sb_info *EXT4_SB(struct super_block *sb)
@@ -2967,6 +2968,7 @@ static inline void ext4_unlock_group(struct super_block *sb,
 {
 	spin_unlock(ext4_group_lock_ptr(sb, group));
 }
+
 
 /*
  * Block validity checking

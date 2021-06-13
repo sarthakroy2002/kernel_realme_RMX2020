@@ -974,7 +974,6 @@ resizefs_out:
 		struct request_queue *q = bdev_get_queue(sb->s_bdev);
 		struct fstrim_range range;
 		int ret = 0;
-
 		if (!capable(CAP_SYS_ADMIN))
 			return -EPERM;
 

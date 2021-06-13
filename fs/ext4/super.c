@@ -3702,7 +3702,6 @@ static int ext4_fill_super(struct super_block *sb, void *data, int silent)
 	if (!parse_options((char *) data, sb, &journal_devnum,
 			   &journal_ioprio, 0))
 		goto failed_mount;
-
 	if (test_opt(sb, DATA_FLAGS) == EXT4_MOUNT_JOURNAL_DATA) {
 		printk_once(KERN_WARNING "EXT4-fs: Warning: mounting "
 			    "with data=journal disables delayed "
@@ -4433,7 +4432,8 @@ no_journal:
 	} else
 		descr = "out journal";
 
-	if (test_opt(sb, DISCARD)) {
+	if (test_opt(sb, DISCARD) 
+    ) {
 		struct request_queue *q = bdev_get_queue(sb->s_bdev);
 		if (!blk_queue_discard(q))
 			ext4_msg(sb, KERN_WARNING,

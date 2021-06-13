@@ -29,6 +29,15 @@
 
 #include "pnode.h"
 #include "internal.h"
+#ifdef VENDOR_EDIT
+//Ke.Li@ROM.Security, 2019-9-30, Add for mount report(root defence)
+#include <soc/oppo/boot_mode.h>
+#ifdef OPPO_DISALLOW_KEY_INTERFACES
+#ifdef CONFIG_OPPO_KEVENT_UPLOAD
+#include <linux/oppo_kevent.h>
+#endif /* CONFIG_OPPO_KEVENT_UPLOAD */
+#endif /* OPPO_DISALLOW_KEY_INTERFACES */
+#endif /* VENDOR_EDIT*/
 
 /* Maximum number of mounts in a mount namespace */
 unsigned int sysctl_mount_max __read_mostly = 100000;
@@ -2828,6 +2837,55 @@ long do_mount(const char *dev_name, const char __user *dir_name,
 	unsigned int mnt_flags = 0, sb_flags;
 	int retval = 0;
 
+#ifdef VENDOR_EDIT
+//Ke.Li@ROM.Security, 2019-9-30, Add for mount report(root defence)
+#ifdef OPPO_DISALLOW_KEY_INTERFACES
+#ifdef CONFIG_OPPO_KEVENT_UPLOAD
+	struct kernel_packet_info* dcs_event;
+	char dcs_stack[sizeof(struct kernel_packet_info) + 256];
+	const char* dcs_event_tag = "kernel_event";
+	const char* dcs_event_id = "mount_report";
+	char* dcs_event_payload = NULL;
+#endif /* CONFIG_OPPO_KEVENT_UPLOAD */
+#endif /* OPPO_DISALLOW_KEY_INTERFACES */
+#endif /* VENDOR_EDIT*/
+
+#if defined(VENDOR_EDIT) && defined(OPPO_DISALLOW_KEY_INTERFACES)
+/* Zhengkang.Ji@ROM.Frameworks.Security, 2018-04-05
+ * System partition is not permitted to be mounted with "rw".
+ */
+ 	char dname[16] = {0};
+	if (dir_name != NULL && copy_from_user(dname,dir_name,8) == 0){
+		if ((!strncmp(dname, "/system", 8) || !strncmp(dname, "/vendor", 8))&& !(flags & MS_RDONLY)
+			&& (get_boot_mode() == MSM_BOOT_MODE__NORMAL)) {
+			printk(KERN_ERR "[OPPO]System partition is not permitted to be mounted as readwrite\n");
+#ifdef CONFIG_OPPO_KEVENT_UPLOAD
+/*Shengyang.Luo@Plt.Framework, 2017/12/27, add for mount report(root defence)*/
+		printk(KERN_ERR "do_mount:kevent_send_to_user\n");
+
+		dcs_event = (struct kernel_packet_info*)dcs_stack;
+		dcs_event_payload = dcs_stack +
+		sizeof(struct kernel_packet_info);
+
+		dcs_event->type = 2;
+
+		strncpy(dcs_event->log_tag, dcs_event_tag,
+			sizeof(dcs_event->log_tag));
+		strncpy(dcs_event->event_id, dcs_event_id,
+			sizeof(dcs_event->event_id));
+
+		dcs_event->payload_length = snprintf(dcs_event_payload, 256, "partition@@system");
+		if (dcs_event->payload_length < 256) {
+			dcs_event->payload_length += 1;
+		}
+
+		kevent_send_to_user(dcs_event);
+#endif /* CONFIG_OPPO_KEVENT_UPLOAD */
+			return -EPERM;
+		}
+	}
+#endif /* VENDOR_EDIT */
+//[like1@oppo.com][Security][2019/09/30] Add for mount report(root defence)  [End]
 	/* Discard magic */
 	if ((flags & MS_MGC_MSK) == MS_MGC_VAL)
 		flags &= ~MS_MGC_MSK;
