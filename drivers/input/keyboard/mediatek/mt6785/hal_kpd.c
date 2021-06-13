@@ -21,19 +21,13 @@
 #include <hal_kpd.h>
 #include <mt-plat/mtk_boot_common.h>
 
-#ifdef ODM_WT_EDIT
-/*Shouli.Wang@ODM_WT.BSP.CHG 2019/12/03, add for key function*/
-#include <soc/oppo/oppo_project.h>
-extern unsigned int is_project(OPPO_PROJECT project);
-extern unsigned int get_PCB_Version(void);
-#endif /*ODM_WT_EDIT*/
-
-#ifdef CONFIG_MTK_PMIC_NEW_ARCH /*for pmic not ready*/
+#ifdef CONFIG_MTK_PMIC_NEW_ARCH
 static int kpd_enable_lprst = 1;
 #endif
 static u16 kpd_keymap_state[KPD_NUM_MEMS] = {
 	0xffff, 0xffff, 0xffff, 0xffff, 0x00ff
 };
+
 
 static void enable_kpd(int enable)
 {
@@ -55,74 +49,57 @@ void kpd_get_keymap_state(u16 state[])
 	state[4] = readw(KP_MEM5);
 	kpd_print(KPD_SAY "register = %x %x %x %x %x\n",
 		state[0], state[1], state[2], state[3], state[4]);
-
 }
 
-/********************************************************************/
 void long_press_reboot_function_setting(void)
 {
 #ifdef CONFIG_MTK_PMIC_NEW_ARCH /*for pmic not ready*/
 	if (kpd_enable_lprst && get_boot_mode() == NORMAL_BOOT) {
 		kpd_info("Normal Boot long press reboot selection\n");
+
 #ifdef CONFIG_KPD_PMIC_LPRST_TD
 		kpd_info("Enable normal mode LPRST\n");
 #ifdef CONFIG_ONEKEY_REBOOT_NORMAL_MODE
-		pmic_set_register_value(PMIC_RG_PWRKEY_RST_EN, 0x01);
-		pmic_set_register_value(PMIC_RG_HOMEKEY_RST_EN, 0x00);
+		/*POWERKEY*/
+		pmic_set_register_value(PMIC_RG_PWRKEY_KEY_MODE, 0x00);
+#elif defined(CONFIG_TWOKEY_REBOOT_NORMAL_MODE)
+		/*PWRKEY + HOMEKEY*/
+		pmic_set_register_value(PMIC_RG_PWRKEY_KEY_MODE, 0x01);
+#endif
 		pmic_set_register_value(PMIC_RG_PWRKEY_RST_TD,
 			CONFIG_KPD_PMIC_LPRST_TD);
-#endif
-
-#ifdef CONFIG_TWOKEY_REBOOT_NORMAL_MODE
 		pmic_set_register_value(PMIC_RG_PWRKEY_RST_EN, 0x01);
-		pmic_set_register_value(PMIC_RG_HOMEKEY_RST_EN, 0x01);
-		pmic_set_register_value(PMIC_RG_PWRKEY_RST_TD,
-			CONFIG_KPD_PMIC_LPRST_TD);
-#endif
 #else
 		kpd_info("disable normal mode LPRST\n");
 		pmic_set_register_value(PMIC_RG_PWRKEY_RST_EN, 0x00);
-		pmic_set_register_value(PMIC_RG_HOMEKEY_RST_EN, 0x00);
-
 #endif
 	} else {
 		kpd_info("Other Boot Mode long press reboot selection\n");
+
 #ifdef CONFIG_KPD_PMIC_LPRST_TD
 		kpd_info("Enable other mode LPRST\n");
-#ifdef CONFIG_ONEKEY_REBOOT_OTHER_MODE
-		pmic_set_register_value(PMIC_RG_PWRKEY_RST_EN, 0x01);
-		pmic_set_register_value(PMIC_RG_HOMEKEY_RST_EN, 0x00);
-		pmic_set_register_value(PMIC_RG_PWRKEY_RST_TD,
-			CONFIG_KPD_PMIC_LPRST_TD);
+
+#ifdef CONFIG_ONEKEY_REBOOT_NORMAL_MODE
+			/*POWERKEY*/
+			pmic_set_register_value(PMIC_RG_PWRKEY_KEY_MODE, 0x00);
+#elif defined(CONFIG_TWOKEY_REBOOT_NORMAL_MODE)
+			/*PWRKEY + HOMEKEY*/
+			pmic_set_register_value(PMIC_RG_PWRKEY_KEY_MODE, 0x01);
+#endif
+			pmic_set_register_value(PMIC_RG_PWRKEY_RST_TD,
+				CONFIG_KPD_PMIC_LPRST_TD);
+			pmic_set_register_value(PMIC_RG_PWRKEY_RST_EN, 0x01);
+#else
+			kpd_info("disable normal mode LPRST\n");
+			pmic_set_register_value(PMIC_RG_PWRKEY_RST_EN, 0x00);
 #endif
 
-#ifdef CONFIG_TWOKEY_REBOOT_OTHER_MODE
-		pmic_set_register_value(PMIC_RG_PWRKEY_RST_EN, 0x01);
-		pmic_set_register_value(PMIC_RG_HOMEKEY_RST_EN, 0x01);
-		pmic_set_register_value(PMIC_RG_PWRKEY_RST_TD,
-			CONFIG_KPD_PMIC_LPRST_TD);
-#endif
-#else
-		kpd_info("disable other mode LPRST\n");
-		pmic_set_register_value(PMIC_RG_PWRKEY_RST_EN, 0x00);
-		pmic_set_register_value(PMIC_RG_HOMEKEY_RST_EN, 0x00);
-#endif
 	}
 #endif
-#ifdef ODM_WT_EDIT
-/*Shouli.Wang@ODM_WT.BSP.CHG 2019/12/03, add for key function*/
-		if((is_project(19741) && get_PCB_Version() <= 0x02) ||
-				(is_project(19747) && (get_PCB_Version() == 0x01||get_PCB_Version() == 0x02))){  
-			//19747:TO EVT 19741:TO EVT DVT
-			kpd_info("set one key LPRST\n");
-			pmic_set_register_value(PMIC_RG_PWRKEY_RST_EN, 0x01);
-			pmic_set_register_value(PMIC_RG_HOMEKEY_RST_EN, 0x00);
-		}
-#endif /*ODM_WT_EDIT*/
 }
 
 /* FM@suspend */
-bool __attribute__ ((weak)) ConditionEnterSuspend(void)
+bool __attribute__ ((weak)) mtk_audio_condition_enter_suspend(void)
 {
 	return true;
 }
@@ -133,7 +110,7 @@ void kpd_wakeup_src_setting(int enable)
 	int is_fm_radio_playing = 0;
 
 	/* If FM is playing, keep keypad as wakeup source */
-	if (ConditionEnterSuspend() == true)
+	if (mtk_audio_condition_enter_suspend() == true)
 		is_fm_radio_playing = 0;
 	else
 		is_fm_radio_playing = 1;
@@ -166,18 +143,15 @@ void kpd_init_keymap_state(u16 keymap_state[])
 
 	for (i = 0; i < KPD_NUM_MEMS; i++)
 		keymap_state[i] = kpd_keymap_state[i];
-	kpd_info("init_keymap_state done: %x %x %x %x %x!\n",
-	keymap_state[0], keymap_state[1], keymap_state[2],
+		kpd_info("init_keymap_state done: %x %x %x %x %x!\n",
+			keymap_state[0], keymap_state[1], keymap_state[2],
 		 keymap_state[3], keymap_state[4]);
 }
-
-/********************************************************************/
 
 void kpd_set_debounce(u16 val)
 {
 	mt_reg_sync_writew((u16) (val & KPD_DEBOUNCE_MASK), KP_DEBOUNCE);
 }
-
 
 void kpd_double_key_enable(int en)
 {
@@ -190,16 +164,15 @@ void kpd_double_key_enable(int en)
 		writew((u16) (tmp & ~KPD_DOUBLE_KEY_MASK), KP_SEL);
 }
 
-/********************************************************************/
 void kpd_pmic_rstkey_hal(unsigned long pressed)
 {
 	if (kpd_dts_data.kpd_sw_rstkey != 0) {
 		input_report_key(kpd_input_dev, kpd_dts_data.kpd_sw_rstkey,
-			pressed);
+				pressed);
 		input_sync(kpd_input_dev);
 		kpd_print(KPD_SAY "(%s) HW keycode =%d using PMIC\n",
-		       pressed ? "pressed" : "released",
-		       kpd_dts_data.kpd_sw_rstkey);
+			pressed ? "pressed" : "released",
+				kpd_dts_data.kpd_sw_rstkey);
 	}
 }
 
@@ -208,15 +181,13 @@ void kpd_pmic_pwrkey_hal(unsigned long pressed)
 	input_report_key(kpd_input_dev, kpd_dts_data.kpd_sw_pwrkey, pressed);
 	input_sync(kpd_input_dev);
 	kpd_print(KPD_SAY "(%s) HW keycode =%d using PMIC\n",
-	       pressed ? "pressed" : "released", kpd_dts_data.kpd_sw_pwrkey);
+		pressed ? "pressed" : "released", kpd_dts_data.kpd_sw_pwrkey);
 }
 
 static int mrdump_eint_state;
 static int mrdump_ext_rst_irq;
 static irqreturn_t mrdump_rst_eint_handler(int irq, void *data)
 {
-	/* bool pressed; */
-
 	if (mrdump_eint_state == 0) {
 		irq_set_irq_type(mrdump_ext_rst_irq, IRQ_TYPE_LEVEL_HIGH);
 		mrdump_eint_state = 1;
@@ -230,7 +201,7 @@ static irqreturn_t mrdump_rst_eint_handler(int irq, void *data)
 
 	return IRQ_HANDLED;
 }
-/**********************************************************************/
+
 void mt_eint_register(void)
 {
 	int ret;
@@ -242,21 +213,19 @@ void mt_eint_register(void)
 	if (!node)
 		kpd_print("can't find compatible node\n");
 	else {
+
 		mrdump_ext_rst_irq = irq_of_parse_and_map(node, 0);
 		if (mrdump_ext_rst_irq) {
 			ret = request_irq(mrdump_ext_rst_irq,
 					mrdump_rst_eint_handler,
 					IRQF_TRIGGER_NONE,
-					"mrdump_ext_rst-eint",
-					NULL);
+					"mrdump_ext_rst-eint", NULL);
 			if (ret > 0)
 				kpd_print("EINT IRQ LINE NOT AVAILABLE\n");
 			ret = enable_irq_wake(mrdump_ext_rst_irq);
-			if (ret > 0)
+			if (ret)
 				kpd_print("%s: enable_irq_wake failed.\n",
 					__func__);
 		}
 	}
 }
-
-/**********************************************************************/

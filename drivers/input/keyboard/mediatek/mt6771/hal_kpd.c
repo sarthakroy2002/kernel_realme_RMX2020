@@ -21,12 +21,10 @@
 #include <hal_kpd.h>
 #include <mt-plat/mtk_boot_common.h>
 
-#ifdef ODM_WT_EDIT
-/*Shouli.Wang@ODM_WT.BSP.CHG 2019/12/03, add for key function*/
+#ifdef VENDOR_EDIT
+//zhouhengguo@psw.bsp.driver, 2019/11/24, 18161 using pmic hw reset, other using hw gpio
 #include <soc/oppo/oppo_project.h>
-extern unsigned int is_project(OPPO_PROJECT project);
-extern unsigned int get_PCB_Version(void);
-#endif /*ODM_WT_EDIT*/
+#endif
 
 #ifdef CONFIG_MTK_PMIC_NEW_ARCH /*for pmic not ready*/
 static int kpd_enable_lprst = 1;
@@ -62,6 +60,10 @@ void kpd_get_keymap_state(u16 state[])
 void long_press_reboot_function_setting(void)
 {
 #ifdef CONFIG_MTK_PMIC_NEW_ARCH /*for pmic not ready*/
+#ifdef VENDOR_EDIT
+//zhouhengguo@psw.bsp.driver, 2019/11/24, 18161 using pmic hw reset, other using hw gpio
+	if (OPPO_18161 == get_project()) {
+#endif /*VENDOR_EDIT*/
 	if (kpd_enable_lprst && get_boot_mode() == NORMAL_BOOT) {
 		kpd_info("Normal Boot long press reboot selection\n");
 #ifdef CONFIG_KPD_PMIC_LPRST_TD
@@ -108,17 +110,11 @@ void long_press_reboot_function_setting(void)
 		pmic_set_register_value(PMIC_RG_HOMEKEY_RST_EN, 0x00);
 #endif
 	}
+#ifdef VENDOR_EDIT
+//zhouhengguo@psw.bsp.driver, 2019/11/24, 18161 using pmic hw reset, other using hw gpio
+	}
+#endif /*VENDOR_EDIT*/
 #endif
-#ifdef ODM_WT_EDIT
-/*Shouli.Wang@ODM_WT.BSP.CHG 2019/12/03, add for key function*/
-		if((is_project(19741) && get_PCB_Version() <= 0x02) ||
-				(is_project(19747) && (get_PCB_Version() == 0x01||get_PCB_Version() == 0x02))){  
-			//19747:TO EVT 19741:TO EVT DVT
-			kpd_info("set one key LPRST\n");
-			pmic_set_register_value(PMIC_RG_PWRKEY_RST_EN, 0x01);
-			pmic_set_register_value(PMIC_RG_HOMEKEY_RST_EN, 0x00);
-		}
-#endif /*ODM_WT_EDIT*/
 }
 
 /* FM@suspend */
@@ -130,6 +126,8 @@ bool __attribute__ ((weak)) ConditionEnterSuspend(void)
 /********************************************************************/
 void kpd_wakeup_src_setting(int enable)
 {
+#ifndef VENDOR_EDIT
+/* Bin.Li@EXP.BSP.bootloader.bootflow, 2017/05/15, Remove for keypad volume up and volume down */
 	int is_fm_radio_playing = 0;
 
 	/* If FM is playing, keep keypad as wakeup source */
@@ -147,6 +145,16 @@ void kpd_wakeup_src_setting(int enable)
 			enable_kpd(0);
 		}
 	}
+#else
+	if (enable == 1) {
+		kpd_print("enable kpd work!\n");
+		enable_kpd(1);
+	} else {
+		kpd_print("disable kpd work!\n");
+		enable_kpd(0);
+	}
+#endif	/* VENDOR_EDIT */
+
 }
 
 /********************************************************************/
@@ -243,19 +251,11 @@ void mt_eint_register(void)
 		kpd_print("can't find compatible node\n");
 	else {
 		mrdump_ext_rst_irq = irq_of_parse_and_map(node, 0);
-		if (mrdump_ext_rst_irq) {
-			ret = request_irq(mrdump_ext_rst_irq,
-					mrdump_rst_eint_handler,
-					IRQF_TRIGGER_NONE,
-					"mrdump_ext_rst-eint",
-					NULL);
-			if (ret > 0)
-				kpd_print("EINT IRQ LINE NOT AVAILABLE\n");
-			ret = enable_irq_wake(mrdump_ext_rst_irq);
-			if (ret > 0)
-				kpd_print("%s: enable_irq_wake failed.\n",
-					__func__);
-		}
+		ret = request_irq(mrdump_ext_rst_irq, mrdump_rst_eint_handler,
+				  IRQF_TRIGGER_NONE, "mrdump_ext_rst-eint",
+				  NULL);
+		if (ret > 0)
+			kpd_print("EINT IRQ LINE NOT AVAILABLE\n");
 	}
 }
 
