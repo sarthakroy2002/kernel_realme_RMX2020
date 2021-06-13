@@ -37,6 +37,12 @@
 
 #define MTK_SOLUTION 1
 
+#ifdef VENDOR_EDIT
+//Cong.Dai@psw.bsp.tp 2018/08/30 modified for stop system enter sleep before low irq handled
+#include <soc/oppo/oppo_project.h>
+__attribute__((weak)) int check_touchirq_triggered(void) {return 0;}
+#endif /* VENDOR_EDIT */
+
 const char * const pm_labels[] = {
 	[PM_SUSPEND_TO_IDLE] = "freeze",
 	[PM_SUSPEND_STANDBY] = "standby",
@@ -442,6 +448,13 @@ static int suspend_enter(suspend_state_t state, bool *wakeup)
 	arch_suspend_disable_irqs();
 	BUG_ON(!irqs_disabled());
 
+#ifdef VENDOR_EDIT
+//Cong.Dai@psw.bsp.tp 2018/08/30 modified for stop system enter sleep before low irq handled
+		if (check_touchirq_triggered()) {
+		error = -EBUSY;
+		goto Enable_irqs;
+	}
+#endif /* VENDOR_EDIT */
 	error = syscore_suspend();
 	if (!error) {
 		*wakeup = pm_wakeup_pending();
@@ -459,6 +472,11 @@ static int suspend_enter(suspend_state_t state, bool *wakeup)
 		}
 		syscore_resume();
 	}
+
+#ifdef VENDOR_EDIT
+//Cong.Dai@psw.bsp.tp 2018/08/30 modified for stop system enter sleep before low irq handled
+ Enable_irqs:
+#endif /* VENDOR_EDIT */
 
 	arch_suspend_enable_irqs();
 	BUG_ON(irqs_disabled());
@@ -545,6 +563,64 @@ static void suspend_finish(void)
 	pm_notifier_call_chain(PM_POST_SUSPEND);
 	pm_restore_console();
 }
+#ifdef VENDOR_EDIT
+//rendong.shi@BSP.boot,2016/1/18,port form 8939 for screenon too slowly when press pwrkey
+/**
+ * Sync the filesystem in seperate workqueue.
+ * Then check it finishing or not periodically and
+ * abort if any wakeup source comes in. That can reduce
+ * the wakeup latency
+ */
+static bool sys_sync_completed = false;
+static void sys_sync_work_func(struct work_struct *work);
+static DECLARE_WORK(sys_sync_work, sys_sync_work_func);
+static DECLARE_WAIT_QUEUE_HEAD(sys_sync_wait);
+static void sys_sync_work_func(struct work_struct *work)
+{
+	printk(KERN_INFO "PM: Syncing filesystems ... \n");
+	sys_sync();
+	sys_sync_completed = true;
+	wake_up(&sys_sync_wait);
+}
+
+static int sys_sync_queue(void)
+{
+	int work_status = work_busy(&sys_sync_work);
+
+	/*maybe some irq coming here before pending check*/
+	pm_wakeup_clear(true);
+
+	/*Check if the previous work still running.*/
+	if (!(work_status & WORK_BUSY_PENDING)) {
+		if (work_status & WORK_BUSY_RUNNING) {
+			while (wait_event_timeout(sys_sync_wait, sys_sync_completed,
+								msecs_to_jiffies(100)) == 0) {
+				if (pm_wakeup_pending()) {
+					pr_info("PM: Pre-Syncing abort\n");
+					goto abort;
+				}
+			}
+			pr_info("PM: Pre-Syncing done\n");
+		}
+		sys_sync_completed = false;
+		schedule_work(&sys_sync_work);
+	}
+
+	while (wait_event_timeout(sys_sync_wait, sys_sync_completed,
+						msecs_to_jiffies(100)) == 0) {
+		if (pm_wakeup_pending()) {
+			pr_info("PM: Syncing abort\n");
+			goto abort;
+		}
+	}
+
+	pr_info("PM: Syncing done\n");
+	return 0;
+abort:
+	return -EAGAIN;
+}
+#endif
+
 
 #if MTK_SOLUTION
 

@@ -68,6 +68,11 @@
 #include <asm/pgtable.h>
 #include <asm/mmu_context.h>
 
+//#ifdef VENDOR_EDIT
+//zhouhengguo@BSP.Stabliity, 2019.10.14, add for aging version
+#include <soc/oppo/oppo_project.h>
+//#endif
+
 static void __unhash_process(struct task_struct *p, bool group_dead)
 {
 	nr_threads--;
@@ -369,6 +374,23 @@ static bool has_stopped_jobs(struct pid *pgrp)
 	return false;
 }
 
+#ifdef VENDOR_EDIT
+//Shu.Liu@PSW.AD.Stability.Crash.1052210, 2014/01/20, Add for not kill zygote
+static bool oppo_is_android_core_group(struct pid *pgrp)
+{
+    struct task_struct *p;
+
+    do_each_pid_task(pgrp, PIDTYPE_PGID, p) {
+        if (( !strcmp(p->comm, "zygote") ) || ( !strcmp(p->comm, "main")) ) {
+            printk("oppo_is_android_core_group: find zygote will be hungup, ignore it \n");
+            return true;
+        }
+    } while_each_pid_task(pgrp, PIDTYPE_PGID, p);
+
+    return false;
+}
+#endif /* VENDOR_EDIT */
+
 /*
  * Check to see if any process groups have become orphaned as
  * a result of our exiting, and if they have any stopped jobs,
@@ -395,6 +417,13 @@ kill_orphaned_pgrp(struct task_struct *tsk, struct task_struct *parent)
 	    task_session(parent) == task_session(tsk) &&
 	    will_become_orphaned_pgrp(pgrp, ignored_task) &&
 	    has_stopped_jobs(pgrp)) {
+#ifdef VENDOR_EDIT
+//Shu.Liu@PSW.AD.Stability.Crash.1052210, 2014/01/10, Add for clean backstage
+            if (oppo_is_android_core_group(pgrp)) {
+                printk("kill_orphaned_pgrp: find android core process will be hungup, ignored it, only hungup itself:%s:%d , current=%d \n",tsk->comm,tsk->pid,current->pid);
+                return;
+            }
+#endif /* VENDOR_EDIT */
 		__kill_pgrp_info(SIGHUP, SEND_SIG_PRIV, pgrp);
 		__kill_pgrp_info(SIGCONT, SEND_SIG_PRIV, pgrp);
 	}
@@ -769,12 +798,65 @@ static void check_stack_usage(void)
 static inline void check_stack_usage(void) {}
 #endif
 
+//#ifdef VENDOR_EDIT
+//Haoran.Zhang@PSW.AD.Stability.Crash.1052210, 2016/05/24, Add for debug critical svc crash
+static bool is_zygote_process(struct task_struct *t)
+{
+	const struct cred *tcred = __task_cred(t);
+
+	struct task_struct * first_child = NULL;
+	if(t->children.next && t->children.next != (struct list_head*)&t->children.next)
+		first_child = container_of(t->children.next, struct task_struct, sibling);
+	if(!strcmp(t->comm, "main") && (tcred->uid.val == 0) && (t->parent != 0 && !strcmp(t->parent->comm,"init"))  )
+		return true;
+	else
+		return false;
+	return false;
+}
+
+static bool is_critial_process(struct task_struct *t) {
+    if(t->group_leader && (!strcmp(t->group_leader->comm, "system_server") || is_zygote_process(t) || !strcmp(t->group_leader->comm, "surfaceflinger") || !strcmp(t->group_leader->comm, "servicemanager")))
+    {
+       if (t->pid == t->tgid)
+       {
+          return true;
+       }
+       else
+       {
+          return false;
+       }
+    } else {
+        return false;
+    }
+
+}
+//#endif /*VENDOR_EDIT*/
+
 void __noreturn do_exit(long code)
 {
 	struct task_struct *tsk = current;
 	int group_dead;
+#if defined(VENDOR_EDIT) && defined(CONFIG_ELSA_STUB)
+//zhoumingjun@Swdp.shanghai, 2017/04/19, add process_event_notifier support
+	struct process_event_data pe_data;
+#endif
+
+//#ifdef VENDOR_EDIT
+//Haoran.Zhang@PSW.AD.Stability.Crash.1052210, 2016/05/24, Add for debug critical svc crash
+    if (is_critial_process(tsk)) {
+        printk("critical svc %d:%s exit with %ld !\n", tsk->pid, tsk->comm,code);
+    }
+//#endif /*VENDOR_EDIT*/
 
 	profile_task_exit(tsk);
+#if defined(VENDOR_EDIT)
+//zhouhengguo@BSP.Stabliity, 2019.10.14, add for aging version
+	if(get_eng_version() == 1) {
+/*xing.xiong@BSP.Kernel.Debug, 2018/10/25, Add for aging*/
+		printk("[%d:%s] exit\n", tsk->pid, tsk->comm);
+	}
+//#endif
+#endif
 	kcov_task_exit(tsk);
 
 	WARN_ON(blk_needs_flush_plug(tsk));
@@ -797,6 +879,13 @@ void __noreturn do_exit(long code)
 
 	validate_creds_for_do_exit(tsk);
 
+#if defined(VENDOR_EDIT) && defined(CONFIG_ELSA_STUB)
+//zhoumingjun@Swdp.shanghai, 2017/04/19, add process_event_notifier support
+	pe_data.pid = tsk->pid;
+	pe_data.uid = tsk->real_cred->uid;
+	pe_data.reason = code;
+	process_event_notifier_call_chain(PROCESS_EVENT_EXIT, &pe_data);
+#endif
 	/*
 	 * We're taking recursive faults here in do_exit. Safest is to just
 	 * leave this task alone and wait for reboot.
