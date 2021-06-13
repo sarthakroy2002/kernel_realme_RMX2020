@@ -156,3 +156,9 @@ config TOUCHSCREEN_MTK_FOCALTECH_FHD
 	  If unsure, say N.
 
 endif
+
+#ifdef ODM_WT_EDIT
+# Tongxing.Liu@ODM_WT.BSP.Touchscreen.Base,2019/10/04,bringup add for xl and hlt touchscreen mould config.
+source "drivers/input/touchscreen/mediatek/ili9881h/Kconfig"
+source "drivers/input/touchscreen/mediatek/NT36525B/Kconfig"
+#endif

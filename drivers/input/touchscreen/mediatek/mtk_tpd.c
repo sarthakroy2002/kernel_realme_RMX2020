@@ -418,6 +418,10 @@ static void touch_resume_workqueue_callback(struct work_struct *work)
 	g_tpd_drv->resume(NULL);
 	tpd_suspend_flag = 0;
 }
+#ifdef ODM_WT_EDIT
+//hao.liang@ODM_WT.MM.Display.Lcd, 2019/12/26,  cancel lcd esd check function at early blank;
+extern void lcd_esd_primary_display_esd_check_enable(bool enable);
+#endif /* ODM_WT_EDIT */
 static int tpd_fb_notifier_callback(
 			struct notifier_block *self,
 			unsigned long event, void *data)
@@ -429,14 +433,24 @@ static int tpd_fb_notifier_callback(
 	TPD_DEBUG("%s\n", __func__);
 
 	evdata = data;
+#ifndef ODM_WT_EDIT
+//#Tongxing.Liu@ODM_WT.BSP.Touchscreen.Base,2019/10/04,bringup remove for tddi(no flash) touchscreen resume  and suspend  control flow.
 	/* If we aren't interested in this event, skip it immediately ... */
 	if (event != FB_EVENT_BLANK)
 		return 0;
-
+#endif
 	blank = *(int *)evdata->data;
 	TPD_DMESG("fb_notify(blank=%d)\n", blank);
+#ifdef ODM_WT_EDIT
+//#Tongxing.Liu@ODM_WT.BSP.Touchscreen.Base,2019/10/04,bringup add for tddi(no flash) touchscreen resume  and suspend  control flow.
+	if((event == FB_EVENT_BLANK)||(event == FB_EARLY_EVENT_BLANK)){
+#endif
 	switch (blank) {
 	case FB_BLANK_UNBLANK:
+#ifdef ODM_WT_EDIT
+//#Tongxing.Liu@ODM_WT.BSP.Touchscreen.Base,2019/10/04,bringup add for tddi(no flash) touchscreen resume  and suspend  control flow.
+		if(event == FB_EVENT_BLANK){
+#endif
 		TPD_DMESG("LCD ON Notify\n");
 		if (g_tpd_drv && tpd_suspend_flag) {
 			err = queue_work(touch_resume_workqueue,
@@ -446,8 +460,21 @@ static int tpd_fb_notifier_callback(
 				return err;
 			}
 		}
+#ifdef ODM_WT_EDIT
+//#Tongxing.Liu@ODM_WT.BSP.Touchscreen.Base,2019/10/04,bringup add for tddi(no flash) touchscreen resume  and suspend  control flow.
+		}
+#endif
+#ifdef ODM_WT_EDIT
+//hao.liang@ODM_WT.MM.Display.Lcd, 2019/12/26,  cancel lcd esd check function at early blank;
+		if (event == FB_EVENT_BLANK)
+			lcd_esd_primary_display_esd_check_enable(true);
+#endif /* ODM_WT_EDIT */
 		break;
 	case FB_BLANK_POWERDOWN:
+#ifdef ODM_WT_EDIT
+//#Tongxing.Liu@ODM_WT.BSP.Touchscreen.Base,2019/10/04,bringup add for tddi(no flash) touchscreen resume  and suspend  control flow.
+		if(event == FB_EARLY_EVENT_BLANK){
+#endif
 		TPD_DMESG("LCD OFF Notify\n");
 		if (g_tpd_drv && !tpd_suspend_flag) {
 			err = cancel_work_sync(&touch_resume_work);
@@ -456,10 +483,23 @@ static int tpd_fb_notifier_callback(
 			g_tpd_drv->suspend(NULL);
 		}
 		tpd_suspend_flag = 1;
+#ifdef ODM_WT_EDIT
+//#Tongxing.Liu@ODM_WT.BSP.Touchscreen.Base,2019/10/04,bringup add for tddi(no flash) touchscreen resume  and suspend  control flow.
+		}
+#endif
+#ifdef ODM_WT_EDIT
+//hao.liang@ODM_WT.MM.Display.Lcd, 2019/12/26,  cancel lcd esd check function at early blank;
+		if (event == FB_EARLY_EVENT_BLANK)
+			lcd_esd_primary_display_esd_check_enable(false);
+#endif
 		break;
 	default:
 		break;
 	}
+#ifdef ODM_WT_EDIT
+//#Tongxing.Liu@ODM_WT.BSP.Touchscreen.Base,2019/10/04,bringup add for tddi(no flash) touchscreen resume  and suspend  control flow.
+	}
+#endif
 	return 0;
 }
 /* Add driver: if find TPD_TYPE_CAPACITIVE driver successfully, loading it */
@@ -609,7 +649,12 @@ static int tpd_probe(struct platform_device *pdev)
 	if (2560 == TPD_RES_X)
 		TPD_RES_X = 2048;
 	if (1600 == TPD_RES_Y)
+#ifndef ODM_WT_EDIT
+//#Tongxing.Liu@ODM_WT.BSP.Touchscreen.Base,2019/10/14,bringup  modify for tddi(no flash) touchscreen for 1600 resolution.
 		TPD_RES_Y = 1536;
+#else
+		TPD_RES_Y = 1600;
+#endif
 	pr_debug("mtk_tpd: TPD_RES_X = %lu, TPD_RES_Y = %lu\n",
 		TPD_RES_X, TPD_RES_Y);
 
