@@ -790,6 +790,30 @@ static struct ctl_table ipv4_table[] = {
 		.proc_handler	= proc_dointvec_minmax,
 		.extra1		= &one
 	},
+	 #ifdef VENDOR_EDIT
+	//Mengqing.Zhao@PSW.CN.WiFi.Network.internet.1394484, 2019/04/02,
+	//add for: When find TCP SYN-ACK Timestamp value error, just do not use Timestamp
+	{
+		.procname	= "tcp_timestamps_control",
+		.data		= &sysctl_tcp_ts_control,
+		.maxlen		= sizeof(sysctl_tcp_ts_control),
+		.mode		= 0664,
+		.proc_handler	= proc_dointvec
+	},
+	#endif /* VENDOR_EDIT */
+
+	 #ifdef VENDOR_EDIT
+	//Ming.Liu@PSW.CN.WiFi.Network.quality.1065762, 2016/10/09,
+	//add for: [monitor tcp info]
+	{
+		.procname	= "tcp_info_print",
+		.data		= &sysctl_tcp_info_print,
+		.maxlen		= sizeof(int),
+		.mode		= 0664,
+		.proc_handler	= proc_do_print_tcpinfo
+	},
+	#endif /* VENDOR_EDIT */
+
 	{ }
 };
 
@@ -1191,6 +1215,17 @@ static struct ctl_table ipv4_net_table[] = {
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec
 	},
+	#ifdef VENDOR_EDIT
+	//Hao.Peng@PSW.CN.WiFi.Network.login.1854960, 2019/03/30,
+	//add for [BUGID],disable tcp random timestamp,some networks limit tcp syn before login
+	{
+		.procname	= "tcp_random_timestamp",
+		.data		= &init_net.ipv4.sysctl_tcp_random_timestamp,
+		.maxlen		= sizeof(int),
+		.mode		= 0644,
+		.proc_handler	= proc_dointvec
+	},
+	#endif /* VENDOR_EDIT */
 	{ }
 };
 

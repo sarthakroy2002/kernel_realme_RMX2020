@@ -143,8 +143,16 @@
 #include <linux/hrtimer.h>
 #include <linux/netfilter_ingress.h>
 #include <linux/crash_dump.h>
+#ifdef VENDOR_EDIT
+//Junyuan.Huang@PSW.CN.WiFi.Network.1471780, 2018/06/26,
+//Add for limit speed function
+#include <linux/imq.h>
+#endif /* VENDOR_EDIT */
+
 #include <linux/sctp.h>
 #include <net/udp_tunnel.h>
+#include <linux/tcp.h>
+#include <net/tcp.h>
 
 #include "net-sysfs.h"
 
@@ -3001,7 +3009,15 @@ static int xmit_one(struct sk_buff *skb, struct net_device *dev,
 	unsigned int len;
 	int rc;
 
+#ifdef VENDOR_EDIT
+//Junyuan.Huang@PSW.CN.WiFi.Network.1471780, 2018/06/26,
+//Add for limit speed function
+	if ((!list_empty(&ptype_all) || !list_empty(&dev->ptype_all)) &&
+		!(skb->imq_flags & IMQ_F_ENQUEUE))
+#else /* VENDOR_EDIT */
 	if (!list_empty(&ptype_all) || !list_empty(&dev->ptype_all))
+#endif /* VENDOR_EDIT */
+
 		dev_queue_xmit_nit(skb, dev);
 
 	len = skb->len;
@@ -3039,6 +3055,12 @@ out:
 	*ret = rc;
 	return skb;
 }
+
+#ifdef VENDOR_EDIT
+//Junyuan.Huang@PSW.CN.WiFi.Network.1471780, 2018/06/26,
+//Add for limit speed function
+EXPORT_SYMBOL_GPL(dev_hard_start_xmit);
+#endif /* VENDOR_EDIT */
 
 static struct sk_buff *validate_xmit_vlan(struct sk_buff *skb,
 					  netdev_features_t features)
@@ -7810,12 +7832,27 @@ EXPORT_SYMBOL(netdev_refcnt_read);
  * We can get stuck here if buggy protocols don't correctly
  * call dev_put.
  */
+ #if defined (REFCNT_DEBUG) && defined (REFCNT_MEMORY_DEBUG)
+unsigned int trace_idx;
+EXPORT_SYMBOL(trace_idx);
+
+struct refcnt_trace trace_array[MAX_TRACE_LEN];
+EXPORT_SYMBOL(trace_array);
+#endif
+
 static void netdev_wait_allrefs(struct net_device *dev)
 {
 	unsigned long rebroadcast_time, warning_time;
 	int refcnt;
-
-	linkwatch_forget_dev(dev);
+    #if defined (REFCNT_DEBUG) && defined (REFCNT_MEMORY_DEBUG)
+    bool refcnt_trace_dump = false;
+    unsigned int idx = 0;
+    unsigned int info = 0;
+    unsigned int tmp = 0;
+    struct stack_trace trace;
+    #endif
+	
+    linkwatch_forget_dev(dev);
 
 	rebroadcast_time = warning_time = jiffies;
 	refcnt = netdev_refcnt_read(dev);
@@ -7852,12 +7889,50 @@ static void netdev_wait_allrefs(struct net_device *dev)
 
 		refcnt = netdev_refcnt_read(dev);
 
-		if (refcnt && time_after(jiffies, warning_time + 10 * HZ)) {
-			pr_emerg("unregister_netdevice: waiting for %s to become free. Usage count = %d\n",
-				 dev->name, refcnt);
-			warning_time = jiffies;
-		}
-	}
+        #ifndef VENDOR_EDIT
+        //Laixin@PSW.CN.WiFi.Basic.Switch.NA, 2019/05/27
+        //Modify for: debug wlan0 refcnt is not 0
+        if (refcnt && time_after(jiffies, warning_time + 10 * HZ)) {
+        #else /* VENDOR_EDIT */
+        if (refcnt && time_after(jiffies, warning_time + 4 * HZ)) {
+        #endif /* VENDOR_EDIT */
+            pr_emerg("unregister_netdevice: waiting for %s to become free. Usage count = %d\n",
+                dev->name, refcnt);
+            warning_time = jiffies;
+			
+            #if defined (REFCNT_DEBUG) && defined (REFCNT_MEMORY_DEBUG)
+            if (!strncmp(dev->name, "wlan0", 5) &&
+                refcnt && !refcnt_trace_dump) {
+                refcnt_trace_dump = true;
+                trace.max_entries = MAX_TRACE_DEPTH;
+                trace.skip = TRACE_SKIP_DEPTH;
+
+                pr_info("[mtk_net]====[ wlan0 refcnt backtrace begin ]===========\n");
+                for (idx = 0; idx < MAX_TRACE_LEN; idx++) {
+                    info = trace_array[idx].info;
+                    tmp = (info & 0xf0000000) >> 28;
+                    if (trace_array[idx].time &&
+                        (info & 0x00ffffff)) {
+                        pr_info("[mtk_net] %s: cpu%d_refcnt=%d, idx=%d, pid=%d, time=%ld\n",
+                            tmp == 1 ? "dev_put" :
+                            "dev_hold",
+                            (info & 0x0f000000) >> 24,
+                            trace_array[idx].refcnt,
+                            idx, info & 0x00ffffff,
+                            trace_array[idx].time);
+                            trace.nr_entries =
+                            trace_array[idx].entry_nr;
+                            trace.entries =
+                            trace_array[idx].entry;
+                            print_stack_trace(&trace, 0);
+                            msleep(1);
+                    }
+                }
+                pr_info("[mtk_net]====[ wlan0 refcnt backtrace end ]===========\n");
+            }
+            #endif
+        }
+    }
 }
 
 /* The sequence is:
