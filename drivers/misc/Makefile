@@ -61,6 +61,19 @@ obj-$(CONFIG_UID_SYS_STATS)	+= uid_sys_stats.o
 obj-$(CONFIG_MEMORY_STATE_TIME)	+= memory_state_time.o
 obj-$(CONFIG_MEDIATEK_SOLUTION) += mediatek/
 
+#ifdef VENDOR_EDIT
+# xing.xiong@BSP.Kernel.Debug, 2018/10/01, Add for motor
+obj-y				+= motor.o
+#endif
+
+
+#Shouli.Wang@ODM_WT.BSP.CHG 2019/9/25,Add for ODM_WT_EDIT macro for kernel usage
+obj-$(CONFIG_ODM_WT_EDIT)   += hardware_info.o
+
+# Mengmeng.Wang@SRC.System, 2018/08/28, Add for oiface
+obj-y				+= schedx.o
+#endif
+
 lkdtm-$(CONFIG_LKDTM)		+= lkdtm_core.o
 lkdtm-$(CONFIG_LKDTM)		+= lkdtm_bugs.o
 lkdtm-$(CONFIG_LKDTM)		+= lkdtm_heap.o
