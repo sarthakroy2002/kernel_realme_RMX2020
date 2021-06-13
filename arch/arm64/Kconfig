@@ -77,7 +77,6 @@ config ARM64
 	select HAVE_ARCH_SECCOMP_FILTER
 	select HAVE_ARCH_TRACEHOOK
 	select HAVE_ARCH_TRANSPARENT_HUGEPAGE
-	select HAVE_ARCH_VMAP_STACK
 	select HAVE_ARM_SMCCC
 	select HAVE_EBPF_JIT
 	select HAVE_C_RECORDMCOUNT
@@ -227,6 +226,24 @@ config NEED_DMA_MAP_STATE
 
 config NEED_SG_DMA_LENGTH
 	def_bool y
+
+#wangzhenhua@Plf.Framework,2017/07/28, use for kevent upload
+config OPPO_KEVENT_UPLOAD
+	def_bool y
+
+#ifdef VENDOR_EDIT
+#Ke.Li@ROM.Security, 2019/09/30, Add for prevent root check
+config OPPO_ROOT_CHECK
+	def_bool y
+
+#Ke.Li@ROM.Security, 2019/09/30, Add for execve blocking(root defence)
+config OPPO_EXECVE_BLOCK
+	def_bool y
+
+#Ke.Li@ROM.Security, 2019/09/30, Add for execve report(root defence)
+config OPPO_EXECVE_REPORT
+	def_bool y
+#endif/* VENDOR_EDIT */
 
 config SMP
 	def_bool y
