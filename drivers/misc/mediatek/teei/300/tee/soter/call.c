@@ -19,7 +19,6 @@
 #include <tee_drv.h>
 #include <linux/types.h>
 #include <linux/uaccess.h>
-#include <linux/delay.h>
 
 #define IMSG_TAG "[tz_driver]"
 #include <imsg_log.h>
@@ -237,9 +236,6 @@ int soter_open_session(struct tee_context *ctx,
 	struct optee_msg_arg *msg_arg;
 	phys_addr_t msg_parg;
 	struct soter_session *sess = NULL;
-
-	while (teei_capi_ready != 1)
-		msleep(50);
 
 	/* +2 for the meta parameters added below */
 	shm = get_msg_arg(ctx, arg->num_params + 2, &msg_arg, &msg_parg);

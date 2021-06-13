@@ -19,6 +19,8 @@
 #include <linux/slab.h>
 #include <linux/cpufreq.h>
 
+#include <soc/oppo/oppo_project.h>
+
 #define TAG "[LT]"
 
 struct LT_USER_DATA {
@@ -238,7 +240,11 @@ int reg_loading_tracking_sp(void (*fn)(int loading), unsigned long polling_ms,
 	queue_delayed_work(ps_lk_wq, &new_work->s_work,
 		msecs_to_jiffies(new_user->polling_ms));
 
-	pr_debug(TAG"%s %s success\n", __func__, caller);
+#if defined(VENDOR_EDIT)
+	if (get_eng_version() != 0) {
+		pr_debug(TAG"%s %s success\n", __func__, caller);
+	}
+#endif
 
 	goto reg_loading_tracking_out;
 
@@ -274,7 +280,11 @@ int unreg_loading_tracking_sp(void (*fn)(int loading), const char *caller)
 	}
 
 	free_lt_user(ltiter);
+#if defined(VENDOR_EDIT)
+	if (get_eng_version() != 0) {
 	pr_debug(TAG"%s %s success\n", __func__, caller);
+	}
+#endif
 
 unreg_loading_tracking_out:
 	lt_unlock(__func__);

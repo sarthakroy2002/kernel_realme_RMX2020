@@ -22,22 +22,21 @@
 #define KM_COMMAND_MAGIC 'X'
 unsigned long keymaster_buff_addr;
 
-int create_keymaster_fdrv(int buff_size)
+unsigned long create_keymaster_fdrv(int buff_size)
 {
+	unsigned long addr = 0;
+
 	if (buff_size < 1) {
 		IMSG_ERROR("Wrong buffer size %d:", buff_size);
-		return -EINVAL;
+		return 0;
 	}
-
-	keymaster_buff_addr = (unsigned long) vmalloc(buff_size);
-	if (keymaster_buff_addr == 0) {
-		IMSG_ERROR("vmalloc buffer failed");
-		return -ENOMEM;
+	addr = (unsigned long) vmalloc(buff_size);
+	if (addr == 0) {
+		IMSG_ERROR("kmalloc buffer failed");
+		return 0;
 	}
-
-	memset((void *)keymaster_buff_addr, 0, buff_size);
-
-	return 0;
+	memset((void *)addr, 0, buff_size);
+	return addr;
 }
 
 int send_keymaster_command(void *buffer, unsigned long size)
@@ -46,8 +45,6 @@ int send_keymaster_command(void *buffer, unsigned long size)
 	struct TEEC_Context context;
 	struct TEEC_UUID uuid_ta = { 0xc09c9c5d, 0xaa50, 0x4b78,
 	{ 0xb0, 0xe4, 0x6e, 0xda, 0x61, 0x55, 0x6c, 0x3a } };
-
-	/* IMSG_INFO("TEEI start send_keymaster_command\n"); */
 
 	if (buffer == NULL || size < 1)
 		return -1;
@@ -68,6 +65,5 @@ int send_keymaster_command(void *buffer, unsigned long size)
 release_2:
 	ut_pf_gp_finalize_context(&context);
 release_1:
-	/* IMSG_INFO("TEEI end of send_keymaster_command\n"); */
 	return ret;
 }

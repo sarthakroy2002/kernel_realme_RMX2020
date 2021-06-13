@@ -156,3 +156,4 @@ obj-$(CONFIG_MTK_JPEG) += jpeg/
 obj-$(CONFIG_MTK_SPMTWAM) += twam/
 obj-$(CONFIG_MTK_LOW_POWER_MODULE) += lpm/
 
+obj-$(CONFIG_MTK_SMARTPA_SOUND)	+= smartpa/

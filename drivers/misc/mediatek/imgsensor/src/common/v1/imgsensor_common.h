@@ -26,6 +26,10 @@
  ************************************************************************/
 
 #define PLATFORM_POWER_SEQ_NAME "platform_power_seq"
+#ifdef ODM_WT_EDIT
+//XingYu.Liu@ODM_WT.CAMERA.Driver.2019/10/9,Add for camera bring up
+#define MIPI_SWITCH //add by liuxingyu.wt
+#endif /* ODM_WT_EDIT */
 #define DEBUG_CAMERA_HW_K
 
 #define IMGSENSOR_LEGACY_COMPAT

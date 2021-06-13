@@ -1343,7 +1343,7 @@ static ssize_t clk_buf_debug_show(struct kobject *kobj,
 static ssize_t clk_buf_bblpm_store(struct kobject *kobj,
 	struct kobj_attribute *attr, const char *buf, size_t count)
 {
-	u32 onoff = 0;
+	u32 onoff;
 	int ret = 0;
 
 	if ((kstrtouint(buf, 10, &onoff))) {
@@ -1515,11 +1515,14 @@ void clk_buf_post_init(void)
 	CLK_BUF7_STATUS = CLOCK_BUFFER_DISABLE;
 #endif
 
-#ifndef CONFIG_NFC_CHIP_SUPPORT
+//#ifndef ODM_WT_EDIT
+//Yuexiu.Wu@ODM_WT.WCN.NFC.Basic.1941873,2019/10/25,delete for use internal clock for nfc
+//#ifndef CONFIG_NFC_CHIP_SUPPORT
 	/* no need to use XO_NFC if no NFC */
-	clk_buf_ctrl_internal(CLK_BUF_NFC, CLK_BUF_FORCE_OFF);
-	CLK_BUF3_STATUS = CLOCK_BUFFER_DISABLE;
-#endif
+//	clk_buf_ctrl_internal(CLK_BUF_NFC, CLK_BUF_FORCE_OFF);
+//	CLK_BUF3_STATUS = CLOCK_BUFFER_DISABLE;
+//#endif
+//#endif /* ODM_WT_EDIT */
 #ifdef CLKBUF_USE_BBLPM
 	if (bblpm_switch == 2) {
 		clk_buf_ctrl_bblpm_mask(CLK_BUF_BB_MD, true);

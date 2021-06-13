@@ -23,6 +23,11 @@
 #include <linux/of_fdt.h>
 #include <linux/of_reserved_mem.h>
 #include <linux/of_irq.h>
+#ifdef ODM_WT_EDIT
+/*weihuan.zhao@ODM_WT.BSP.Kernel.stability, 2019/12/25,modify for aee_kpd_enable control*/
+#include <linux/proc_fs.h>
+#include <linux/uaccess.h>
+#endif /*ODM_WT_EDIT*/
 #ifdef CONFIG_OF
 #include <linux/of.h>
 #endif
@@ -47,6 +52,116 @@ static const struct of_device_id mrdump_key_of_ids[] = {
 	{ .compatible = "mediatek, mrdump_ext_rst-eint", },
 	{}
 };
+
+#ifdef ODM_WT_EDIT
+/*weihuan.zhao@ODM_WT.BSP.Kernel.stability, 2019/12/25,modify for aee_kpd_enable control*/
+static int aee_kpd_enable = 1;
+
+static int param_set_mrdump_key_enable(int aee_enable)
+{
+    int res;
+    struct wd_api *wd_api = NULL;
+    int retval = -1;
+    pr_notice("%s:mrdump param_set_mrdump_key_enable\n", __func__);
+#ifdef CONFIG_MTK_WATCHDOG_COMMON
+    res = get_wd_api(&wd_api);
+    if (res < 0){
+        return retval;
+    }
+    if(aee_enable) {
+#ifdef CONFIG_MTK_PMIC_COMMON
+        pmic_enable_smart_reset(1, 0);
+#endif
+        res = wd_api->wd_debug_key_eint_config(0, WD_REQ_RST_MODE);
+        if (res == -1){
+            pr_notice("%s:mrdump disable EINT failed\n", __func__);
+            return  retval;
+        }
+        res = wd_api->wd_debug_key_sysrst_config(1, WD_REQ_RST_MODE);
+        if (res == -1){
+            pr_notice("%s:mrdump enable SYSRST failed\n", __func__);
+            return  retval;
+        }
+
+    }else{
+#ifdef CONFIG_MTK_PMIC_COMMON
+        pmic_enable_smart_reset(0, 0);
+#endif
+        res = wd_api->wd_debug_key_eint_config(1, WD_REQ_IRQ_MODE);
+        if (res == -1){
+            pr_notice("%s:mrdump enable EINT failed\n", __func__);
+            return  retval;
+        }
+        res = wd_api->wd_debug_key_sysrst_config(0, WD_REQ_RST_MODE);
+        if (res == -1){
+            pr_notice("%s:mrdump disable SYSRST failed\n", __func__);
+            return  retval;
+        }
+    }
+#endif
+    return 1;
+}
+
+static ssize_t aee_kpd_enable_read(struct file *filp, char __user *buff,
+                size_t count, loff_t *off)
+{
+    char page[256] = {0};
+    char read_data[16] = {0};
+    int len = 0;
+
+    if (aee_kpd_enable)
+        read_data[0] = '1';
+    else
+        read_data[0] = '0';
+    len = sprintf(page, "%s", read_data);
+
+    if(len > *off)
+        len -= *off;
+    else
+        len = 0;
+    if (copy_to_user(buff, page, (len < count ? len : count))) {
+        return -EFAULT;
+    }
+    *off += len < count ? len : count;
+    pr_notice("%s: mrdump aee_kpd_enable_read \n", __func__);
+    return (len < count ? len : count);
+}
+
+static ssize_t aee_kpd_enable_write(struct file *filp, const char __user *buff,
+                size_t len, loff_t *data)
+{
+    char temp[16] = {0};
+    int retval,aee_kpd_enable_tmp;
+    if (copy_from_user(temp, buff, len)) {
+        pr_err("mrdump aee_kpd_enable_write error.\n");
+        return -EFAULT;
+    }
+    sscanf(temp, "%d", &aee_kpd_enable_tmp);
+    pr_notice("%s:mrdump aee_kpd_enable_write\n", __func__);
+    retval=param_set_mrdump_key_enable(aee_kpd_enable_tmp);
+    if(retval == -1){
+        pr_err("mrdump aee_kpd_enable_write error.\n");
+        return -EFAULT;
+    }
+    sscanf(temp, "%d", &aee_kpd_enable);
+    return len;
+}
+
+static const struct file_operations aee_kpd_enable_proc_fops = {
+    .write = aee_kpd_enable_write,
+    .read = aee_kpd_enable_read,
+};
+
+static void init_proc_aee_kpd_enable(void)
+{
+    struct proc_dir_entry *p = NULL;
+
+    p = proc_create("aee_kpd_enable", 0664,NULL, &aee_kpd_enable_proc_fops);
+    if (!p)
+        pr_err("mrdump proc_create aee_kpd_enable ops fail!\n");
+}
+
+#endif /*ODM_WT_EDIT*/
 
 static int __init mrdump_key_probe(struct platform_device *pdev)
 {
@@ -148,6 +263,10 @@ static int __init mrdump_key_probe(struct platform_device *pdev)
 			"disable MRDUMP_KEY\n", __func__, source);
 	}
 #endif
+#ifdef ODM_WT_EDIT
+/*weihuan.zhao@ODM_WT.BSP.Kernel.stability, 2019/12/25,modify for aee_kpd_enable control*/
+    init_proc_aee_kpd_enable();
+#endif /*ODM_WT_EDIT*/
 out:
 	of_node_put(node);
 	return 0;

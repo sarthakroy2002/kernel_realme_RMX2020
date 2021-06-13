@@ -72,28 +72,7 @@ DECLARE_COMPLETION(VFS_wr_comp);
 
 struct vfs_dev *vfs_devp;
 
-int wait_for_vfs_done(void)
-{
-#ifdef VFS_RDWR_SEM
-	down_interruptible(&VFS_wr_sem);
-#else
-	wait_for_completion_interruptible(&VFS_wr_comp);
-#endif
-	return 0;
-}
-
-int notify_vfs_handle(void)
-{
-#ifdef VFS_RDWR_SEM
-	up(&VFS_rd_sem);
-#else
-	complete(&VFS_rd_comp);
-#endif
-	return 0;
-}
-
-
-static int tz_vfs_open(struct inode *inode, struct file *filp)
+int tz_vfs_open(struct inode *inode, struct file *filp)
 {
 	if (vfs_devp == NULL)
 		return -EINVAL;
@@ -108,7 +87,7 @@ static int tz_vfs_open(struct inode *inode, struct file *filp)
 	return 0;
 }
 
-static int tz_vfs_release(struct inode *inode, struct file *filp)
+int tz_vfs_release(struct inode *inode, struct file *filp)
 {
 	filp->private_data = NULL;
 	return 0;
@@ -188,8 +167,9 @@ static ssize_t tz_vfs_read(struct file *filp, char __user *buf,
 	ret = wait_for_completion_interruptible(&VFS_rd_comp);
 
 	if (ret == -ERESTARTSYS) {
-		IMSG_ERROR("[%s][%d] wait_for_completion was interrupt\n",
+		IMSG_DEBUG("[%s][%d] wait_for_completion was interrupt\n",
 				__func__, __LINE__);
+		complete(&global_down_lock);
 		return ret;
 	}
 #endif
@@ -309,7 +289,10 @@ static void vfs_setup_cdev(struct vfs_dev *dev, int index)
 		IMSG_ERROR("Error %d adding socket %d.\n", err, index);
 }
 
-static int vfs_init(void)
+
+
+
+int vfs_init(void)
 {
 	int result = 0;
 	struct device *class_dev = NULL;
@@ -365,7 +348,7 @@ return_fn:
 	return result;
 }
 
-static void vfs_exit(void)
+void vfs_exit(void)
 {
 	device_destroy(driver_class, devno);
 	class_destroy(driver_class);

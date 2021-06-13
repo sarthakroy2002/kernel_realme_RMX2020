@@ -36,7 +36,12 @@ struct IMGSENSOR_HW_CFG imgsensor_custom_config[] = {
 		IMGSENSOR_I2C_DEV_0,
 		{
 			{IMGSENSOR_HW_ID_MCLK, IMGSENSOR_HW_PIN_MCLK},
-			{IMGSENSOR_HW_ID_REGULATOR, IMGSENSOR_HW_PIN_AVDD},
+#ifdef ODM_WT_EDIT
+//XingYu.Liu@ODM_WT.CAMERA.Driver.2019/10/9,Add for camera bring up
+			{IMGSENSOR_HW_ID_GPIO, IMGSENSOR_HW_PIN_AVDD},
+			/*xiaojun.Pu@ODM_WT.CAMERA.Driver.2019/10/18,add for 12M camera af driver*/
+			{IMGSENSOR_HW_ID_REGULATOR,IMGSENSOR_HW_PIN_AFVDD},
+#endif /* ODM_WT_EDIT */
 			{IMGSENSOR_HW_ID_REGULATOR, IMGSENSOR_HW_PIN_DOVDD},
 			{IMGSENSOR_HW_ID_GPIO, IMGSENSOR_HW_PIN_DVDD},
 			{IMGSENSOR_HW_ID_GPIO, IMGSENSOR_HW_PIN_PDN},
@@ -51,9 +56,17 @@ struct IMGSENSOR_HW_CFG imgsensor_custom_config[] = {
 			{IMGSENSOR_HW_ID_MCLK, IMGSENSOR_HW_PIN_MCLK},
 			{IMGSENSOR_HW_ID_REGULATOR, IMGSENSOR_HW_PIN_AVDD},
 			{IMGSENSOR_HW_ID_REGULATOR, IMGSENSOR_HW_PIN_DOVDD},
-			{IMGSENSOR_HW_ID_GPIO, IMGSENSOR_HW_PIN_DVDD},
+#ifdef ODM_WT_EDIT
+//XingYu.Liu@ODM_WT.CAMERA.Driver.2019/10/9,Add for camera bring up
+			{IMGSENSOR_HW_ID_REGULATOR, IMGSENSOR_HW_PIN_DVDD},
+#endif /* ODM_WT_EDIT */
 			{IMGSENSOR_HW_ID_GPIO, IMGSENSOR_HW_PIN_PDN},
 			{IMGSENSOR_HW_ID_GPIO, IMGSENSOR_HW_PIN_RST},
+#ifdef ODM_WT_EDIT
+//XingYu.Liu@ODM_WT.CAMERA.Driver.2019/10/9,Add for camera bring up
+			{IMGSENSOR_HW_ID_GPIO, IMGSENSOR_HW_PIN_MIPI_SWITCH_EN},
+			{IMGSENSOR_HW_ID_GPIO, IMGSENSOR_HW_PIN_MIPI_SWITCH_SEL},
+#endif /* ODM_WT_EDIT */
 			{IMGSENSOR_HW_ID_NONE, IMGSENSOR_HW_PIN_NONE},
 		},
 	},
@@ -62,11 +75,19 @@ struct IMGSENSOR_HW_CFG imgsensor_custom_config[] = {
 		IMGSENSOR_I2C_DEV_2,
 		{
 			{IMGSENSOR_HW_ID_MCLK, IMGSENSOR_HW_PIN_MCLK},
-			{IMGSENSOR_HW_ID_GPIO, IMGSENSOR_HW_PIN_AVDD},
+#ifdef ODM_WT_EDIT
+//XingYu.Liu@ODM_WT.CAMERA.Driver.2019/10/9,Add for camera bring up
+			{IMGSENSOR_HW_ID_REGULATOR, IMGSENSOR_HW_PIN_AVDD},
+#endif /* ODM_WT_EDIT */
 			{IMGSENSOR_HW_ID_REGULATOR, IMGSENSOR_HW_PIN_DOVDD},
 			{IMGSENSOR_HW_ID_REGULATOR, IMGSENSOR_HW_PIN_DVDD},
 			{IMGSENSOR_HW_ID_GPIO, IMGSENSOR_HW_PIN_PDN},
 			{IMGSENSOR_HW_ID_GPIO, IMGSENSOR_HW_PIN_RST},
+#ifdef ODM_WT_EDIT
+//XingYu.Liu@ODM_WT.CAMERA.Driver.2019/10/9,Add for camera bring up
+			{IMGSENSOR_HW_ID_GPIO, IMGSENSOR_HW_PIN_MIPI_SWITCH_EN},
+			{IMGSENSOR_HW_ID_GPIO, IMGSENSOR_HW_PIN_MIPI_SWITCH_SEL},
+#endif /* ODM_WT_EDIT */
 			{IMGSENSOR_HW_ID_NONE, IMGSENSOR_HW_PIN_NONE},
 		},
 	},
@@ -88,7 +109,10 @@ struct IMGSENSOR_HW_CFG imgsensor_custom_config[] = {
 		IMGSENSOR_I2C_DEV_2,
 		{
 			{IMGSENSOR_HW_ID_MCLK, IMGSENSOR_HW_PIN_MCLK},
-			{IMGSENSOR_HW_ID_GPIO, IMGSENSOR_HW_PIN_AVDD},
+#ifdef ODM_WT_EDIT
+//XingYu.Liu@ODM_WT.CAMERA.Driver.2019/10/9,Add for camera bring up
+			{IMGSENSOR_HW_ID_REGULATOR, IMGSENSOR_HW_PIN_AVDD},
+#endif /* ODM_WT_EDIT */
 			{IMGSENSOR_HW_ID_REGULATOR, IMGSENSOR_HW_PIN_DOVDD},
 			{IMGSENSOR_HW_ID_REGULATOR, IMGSENSOR_HW_PIN_DVDD},
 			{IMGSENSOR_HW_ID_GPIO, IMGSENSOR_HW_PIN_PDN},
@@ -116,7 +140,7 @@ struct IMGSENSOR_HW_POWER_SEQ platform_power_sequence[] = {
 				IMGSENSOR_HW_PIN_MIPI_SWITCH_SEL,
 				IMGSENSOR_HW_PIN_STATE_LEVEL_HIGH,
 				0,
-				IMGSENSOR_HW_PIN_STATE_LEVEL_0,
+				IMGSENSOR_HW_PIN_STATE_LEVEL_HIGH,
 				0
 			},
 		},
@@ -149,6 +173,220 @@ struct IMGSENSOR_HW_POWER_SEQ platform_power_sequence[] = {
 
 /* Legacy design */
 struct IMGSENSOR_HW_POWER_SEQ sensor_power_sequence[] = {
+#ifdef ODM_WT_EDIT
+	/* Zhen.Quan@Camera.Driver, 2019/11/04, modify camera power sequence */
+#if defined(MONET_HLT_DEPTH_OV02A1B)
+	{SENSOR_DRVNAME_MONET_HLT_DEPTH_OV02A1B,
+		{
+			{RST, Vol_High, 1,Vol_Low,1},
+			{DOVDD, Vol_1800, 5,Vol_Low,5},
+			{AVDD, Vol_2800, 5,Vol_Low,5},
+			{RST, Vol_High, 1,Vol_High,1},
+			{SensorMCLK, Vol_High, 5,Vol_Low,5},
+			{RST, Vol_Low, 5,Vol_Low,5},
+		},
+	},
+#endif
+#if defined(MONET_HLT_MACRO_GC2375H)
+	{SENSOR_DRVNAME_MONET_HLT_MACRO_GC2375H,
+		{
+			{RST, Vol_High, 1,Vol_Low,1},
+			{DOVDD, Vol_1800, 5,Vol_Low,5},
+			{AVDD, Vol_2800, 5,Vol_Low,5},
+			{SensorMCLK, Vol_High, 5,Vol_Low,5},
+			{RST, Vol_Low, 5,Vol_High,5},
+		},
+	},
+#endif
+#if defined(MONETX_HLT_MACRO_GC2375H)
+	{SENSOR_DRVNAME_MONETX_HLT_MACRO_GC2375H,
+		{
+			{RST, Vol_High, 1,Vol_Low,1},
+			{DOVDD, Vol_1800, 5,Vol_Low,5},
+			{AVDD, Vol_2800, 5,Vol_Low,5},
+			{SensorMCLK, Vol_High, 5,Vol_Low,5},
+			{RST, Vol_Low, 5,Vol_High,5},
+		},
+	},
+#endif
+#if defined(MONETD_CXT_DEPTH_GC2375H)
+	{SENSOR_DRVNAME_MONETD_CXT_DEPTH_GC2375H,
+		{
+			{RST, Vol_High, 1,Vol_Low,1},
+			{DOVDD, Vol_1800, 5,Vol_Low,5},
+			{AVDD, Vol_2800, 5,Vol_Low,5},
+			{SensorMCLK, Vol_High, 5,Vol_Low,5},
+			{RST, Vol_Low, 5,Vol_High,5},
+		},
+	},
+#endif
+#if defined(MONETD_LH_DEPTH_GC2375H)
+	{SENSOR_DRVNAME_MONETD_LH_DEPTH_GC2375H,
+		{
+			{RST, Vol_High, 1,Vol_Low,1},
+			{DOVDD, Vol_1800, 5,Vol_Low,5},
+			{AVDD, Vol_2800, 5,Vol_Low,5},
+			{SensorMCLK, Vol_High, 5,Vol_Low,5},
+			{RST, Vol_Low, 5,Vol_High,5},
+		},
+	},
+#endif
+#if defined(MONET_LH_MACRO_GC2375H)
+    {SENSOR_DRVNAME_MONET_LH_MACRO_GC2375H,
+		{
+			{RST, Vol_High, 1,Vol_Low,1},
+			{DOVDD, Vol_1800, 5,Vol_Low,5},
+			{AVDD, Vol_2800, 5,Vol_Low,5},
+			{SensorMCLK, Vol_High, 5,Vol_Low,5},
+			{RST, Vol_Low, 5,Vol_High,5},
+		},
+	},
+#endif
+#if defined(MONETX_HLT_DEPTH_OV02A1B)
+	{SENSOR_DRVNAME_MONETX_HLT_DEPTH_OV02A1B,
+		{
+			{RST, Vol_High, 1,Vol_High,1},
+			{DOVDD, Vol_1800, 5,Vol_Low,5},
+			{AVDD, Vol_2800, 5,Vol_Low,5},
+			{RST, Vol_High, 1,Vol_High,1},
+			{SensorMCLK, Vol_High, 5,Vol_Low,1},
+			{RST, Vol_Low, 5,Vol_Low,5},
+		},
+	},
+#endif
+#if defined(MONET_HLT_FRONT_GC5035)
+	{SENSOR_DRVNAME_MONET_HLT_FRONT_GC5035,
+		{
+			{PDN, Vol_Low, 0},
+			{RST, Vol_Low, 3},
+			{DOVDD, Vol_1800, 1},
+			{DVDD, Vol_1200, 1},
+			{AVDD, Vol_2800, 1},
+			{RST, Vol_High, 1},
+			{PDN, Vol_High, 3},
+			{SensorMCLK, Vol_High, 3},
+		},
+	},
+#endif
+#if defined(MONET_TXD_FRONT_HI556)
+	{SENSOR_DRVNAME_MONET_TXD_FRONT_HI556,
+		{
+			{SensorMCLK, Vol_High, 5},
+			{AVDD, Vol_2800, 0},
+			{DOVDD, Vol_1800, 0},
+			{DVDD, Vol_1200, 0},
+			{PDN, Vol_Low, 0},
+			{PDN, Vol_High, 3},
+			{RST, Vol_Low, 5},
+			{RST, Vol_High, 10},
+		},
+	},
+#endif
+#if defined(MONET_TRULY_MAIN_OV12A10)
+	{
+		SENSOR_DRVNAME_MONET_TRULY_MAIN_OV12A10,
+		{
+			{RST, Vol_Low, 0},
+			{AVDD, Vol_2800, 1},
+			{DOVDD, Vol_1800, 1},
+			{DVDD, Vol_High, 1},
+			/*xiaojun.Pu@ODM_WT.CAMERA.Driver.2019/10/18,add for 12M camera af driver*/
+			{AFVDD, Vol_2800, 1},
+			{RST, Vol_High, 1},
+                        {SensorMCLK, Vol_High, 0},
+		},
+	},
+#endif
+	//Duilin.Qin@ODM_WT.CAMERA.Driver.2019/11/20,Add for camera bring up
+#if defined(MONETD_TRULY_MAIN_OV12A10)
+        {
+                SENSOR_DRVNAME_MONETD_TRULY_MAIN_OV12A10,
+                {
+                        {RST, Vol_Low, 3},
+                        {AVDD, Vol_2800, 1},
+                        {DOVDD, Vol_1800, 1},
+                        {DVDD, Vol_High, 1},
+                        /*xiaojun.Pu@ODM_WT.CAMERA.Driver.2019/10/18,add for 12M camera af driver*/
+                        {AFVDD, Vol_2800, 1},
+                        {RST, Vol_High, 5},
+                        {SensorMCLK, Vol_High, 0},
+                },
+        },
+#endif
+        //Duilin.Qin@ODM_WT.CAMERA.Driver.2019/11/20,Add for camera bring up
+
+/*xiaojun.Pu@ODM_WT.CAMERA.Driver.2019/12/19,add for customer supply 5M front camera r*/
+#if defined(MONET_HLT_CUSTFRONT_GC5035)
+	{
+	     SENSOR_DRVNAME_MONET_HLT_CUSTFRONT_GC5035,
+		{
+			{PDN, Vol_Low, 0},
+			{RST, Vol_Low, 3},
+			{DOVDD, Vol_1800, 1},
+			{DVDD, Vol_1200, 1},
+			{AVDD, Vol_2800, 1},
+			{RST, Vol_High, 1},
+			{PDN, Vol_High, 3},
+			{SensorMCLK, Vol_High, 3},
+		},
+	},
+#endif
+#if defined(MONETX_TRULY_MAIN_S5KGM1SP)
+	{
+		SENSOR_DRVNAME_MONETX_TRULY_MAIN_S5KGM1SP,
+		{
+			{RST, Vol_Low, 1},
+			{AVDD, Vol_2800, 0},
+			{DVDD, Vol_High, 0},
+			{DOVDD, Vol_1800, 0},
+			{AFVDD, Vol_2800, 5},
+			{RST, Vol_High, 2},
+			{SensorMCLK, Vol_High, 0},
+		},
+	},
+#endif
+#if defined(MONETX_OFILM_FRONT_OV16A1Q)
+	{
+		SENSOR_DRVNAME_MONETX_OFILM_FRONT_OV16A1Q,
+		{
+			{PDN, Vol_Low, 0},
+			{RST, Vol_Low, 3},
+			{AVDD, Vol_2800, 0},
+			{DOVDD, Vol_1800, 0},
+			{DVDD, Vol_1200, 0},
+			{PDN, Vol_High, 0},
+			{RST, Vol_High, 5},
+			{SensorMCLK, Vol_High, 3},
+		},
+	},
+#endif
+#if defined(MONETX_HLT_MACRO_GC2385)
+	{
+		SENSOR_DRVNAME_MONETX_HLT_MACRO_GC2385,
+		{
+			{RST, Vol_Low, 1, Vol_High, 1},
+			{DOVDD, Vol_1800, 5, Vol_Low, 5},
+			{AVDD, Vol_2800, 5, Vol_Low, 5},
+			{SensorMCLK, Vol_High, 3, Vol_Low, 5},
+			{RST, Vol_High, 5, Vol_Low, 5},
+		},
+	},
+#endif
+#if defined(MONETX_SHENGTAI_WIDE_OV8856)
+	{SENSOR_DRVNAME_MONETX_SHENGTAI_WIDE_OV8856,
+		{
+			{PDN, Vol_Low, 1},
+			{RST, Vol_Low, 1},
+			{DOVDD, Vol_1800, 1},
+			{AVDD, Vol_2800, 1},
+			{DVDD, Vol_1200, 1},
+			{PDN, Vol_High, 1},
+			{RST, Vol_High, 5},
+			{SensorMCLK, Vol_High, 2},
+		},
+	},
+#endif
+#else
 #if defined(IMX519_MIPI_RAW)
 	{
 		SENSOR_DRVNAME_IMX519_MIPI_RAW,
@@ -721,6 +959,7 @@ struct IMGSENSOR_HW_POWER_SEQ sensor_power_sequence[] = {
 		},
 	},
 #endif
+#endif /* ODM_WT_EDIT */
 	/* add new sensor before this line */
 	{NULL,},
 };

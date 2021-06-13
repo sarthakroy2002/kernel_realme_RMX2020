@@ -59,7 +59,10 @@
 #endif
 #include "../mrdump/mrdump_private.h"
 #include <mrdump.h>
-
+#ifdef ODM_WT_EDIT
+/*weihuan.zhao@ODM_WT.BSP.Kernel.stability, 2019/12/30,print process pss to kernel log to track Memleak*/
+#include <linux/oom.h>
+#endif /*ODM_WT_EDIT*/
 #ifndef TASK_STATE_TO_CHAR_STR
 #define TASK_STATE_TO_CHAR_STR "RSDTtXZxKWPNn"
 #endif
@@ -1547,6 +1550,62 @@ static void hang_dump_backtrace(void)
 	}
 }
 
+#ifdef ODM_WT_EDIT
+/*weihuan.zhao@ODM_WT.BSP.Kernel.stability, 2019/12/30,print process pss to kernel log to track Memleak*/
+#define CONVERT_ADJ(x) ((x * OOM_SCORE_ADJ_MAX) / -OOM_DISABLE)
+#define REVERT_ADJ(x)  (x * (-OOM_DISABLE + 1) / OOM_SCORE_ADJ_MAX)
+
+static int dump_processes(void)
+{
+    int i, j;
+    int score_adj[37]={0};
+    //long score_adj_pss[37]={0};
+    short oom_score_adj;
+    struct task_struct *tsk;
+
+    for(i = 0, j=-18; i < 37; i++, j++)
+        score_adj[i] = CONVERT_ADJ(j);
+
+    printk("======   hang detect show processes   =====\n");
+#ifdef CONFIG_ZRAM
+    printk(" [pid]  adj    score_adj   rss    rswap      name\n");
+#else
+    printk(" [pid]  adj    score_adj   rss      name\n");
+#endif
+
+    rcu_read_lock();
+    for_each_process(tsk) {
+        struct task_struct *p;
+
+        if (tsk->flags & PF_KTHREAD)
+            continue;
+
+        p = find_lock_task_mm(tsk);
+        if (!p)
+            continue;
+
+        oom_score_adj = p->signal->oom_score_adj;
+
+        printk(
+
+#ifdef CONFIG_ZRAM
+                " [%5d] %5d%11d%8lu%8lu        %s\n", p->pid,
+                REVERT_ADJ(oom_score_adj), oom_score_adj,
+                get_mm_rss(p->mm),
+                get_mm_counter(p->mm, MM_SWAPENTS), p->comm);
+#else /* CONFIG_ZRAM */
+                " [%5d] %5d%11d%8lu        %s\n", p->pid,
+                REVERT_ADJ(oom_score_adj), oom_score_adj,
+                get_mm_rss(p->mm), p->comm);
+#endif
+        task_unlock(p);
+    }
+    rcu_read_unlock();
+
+    return 0;
+}
+#endif /*ODM_WT_EDIT*/
+
 static void ShowStatus(int flag)
 {
 	if (Hang_Detect_first == true)	{ /* the last dump */
@@ -1560,6 +1619,10 @@ static void ShowStatus(int flag)
 		/* debug_locks = 1; */
 		debug_show_all_locks();
 		show_free_areas(0, NULL);
+#ifdef ODM_WT_EDIT
+/*weihuan.zhao@ODM_WT.BSP.Kernel.stability, 2019/12/30,print process pss to kernel log to track Memleak*/
+        dump_processes();
+#endif /*ODM_WT_EDIT*/
 		if (show_task_mem)
 			show_task_mem();
 #ifdef CONFIG_MTK_ION

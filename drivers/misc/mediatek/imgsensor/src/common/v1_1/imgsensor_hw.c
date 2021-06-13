@@ -20,6 +20,9 @@
 #include "imgsensor_sensor.h"
 #include "imgsensor_hw.h"
 
+#ifndef VENDOR_EDIT
+#define VENDOR_EDIT
+#endif
 enum IMGSENSOR_RETURN imgsensor_hw_init(struct IMGSENSOR_HW *phw)
 {
 	struct IMGSENSOR_HW_SENSOR_POWER      *psensor_pwr;

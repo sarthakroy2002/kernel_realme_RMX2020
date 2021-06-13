@@ -613,6 +613,14 @@ done:
 	return ret;
 }
 
+#ifdef ODM_WT_EDIT
+//hao.liang@ODM_WT.MM.Display.Lcd, 2019/12/26,  cancel lcd esd check function at early blank;
+static bool tp_suspend_flag_for_disable_lcd_esd_check;
+void lcd_esd_primary_display_esd_check_enable(bool enable){
+	primary_display_esd_check_enable(enable);
+	tp_suspend_flag_for_disable_lcd_esd_check = (!enable);
+}
+#endif /* ODM_WT_EDIT */
 static int primary_display_check_recovery_worker_kthread(void *data)
 {
 	struct sched_param param = {.sched_priority = 87 };
@@ -657,7 +665,14 @@ static int primary_display_check_recovery_worker_kthread(void *data)
 			ret = primary_display_esd_check();
 			if (!ret) /* success */
 				break;
-
+#ifdef ODM_WT_EDIT
+//hao.liang@ODM_WT.MM.Display.Lcd, 2019/12/26,  cancel lcd esd check function at early blank;
+			if (tp_suspend_flag_for_disable_lcd_esd_check) {
+				DISPERR(
+				"[ESD]esd check fail, skip it this time ,as Tp has been suspended\n");
+				break;
+			}
+#endif /* ODM_WT_EDIT */
 			DISPERR(
 				"[ESD]esd check fail, will do esd recovery. try=%d\n",
 				i);
@@ -684,6 +699,10 @@ static int primary_display_check_recovery_worker_kthread(void *data)
 	}
 	return 0;
 }
+#ifdef ODM_WT_EDIT
+//Hao.Liang@ODM_WT.MM.Display.Lcd, 2019/12/9, Add cabc function
+extern bool flag_lcd_off;
+#endif
 
 /* ESD RECOVERY */
 int primary_display_esd_recovery(void)
@@ -815,6 +834,10 @@ int primary_display_esd_recovery(void)
 
 done:
 	primary_display_manual_unlock();
+#ifdef ODM_WT_EDIT
+	//Hao.Liang@ODM_WT.MM.Display.Lcd, 2019/12/9, Add cabc function
+	flag_lcd_off = false;
+#endif
 	DISPCHECK("[ESD]ESD recovery end\n");
 	mmprofile_log_ex(mmp_r, MMPROFILE_FLAG_END, 0, 0);
 	dprec_logger_done(DPREC_LOGGER_ESD_RECOVERY, 0, 0);

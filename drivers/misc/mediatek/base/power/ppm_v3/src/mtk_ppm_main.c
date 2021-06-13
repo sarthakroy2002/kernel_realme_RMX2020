@@ -29,6 +29,8 @@
 #include <trace/events/mtk_events.h>
 #include <linux/of.h>
 
+#include <soc/oppo/oppo_project.h>
+
 /*==============================================================*/
 /* Local Macros                                                 */
 /*==============================================================*/
@@ -606,11 +608,18 @@ static void ppm_main_log_print(unsigned int policy_mask,
 	}
 
 	if (!filter_log)
+#if defined(VENDOR_EDIT)
+/*xing.xiong@BSP.Kernel.Debug, 2019/1/12, Modify for limiting kernel log*/
+	if (get_eng_version() != 0) {
 		ppm_info("(0x%x)(%d)(%d)%s\n", policy_mask,
 			min_power_budget, root_cluster, msg);
-	else
+	} else {
 		ppm_ver("(0x%x)(%d)(%d)%s\n", policy_mask,
 			min_power_budget, root_cluster, msg);
+	}
+#endif
+	else
+		ppm_ver("(0x%x)(%d)(%d)%s\n", policy_mask, min_power_budget, root_cluster, msg);
 
 	prev_log_time = cur_time;
 }

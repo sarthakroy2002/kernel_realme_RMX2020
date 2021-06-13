@@ -988,7 +988,6 @@ static int cldma_gpd_bd_tx_collect(struct md_cd_queue *queue,
 	struct sk_buff *skb_free;
 	int need_resume = 0;
 	int resume_done = 0;
-
 	while (1) {
 		spin_lock_irqsave(&queue->ring_lock, flags);
 		req = queue->tr_done;
@@ -1200,6 +1199,7 @@ static int cldma_gpd_tx_collect(struct md_cd_queue *queue,
 				"CLDMA_AP wakeup source:(%d/%d)(%u)\n",
 				queue->index, ccci_h->channel,
 				md_ctrl->wakeup_count);
+
 		}
 		CCCI_DEBUG_LOG(md_ctrl->md_id, TAG,
 				"harvest Tx msg (%x %x %x %x) txq=%d len=%d\n",

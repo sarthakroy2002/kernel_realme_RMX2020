@@ -35,6 +35,10 @@
 #include <linux/atomic.h>
 #include <mt-plat/mtk_boot_common.h>
 
+#ifdef ODM_WT_EDIT
+/* Hui.Yuan@ODM_WT.System.Kernel.Boot, 2019/10/17, Add for silence mode/SAU mode */
+#include <linux/hardware_info.h>
+#endif
 
 enum {
 	BM_UNINIT = 0,
@@ -221,6 +225,37 @@ static const struct file_operations boot_fops = {
 	.unlocked_ioctl = NULL
 };
 
+#ifdef ODM_WT_EDIT
+/* Hui.Yuan@ODM_WT.System.Kernel.Boot, 2019/10/17, Add for boot reason proc node for mtk platform */
+static struct kobject *systeminfo_kobj;
+static ssize_t ftmmode_show(struct kobject *kobj, struct kobj_attribute *attr,
+				char *buf)
+{
+	if (oppo_boot_mode == OPPO_SILENCE_BOOT)
+		return sprintf(buf, "%d\n", SILENCE_BOOT);
+	else if (oppo_boot_mode == OPPO_SAFE_BOOT)
+		return sprintf(buf, "%d\n", SAFE_BOOT);
+	/* xiaofan.yang@PSW.TECH.AgingTest, 2019/09/09,Add for factory agingtest */
+	else if (oppo_boot_mode == OPPO_AGING_BOOT)
+		return sprintf(buf, "%d\n", AGING_BOOT);
+	else
+		return sprintf(buf, "%d\n", get_boot_mode());
+}
+
+struct kobj_attribute ftmmode_attr = {
+	.attr = {"ftmmode", 0644},
+	.show = &ftmmode_show,
+};
+static struct attribute * g[] = {
+	&ftmmode_attr.attr,
+	NULL,
+};
+
+static struct attribute_group attr_group = {
+	.attrs = g,
+};
+#endif /* ODM_WT_EDIT */
+
 /* boot device class */
 static struct class *boot_class;
 static struct device *boot_device;
@@ -265,6 +300,14 @@ static int __init create_sysfs(void)
 		return ret;
 	}
 
+#ifdef ODM_WT_EDIT
+/* Hui.Yuan@ODM_WT.System.Kernel.Boot, 2019/10/17, Add for boot reason proc node for mtk platform */
+	systeminfo_kobj = kobject_create_and_add("systeminfo", NULL);
+	printk("oppo create systeminto node suscess!\n");
+	if (systeminfo_kobj)
+		ret = sysfs_create_group(systeminfo_kobj, &attr_group);
+#endif /* ODM_WT_EDIT */
+
 	return 0;
 }
 
@@ -299,6 +342,66 @@ static int boot_mode_proc_show(struct seq_file *p, void *v)
 
 	return 0;
 }
+
+
+#ifdef ODM_WT_EDIT
+/* Hui.Yuan@ODM_WT.System.Kernel.Boot, 2019/10/17, Add for oppo boot mode */
+//extern void oppoversion_info_set(char *name, char *version);
+OPPO_BOOTMODE oppo_boot_mode = OPPO_NORMAL_BOOT;
+static int oppo_get_boot_mode(char *oppo_boot_mode_char)
+{
+	int  boot_mode_temp = 0;
+
+	char oppoBootModeInfo[HARDWARE_MAX_ITEM_LONGTH];
+
+
+	sscanf(oppo_boot_mode_char, "%d", &boot_mode_temp);
+	if(boot_mode_temp == 0)
+	{
+		oppo_boot_mode = OPPO_NORMAL_BOOT;
+	}
+	else if (boot_mode_temp == 1)
+	{
+		oppo_boot_mode = OPPO_SILENCE_BOOT;
+	}
+
+	else if (boot_mode_temp == 2)
+	{
+		oppo_boot_mode = OPPO_SAFE_BOOT;
+	}	/* xiaofan.yang@PSW.TECH.AgingTest, 2019/09/09,Add for factory agingtest */
+	else if (boot_mode_temp == 3)
+	{
+		oppo_boot_mode = OPPO_AGING_BOOT;
+	}
+	else
+	{
+		oppo_boot_mode = OPPO_UNKNOWN_BOOT;
+	}
+
+    pr_info("oppo_boot_mode: %d ",oppo_boot_mode);
+
+	sprintf(oppoBootModeInfo, "%d", oppo_boot_mode);
+	//oppoversion_info_set("bootMode", oppoBootModeInfo);
+    return 1;
+}
+__setup("oppo_boot_mode=", oppo_get_boot_mode);
+
+
+static int oppo_get_modemid_info(char *oppo_modemid)
+{
+	//oppoversion_info_set("modemType", oppo_modemid);
+    return 1;
+}
+__setup("modemId=", oppo_get_modemid_info);
+
+static int oppo_get_operatorID_info(char *operatorID_info)
+{
+	//oppoversion_info_set("operatorName", operatorID_info);
+    return 1;
+}
+__setup("operatorID=", oppo_get_operatorID_info);
+
+#endif /* ODM_WT_EDIT */
 
 static int boot_mode_proc_open(struct inode *inode, struct file *file)
 {

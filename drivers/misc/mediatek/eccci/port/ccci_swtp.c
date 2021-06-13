@@ -27,6 +27,13 @@
 #include "ccci_swtp.h"
 #include "ccci_fsm.h"
 
+#ifdef ODM_WT_EDIT
+/* Yong.Cheng@ODM_WT.Network.RF.SWTP, 2019/12/02, add swtp gpio state */
+#include <linux/proc_fs.h>
+static unsigned int swtp_gpio_value = 0;
+#endif /*ODM_WT_EDIT*/
+
+
 const struct of_device_id swtp_of_match[] = {
 	{ .compatible = SWTP_COMPATIBLE_DEVICE_ID, },
 	{},
@@ -89,6 +96,11 @@ static int swtp_switch_mode(struct swtp_t *swtp)
 	CCCI_LEGACY_ALWAYS_LOG(swtp->md_id, SYS, "%s mode %d\n",
 		__func__, swtp->curr_mode);
 	spin_unlock_irqrestore(&swtp->spinlock, flags);
+
+#ifdef ODM_WT_EDIT
+/* Yong.Cheng@ODM_WT.Network.RF.SWTP, 2019/12/02, add swtp gpio state */	
+	swtp_gpio_value = swtp->curr_mode;
+#endif /*ODM_WT_EDIT*/
 
 	return ret;
 }
@@ -187,6 +199,34 @@ int swtp_md_tx_power_req_hdlr(int md_id, int data)
 	return 0;
 }
 
+#ifdef ODM_WT_EDIT
+/* Yong.Cheng.Niu@ODM_WT.Network.RF.SWTP, 2019/12/02, add swtp gpio state */
+
+static int swtp_gpio_show(struct seq_file *m, void *v)
+{
+	seq_printf(m, "%d\n", swtp_gpio_value);
+	return 0;
+}
+
+static int swtp_gpio_proc_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, swtp_gpio_show, NULL);
+}
+
+static const struct file_operations swtp_gpio_fops = {
+	.open	= swtp_gpio_proc_open,
+	.read	= seq_read,
+	.llseek	= seq_lseek,
+	.release = single_release,
+};
+
+static void swtp_gpio_create_proc(void)
+{
+	proc_create("swtp_status_value", 0444, NULL, &swtp_gpio_fops);
+}
+#endif /*ODM_WT_EDIT*/
+
+
 int swtp_init(int md_id)
 {
 	int ret = 0;
@@ -226,6 +266,17 @@ int swtp_init(int md_id)
 #endif
 		gpio_set_debounce(swtp_data[md_id].gpiopin,
 			swtp_data[md_id].setdebounce);
+#ifdef ODM_WT_EDIT
+		//Yong.Cheng@ODM_WT.NW.RF.SWTP.noBug, 2019/12/02, Add for SWTP featrue to set right GPIO
+		swtp_data[md_id].gpiopin = ints1[0];
+		swtp_data[md_id].setdebounce = ints[0];
+		swtp_data[md_id].eint_type = ints1[1];
+		CCCI_LEGACY_ERR_LOG(md_id, SYS,
+                "swtp GPIO=%d, setdebounce=%d, eint_type=%d\n",
+                swtp_data[md_id].gpiopin,
+                swtp_data[md_id].setdebounce,
+                swtp_data[md_id].eint_type);
+#endif  /* ODM_WT_EDIT */
 		swtp_data[md_id].irq = irq_of_parse_and_map(node, 0);
 		ret = request_irq(swtp_data[md_id].irq, swtp_irq_func,
 			IRQF_TRIGGER_NONE, "swtp-eint", &swtp_data[md_id]);
@@ -246,6 +297,11 @@ int swtp_init(int md_id)
 	}
 	register_ccci_sys_call_back(md_id, MD_SW_MD1_TX_POWER_REQ,
 		swtp_md_tx_power_req_hdlr);
+
+#ifdef ODM_WT_EDIT
+/* Yong.Cheng@ODM_WT.Network.RF.SWTP, 2019/12/02, add swtp gpio state */
+	swtp_gpio_create_proc();
+#endif /*ODM_WT_EDIT*/
 	return ret;
 }
 

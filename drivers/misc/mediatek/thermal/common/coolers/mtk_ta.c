@@ -209,6 +209,7 @@ void atm_ctrl_cmd_from_user(void *nl_data, struct tad_nl_msg_t *ret_msg)
 		{
 			memcpy(&g_tad_ttj, &msg->tad_data[0],
 						sizeof(g_tad_ttj));
+
 			tsta_dprintk(
 				"[%s] g_tad_ttj = %d\n", __func__,
 								g_tad_ttj);
@@ -535,7 +536,7 @@ static int __init ta_init(void)
 
 	g_tad_pid = 0;
 	init_flag = false;
-	g_tad_ttj = CLCTM_TARGET_TJ;
+	g_tad_ttj = 0;
 	g_ta_status = 0;
 
 	/*add by willcai for the userspace to kernelspace*/

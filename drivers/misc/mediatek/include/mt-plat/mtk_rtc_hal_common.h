@@ -34,6 +34,29 @@ enum rtc_spare_enum {
 	RTC_32K_LESS,
 	RTC_LP_DET,
 	RTC_FG_INIT,
+	#ifdef VENDOR_EDIT
+	/* Bin.Li@EXP.BSP.bootloader.bootflow, 2017/05/24,, Add for /panic mode/silence mode/meta mode/SAU mode */
+	RTC_REBOOT_KERNEL,//16
+	RTC_SILENCE_BOOT,//17
+	RTC_META_BOOT,//18
+	RTC_SAU_BOOT,//19
+	#endif /* VENDOR_EDIT */
+	#ifdef VENDOR_EDIT
+	/* Qiao.Hu@EXP.BSP.BaseDrv.CHG.Basic, 2017/08/02, Add for charger memory electricity */
+	RTC_OPPO_BATTERY,//20
+	#endif /* VENDOR_EDIT */
+#ifdef VENDOR_EDIT
+/* Fuchun.Liao@BSP.CHG.Basic 2018/02/12 modify for factory mode */
+        RTC_FACTORY_BOOT,
+#endif /* VENDOR_EDIT */
+#ifdef VENDOR_EDIT
+/* Fuchun.Liao@BSP.CHG.Basic 2018/08/08 modify for sensor i2c err workaround */
+	RTC_SENSOR_CAUSE_PANIC,
+/*xiongxing@BSP.Kernel.Driver, 2019/02/27, Add for safemode*/
+        RTC_SAFE_BOOT,
+/* xiaofan.yang@PSW.TECH.AgingTest, 2019/09/09,Add for factory agingtest */
+	RTC_AGINGTEST_BOOT,
+#endif /* VENDOR_EDIT */
 	RTC_SPAR_NUM
 };
 

@@ -18,31 +18,35 @@
 #include <linux/types.h>
 
 struct NQ_head {
-	unsigned long long nq_type;
-	unsigned long long max_count;
-	unsigned long long put_index;
-	unsigned long long reserve[5];
+	u32 start_index;
+	u32 end_index;
+	u32 Max_count;
+	unsigned char reserve[20];
 };
 
 struct NQ_entry {
-	unsigned long long cmd_ID;
-	unsigned long long sub_cmd_ID;
-	unsigned long long block_p;
-	unsigned long long param[5];
+	u32 valid_flag;
+	u32 length;
+	u64 buffer_addr;
+	u32 cmd;
+	unsigned char reserve[12];
 };
 
-int add_nq_entry(unsigned long long cmd_ID, unsigned long long sub_cnd_ID,
-			unsigned long long block_p, unsigned long long p0,
-			unsigned long long p1, unsigned long long p2);
+#pragma pack(1)
+struct create_NQ_struct {
+	u64 n_t_nq_phy_addr;
+	u32 n_t_size;
+	u64 t_n_nq_phy_addr;
+	u32 t_n_size;
+};
+#pragma pack()
 
-int add_bdrv_nq_entry(unsigned long long cmd_ID, unsigned long long sub_cnd_ID,
-			unsigned long long block_p, unsigned long long p0,
-			unsigned long long p1, unsigned long long p2);
+extern unsigned long t_nt_buffer;
 
-struct NQ_entry *get_nq_entry(void);
+int add_nq_entry(u32 cmd, unsigned long command_buff,
+				int command_length, int valid_flag);
 
-int create_nq_buffer(void);
-int set_soter_version(void);
-void secondary_init_cmdbuf(void *info);
-int show_t_nt_queue(void);
+unsigned char *get_nq_entry(unsigned char *buffer_addr);
+long create_nq_buffer(void);
+
 #endif /* end of NOTIFY_QUEUE_H */

@@ -12,7 +12,6 @@
  * GNU General Public License for more details.
  */
 
-#include <linux/version.h>
 #include <linux/kernel.h>
 #include <linux/slab.h>
 #include <linux/cpu.h>
@@ -25,13 +24,13 @@
 #include <linux/cpu.h>
 #include <linux/notifier.h>
 #include <fdrv.h>
-#include <linux/vmalloc.h>
 #include "nt_smc_call.h"
 #include "utdriver_macro.h"
 #include "sched_status.h"
 #include "teei_log.h"
 #include "teei_common.h"
 #include "teei_client_main.h"
+#include "global_function.h"
 #include "backward_driver.h"
 #include "irq_register.h"
 #include "teei_smc_call.h"
@@ -40,7 +39,6 @@
 #include "utr_tui_cmd.h"
 #endif
 
-#include <notify_queue.h>
 #include <teei_secure_api.h>
 
 #define IMSG_TAG "[tz_driver]"
@@ -70,7 +68,7 @@ static struct switch_call_struct *create_switch_call_struct(void)
 }
 
 static int init_switch_call_struct(struct switch_call_struct *ent,
-				int work_type, unsigned long buff)
+					int work_type, unsigned long buff)
 {
 	if (ent == NULL) {
 		IMSG_ERROR("[%s][%d] the paraments are wrong!\n",
@@ -98,28 +96,43 @@ struct ut_smc_call_work {
 
 static int ut_smc_call(void *buff)
 {
-	struct ut_smc_call_work *usc_work = NULL;
+	struct ut_smc_call_work usc_work = {
+		KTHREAD_WORK_INIT(usc_work.work, switch_fn),
+		.data = buff,
+	};
 
-	usc_work = kmalloc(sizeof(struct ut_smc_call_work), GFP_KERNEL);
-
-	if (usc_work == NULL) {
-		IMSG_ERROR("[%s][%d] NO enough memory for use_work\n",
-				__func__, __LINE__);
-		return -ENOMEM;
-	}
-
-	kthread_init_work(&(usc_work->work), switch_fn);
-	usc_work->data = buff;
-
-	if (!kthread_queue_work(&ut_fastcall_worker, &usc_work->work))
+	if (!kthread_queue_work(&ut_fastcall_worker, &usc_work.work))
 		return -1;
-
+	kthread_flush_work(&usc_work.work);
 	return 0;
 }
 
 static int check_work_type(int work_type)
 {
-	return 0;
+	switch (work_type) {
+	case NEW_CAPI_CALL:
+	case CAPI_CALL:
+	case FDRV_CALL:
+	case BDRV_CALL:
+	case SCHED_CALL:
+	case LOAD_FUNC:
+	case INIT_CMD_CALL:
+	case BOOT_STAGE1:
+	case BOOT_STAGE2:
+	case INVOKE_FASTCALL:
+	case LOAD_TEE:
+	case LOCK_PM_MUTEX:
+	case UNLOCK_PM_MUTEX:
+	case SWITCH_CORE:
+	case MOVE_CORE:
+	case NT_DUMP_T:
+#ifdef TUI_SUPPORT
+	case POWER_DOWN_CALL:
+#endif
+		return 0;
+	default:
+		return -EINVAL;
+	}
 }
 
 int handle_dump_call(void *buff)
@@ -127,31 +140,43 @@ int handle_dump_call(void *buff)
 	IMSG_DEBUG("[%s][%d] begin.\n", __func__, __LINE__);
 	teei_secure_call(NT_SCHED_T, 0x9527, 0, 0);
 	IMSG_DEBUG("[%s][%d] end.\n", __func__, __LINE__);
-
 	return 0;
 }
 
+void handle_lock_pm_mutex(struct mutex *lock)
+{
+	if (ut_pm_count == 0)
+		mutex_lock(lock);
+
+	ut_pm_count++;
+}
+
+
+void handle_unlock_pm_mutex(struct mutex *lock)
+{
+	ut_pm_count--;
+
+	if (ut_pm_count == 0)
+		mutex_unlock(lock);
+}
 
 int add_work_entry(int work_type, unsigned long buff)
 {
 	struct switch_call_struct *work_entry = NULL;
 	int retVal = 0;
 
-	/* with a wmb() */
-	/* wmb(); */
-
 	retVal = check_work_type(work_type);
 	if (retVal != 0) {
 		IMSG_ERROR("[%s][%d] with wrong work_type!\n",
 						__func__, __LINE__);
-		return -EINVAL;
+		return retVal;
 	}
 
 	work_entry = create_switch_call_struct();
 	if (work_entry == NULL) {
 		IMSG_ERROR("[%s][%d] There is no enough memory!\n",
 							__func__, __LINE__);
-		return -EINVAL;
+		return -ENOMEM;
 	}
 
 	retVal = init_switch_call_struct(work_entry, work_type, buff);
@@ -163,9 +188,6 @@ int add_work_entry(int work_type, unsigned long buff)
 	}
 
 	retVal = ut_smc_call((void *)work_entry);
-
-	/* with a rmb() */
-	/* rmb(); */
 
 	return retVal;
 }
@@ -188,6 +210,116 @@ int handle_sched_call(void *buff)
 	return 0;
 }
 
+
+int handle_capi_call(void *buff)
+{
+	struct smc_call_struct *cd = NULL;
+
+	cd = (struct smc_call_struct *)buff;
+
+	/* with a rmb() */
+	rmb();
+
+	cd->retVal = __teei_smc_call(cd->local_cmd,
+			cd->teei_cmd_type,
+			cd->dev_file_id,
+			cd->svc_id,
+			cd->cmd_id,
+			cd->context,
+			cd->enc_id,
+			cd->cmd_buf,
+			cd->cmd_len,
+			cd->resp_buf,
+			cd->resp_len,
+			cd->meta_data,
+			cd->info_data,
+			cd->info_len,
+			cd->ret_resp_len,
+			cd->error_code,
+			cd->psema);
+
+	/* with a wmb() */
+	wmb();
+
+	return 0;
+}
+
+int handle_fdrv_call(void *buff)
+{
+	struct fdrv_call_struct *cd = NULL;
+
+	cd = (struct fdrv_call_struct *)buff;
+
+	/* with a rmb() */
+	rmb();
+
+	switch (cd->fdrv_call_type) {
+	case CANCEL_SYS_NO:
+		cd->retVal = __send_cancel_command(cd->fdrv_call_buff_size);
+		break;
+#ifdef TUI_SUPPORT
+	case TUI_DISPLAY_SYS_NO:
+		cd->retVal = __send_tui_display_command(
+						cd->fdrv_call_buff_size);
+		break;
+	case TUI_NOTICE_SYS_NO:
+		cd->retVal = __send_tui_notice_command(cd->fdrv_call_buff_size);
+		break;
+#endif
+	default:
+		cd->retVal = __call_fdrv(cd);
+	}
+
+	/* with a wmb() */
+	wmb();
+
+	return 0;
+}
+
+struct bdrv_call_struct {
+	int bdrv_call_type;
+	struct service_handler *handler;
+	int retVal;
+};
+
+int handle_bdrv_call(void *buff)
+{
+	struct bdrv_call_struct *cd = NULL;
+
+	cd = (struct bdrv_call_struct *)buff;
+
+	/* with a rmb() */
+	rmb();
+
+	switch (cd->bdrv_call_type) {
+	case VFS_SYS_NO:
+		cd->retVal = __vfs_handle(cd->handler);
+		kfree(buff);
+		break;
+	case REETIME_SYS_NO:
+		cd->retVal = __reetime_handle(cd->handler);
+		kfree(buff);
+		break;
+	default:
+		cd->retVal = -EINVAL;
+	}
+
+	/* with a wmb() */
+	wmb();
+
+	return 0;
+}
+
+int handle_switch_call(void *buff)
+{
+	unsigned long smc_type = 2;
+
+	smc_type = teei_secure_call(NT_SCHED_T, 0, 0, 0);
+	while (smc_type == SMC_CALL_INTERRUPTED_IRQ)
+		smc_type = teei_secure_call(NT_SCHED_T, 0, 0, 0);
+
+	return 0;
+}
 
 #ifdef TUI_SUPPORT
 int handler_power_down_call(void *buff)
@@ -217,7 +349,6 @@ static void switch_fn(struct kthread_work *work)
 	switch_ent = (struct switch_call_struct *)switch_work->data;
 
 	call_type = get_call_type(switch_ent);
-
 	switch (call_type) {
 	case LOAD_FUNC:
 		secondary_load_func();
@@ -228,20 +359,60 @@ static void switch_fn(struct kthread_work *work)
 	case INIT_CMD_CALL:
 		secondary_init_cmdbuf((void *)(switch_ent->buff_addr));
 		break;
-	case INVOKE_NQ_CALL:
-		retVal = handle_notify_queue_call();
+	case BOOT_STAGE2:
+		secondary_boot_stage2(NULL);
+		break;
+	case INVOKE_FASTCALL:
+		secondary_invoke_fastcall(NULL);
+		break;
+	case LOAD_TEE:
+		secondary_load_tee(NULL);
+		break;
+	case CAPI_CALL:
+		retVal = handle_capi_call((void *)(switch_ent->buff_addr));
+		if (retVal < 0)
+			IMSG_ERROR("[%s][%d] fail to handle ClientAPI!\n",
+							__func__, __LINE__);
+		break;
+	case NEW_CAPI_CALL:
+		retVal = handle_new_capi_call((void *)(switch_ent->buff_addr));
 		if (retVal < 0)
 			IMSG_ERROR("[%s][%d] fail to handle new ClientAPI!\n",
 							__func__, __LINE__);
 		break;
-
+	case FDRV_CALL:
+		retVal = handle_fdrv_call((void *)(switch_ent->buff_addr));
+		if (retVal < 0)
+			IMSG_ERROR("[%s][%d] fail to handle F-driver!\n",
+							__func__, __LINE__);
+		break;
+	case BDRV_CALL:
+		retVal = handle_bdrv_call((void *)(switch_ent->buff_addr));
+		if (retVal < 0)
+			IMSG_ERROR("[%s][%d] fail to handle B-driver!\n",
+							__func__, __LINE__);
+		break;
 	case SCHED_CALL:
 		retVal = handle_sched_call((void *)(switch_ent->buff_addr));
 		if (retVal < 0)
 			IMSG_ERROR("[%s][%d] fail to handle sched-Call!\n",
 							__func__, __LINE__);
 		break;
-
+	case LOCK_PM_MUTEX:
+		handle_lock_pm_mutex((struct mutex *)(switch_ent->buff_addr));
+		break;
+	case UNLOCK_PM_MUTEX:
+		handle_unlock_pm_mutex((struct mutex *)(switch_ent->buff_addr));
+		break;
+#ifdef TUI_SUPPORT
+	case POWER_DOWN_CALL:
+		retVal = handler_power_down_call(
+				(void *)(switch_ent->buff_addr));
+		if (retVal < 0)
+			IMSG_ERROR("[%s][%d] fail to handle power_down-Call!\n",
+							__func__, __LINE__);
+		break;
+#endif
 	case SWITCH_CORE:
 		handle_switch_core((int)(switch_ent->buff_addr));
 		break;
@@ -259,17 +430,11 @@ static void switch_fn(struct kthread_work *work)
 		break;
 	}
 
-	if (call_type != SWITCH_CORE)
-		atomic_notifier_call_chain(&s->notifier,
-					TZ_CALL_RETURNED, NULL);
-
+	atomic_notifier_call_chain(&s->notifier, TZ_CALL_RETURNED, NULL);
 	retVal = destroy_switch_call_struct(switch_ent);
-	if (retVal != 0) {
+	if (retVal != 0)
 		IMSG_ERROR("[%s][%d] destroy_switch_call_struct failed %d!\n",
 						__func__, __LINE__, retVal);
-	}
-
-	kfree(switch_work);
 
 	KATRACE_END("teei_switch_fn");
 }

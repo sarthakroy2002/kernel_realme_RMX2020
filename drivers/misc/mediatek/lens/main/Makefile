@@ -23,7 +23,6 @@ MTK_CUSTOM_PATH  := $(srctree)/drivers/misc/mediatek
 
 subdir-ccflags-y += -I$(MTK_CUSTOM_PATH)/lens/main/inc
 subdir-ccflags-y += -I$(MTK_CUSTOM_PATH)/lens/main/common/lc898122af
-subdir-ccflags-y += -I$(MTK_CUSTOM_PATH)/lens/main/common/dw9800waf
 subdir-ccflags-y += -I$(MTK_CUSTOM_PATH)/lens/main/common/lc898212xdaf/inc
 ifeq ($(CONFIG_MTK_LENS_BU63165AF_SUPPORT), y)
   subdir-ccflags-y += -I$(MTK_CUSTOM_PATH)/lens/main/common/bu63165af/inc
@@ -41,7 +40,6 @@ MAIN_CFILES  += common/bu6429af/BU6429AF.c
 MAIN_CFILES  += common/bu6429af/bu64748af.c
 MAIN_CFILES  += common/bu6429af/bu64748_function.c
 MAIN_CFILES += common/dw9714af/DW9714AF.c
-MAIN_CFILES += common/dw9800waf/DW9800WAF.c
 MAIN_CFILES  += common/dw9814af/DW9814AF.c
 MAIN_CFILES  += common/dw9718af/DW9718AF.c
 MAIN_CFILES  += common/dw9718saf/DW9718SAF.c
@@ -62,6 +60,11 @@ MAIN_CFILES  += common/lc898122af/OisIni.c
 MAIN_CFILES  += common/ad5820af/AD5820AF.c
 MAIN_CFILES  += common/wv511aaf/WV511AAF.c
 MAIN_CFILES  += common/ak7371af/AK7371AF.c
+MAIN_CFILES  += common/ak7374af/AK7374AF.c
+# ifdef ODM_WT_EDIT
+# Tian.Tian@ODM_WT.CAMERA.Driver.2019/10/18,Add for s5kgm1 camera af
+MAIN_CFILES  += common/fp5516af/FP5516AF.c
+# endif /* ODM_WT_EDIT */
 ifeq ($(CONFIG_MTK_LENS_BU63165AF_SUPPORT), y)
 MAIN_CFILES  += common/bu63165af/BU63165AF.c
 MAIN_CFILES  += common/bu63165af/OIS_func.c
@@ -85,7 +88,6 @@ obj-y  += common/bu6424af/
 obj-y  += common/bu6429af/
 obj-y  += common/bu64748af/
 obj-y  += common/dw9714af/
-obj-y  += common/dw9800waf/
 obj-y  += common/dw9814af/
 obj-y  += common/dw9718af/
 obj-y  += common/dw9718saf/
@@ -100,6 +102,11 @@ obj-y  += common/lc898217afc/
 obj-y  += common/lc898122af/
 obj-y  += common/wv511aaf/
 obj-y  += common/ak7371af/
+obj-y  += common/ak7374af/
+# ifdef ODM_WT_EDIT
+# Tian.Tian@ODM_WT.CAMERA.Driver.2019/10/18,Add for s5kgm1 camera af
+obj-y  += common/fp5516af/
+# endif /* ODM_WT_EDIT */
 ifeq ($(CONFIG_MTK_LENS_BU63165AF_SUPPORT), y)
   obj-y  += common/bu63165af/
 else

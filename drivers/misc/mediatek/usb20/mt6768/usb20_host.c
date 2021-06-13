@@ -30,6 +30,14 @@
 #include "tcpm.h"
 #include <linux/workqueue.h>
 #include <linux/mutex.h>
+
+#ifdef ODM_WT_EDIT
+//Mingyao.Xie@ODM_WT.BSP.Storage.Usb, 2018/08/07, Modify for USB
+#include <soc/oppo/oppo_project.h>
+extern unsigned int is_project(OPPO_PROJECT project );
+extern void oppo_chg_set_otg_online(bool online);
+#endif /*ODM_WT_EDIT*/
+
 static struct notifier_block otg_nb;
 static struct tcpc_device *otg_tcpc_dev;
 static struct delayed_work register_otg_work;
@@ -63,6 +71,12 @@ static void do_register_otg_work(struct work_struct *data)
 	}
 
 	DBG(0, "register OTG <%p> ok\n", otg_tcpc_dev);
+#ifdef ODM_WT_EDIT
+//Mingyao.Xie@ODM_WT.BSP.Storage.Usb, 2019/12/02, Modify for USB
+//Haibo.Dong@ODM_WT.BSP.Storage.Usb, 2020/01/20, Modify for ensure role change run after tcpci timer init ok
+	msleep(500);
+	tcpm_typec_change_role(otg_tcpc_dev, TYPEC_ROLE_SNK);
+#endif /*ODM_WT_EDIT*/
 }
 #endif
 #endif
@@ -77,6 +91,17 @@ static struct charger_device *primary_charger;
 #endif
 #endif
 #include <mt-plat/mtk_boot_common.h>
+
+#ifdef ODM_WT_EDIT
+//Mingyao.Xie@ODM_WT.BSP.Storage.otg, 2019/11/25, Modify for monet otg_switch
+#include <linux/power_supply.h>
+
+
+
+static struct pinctrl *pinctrl_otg;
+static struct pinctrl_state *pinctrl_iddig;
+static struct pinctrl_state *pinctrl_low;
+#endif /*ODM_WT_EDIT*/
 
 struct device_node		*usb_node;
 static int iddig_eint_num;
@@ -159,6 +184,11 @@ static void _set_vbus(int is_on)
 		vbus_on = true;
 #ifdef CONFIG_MTK_CHARGER
 #if CONFIG_MTK_GAUGE_VERSION == 30
+#ifdef ODM_WT_EDIT
+//Mingyao.Xie@ODM_WT.BSP.Storage.Usb, 2018/08/07, Modify for USB
+                oppo_chg_set_otg_online(true);
+#endif /*ODM_WT_EDIT*/
+
 		charger_dev_enable_otg(primary_charger, true);
 		charger_dev_set_boost_current_limit(primary_charger, 1500000);
 #else
@@ -175,6 +205,10 @@ static void _set_vbus(int is_on)
 #ifdef CONFIG_MTK_CHARGER
 #if CONFIG_MTK_GAUGE_VERSION == 30
 		charger_dev_enable_otg(primary_charger, false);
+#ifdef ODM_WT_EDIT
+//Mingyao.Xie@ODM_WT.BSP.Storage.Usb, 2018/08/07, Modify for USB
+		oppo_chg_set_otg_online(false);
+#endif /*ODM_WT_EDIT*/
 #else
 		set_chr_enable_otg(0x0);
 #endif
@@ -452,6 +486,52 @@ void switch_int_to_host(struct musb *musb)
 	DBG(0, "%s is done\n", __func__);
 }
 
+#ifdef ODM_WT_EDIT
+//Mingyao.Xie@ODM_WT.BSP.Storage.otg, 2019/10/15, Modify for monet otg_switch
+static irqreturn_t mt_usb_ext_iddig_int(int irq, void *dev_id);
+
+void musb_ctrl_host(bool on_off)
+{
+	if(is_project(19747))
+	{
+		if (!otg_tcpc_dev) {
+			DBG(0, "host not inited, directly return\n");
+			return;
+		}
+		DBG(0, "OTG <%p, %p>\n",
+				otg_tcpc_dev,
+				tcpc_dev_get_by_name(TCPC_OTG_DEV_NAME));
+		if(on_off == false)
+			tcpm_typec_change_role(otg_tcpc_dev, TYPEC_ROLE_SNK);
+		else
+			tcpm_typec_change_role(otg_tcpc_dev, TYPEC_ROLE_DRP);
+	} else {
+		if(on_off == false) {
+			if (iddig_req_host) {
+				DBG(0, "USB is in otg host mode, force to otg disable\n");
+				mt_usb_ext_iddig_int(0, 0);
+			}
+
+			if (!IS_ERR(pinctrl_low)) {
+				DBG(0, "pinctrl_otg to pinctrl_low\n");
+				pinctrl_select_state(pinctrl_otg, pinctrl_low);
+			}
+		} else {
+			if (!iddig_eint_num) {
+				DBG(0, "host not inited, directly return\n");
+				return;
+			}
+
+			if (!IS_ERR(pinctrl_iddig)) {
+				DBG(0, "pinctrl_otg to pinctrl_iddig\n");
+				pinctrl_select_state(pinctrl_otg, pinctrl_iddig);
+			}
+		}
+	}
+}
+EXPORT_SYMBOL(musb_ctrl_host);
+#endif /*ODM_WT_EDIT*/
+
 static void do_host_plug_test_work(struct work_struct *data)
 {
 	static ktime_t ktime_begin, ktime_end;
@@ -712,6 +792,23 @@ static int otg_iddig_probe(struct platform_device *pdev)
 	DBG(0, "iddig_eint_num<%d>\n", iddig_eint_num);
 	if (iddig_eint_num < 0)
 		return -ENODEV;
+#ifdef ODM_WT_EDIT
+//Mingyao.Xie@ODM_WT.BSP.Storage.otg, 2019/12/02, Modify for Monet otg_switch
+	pinctrl_otg = devm_pinctrl_get(&pdev->dev);
+		if (IS_ERR(pinctrl_otg)){
+				dev_err(&pdev->dev, "Cannot find usb pinctrl_otg!\n");
+		}else {
+				pinctrl_iddig = pinctrl_lookup_state(pinctrl_otg, "otg_iddg_high");
+				if (IS_ERR(pinctrl_iddig))
+					dev_err(&pdev->dev, "Cannot find usb pinctrl_otg otg_iddg_high\n");
+
+				pinctrl_low = pinctrl_lookup_state(pinctrl_otg, "otg_gpio_low");
+				if (IS_ERR(pinctrl_low))
+					dev_err(&pdev->dev, "Cannot find usb pinctrl_otg_gpio_low_low\n");
+				//Haibo.Dong@ODM_WT.BSP.Storage.otg, 2019/12/26, Modify for Monet set otg pin low default
+				pinctrl_select_state(pinctrl_otg, pinctrl_low);
+		}
+#endif /*ODM_WT_EDIT*/
 
 	ret = request_irq(iddig_eint_num, mt_usb_ext_iddig_int,
 					IRQF_TRIGGER_LOW, "USB_IDDIG", NULL);
@@ -750,6 +847,7 @@ static int iddig_int_init(void)
 
 void mt_usb_otg_init(struct musb *musb)
 {
+
 	/* BYPASS OTG function in special mode */
 	if (get_boot_mode() == META_BOOT
 #ifdef CONFIG_MTK_KERNEL_POWER_OFF_CHARGING
@@ -758,8 +856,16 @@ void mt_usb_otg_init(struct musb *musb)
 #endif
 	   ) {
 #ifdef CONFIG_MTK_USB_TYPEC
+#ifdef ODM_WT_EDIT
+//Mingyao.Xie@ODM_WT.BSP.Storage.Usb, 2019/11/05, Modify for USB
+	if (is_project(19747)) {
+ 		DBG(0, "with TYPEC in special mode %d, keep going\n",
+ 			get_boot_mode());
+	}
+#else /*ODM_WT_EDIT*/
 		DBG(0, "with TYPEC in special mode %d, keep going\n",
 			get_boot_mode());
+#endif /*ODM_WT_EDIT*/
 #else
 		DBG(0, "w/o TYPEC in special mode %d, skip\n",
 			get_boot_mode());
@@ -773,17 +879,23 @@ void mt_usb_otg_init(struct musb *musb)
 
 	/* CONNECTION MANAGEMENT*/
 #ifdef CONFIG_MTK_USB_TYPEC
-	DBG(0, "host controlled by TYPEC\n");
-	typec_control = 1;
+#ifdef ODM_WT_EDIT
+//Mingyao.Xie@ODM_WT.BSP.Storage.Usb, 2018/08/07, Modify for USB
+	if (is_project(19747)) {
+		DBG(0, "host controlled by TYPEC\n");
+		typec_control = 1;
 #ifdef CONFIG_TCPC_CLASS
-	INIT_DELAYED_WORK(&register_otg_work, do_register_otg_work);
-	queue_delayed_work(mtk_musb->st_wq, &register_otg_work, 0);
-	vbus_control = 0;
+		INIT_DELAYED_WORK(&register_otg_work, do_register_otg_work);
+		queue_delayed_work(mtk_musb->st_wq, &register_otg_work, 0);
+		vbus_control = 0;
 #endif
-#else
-	DBG(0, "host controlled by IDDIG\n");
-	iddig_int_init();
-	vbus_control = 1;
+	}else {
+		DBG(0, "host controlled by IDDIG\n");
+
+		iddig_int_init();
+		vbus_control = 1;
+	}
+#endif /*ODM_WT_EDIT*/
 #endif
 
 	/* EP table */

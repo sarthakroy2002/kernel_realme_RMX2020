@@ -40,8 +40,12 @@
 /****************************************************************************
  * variables
  ***************************************************************************/
-#define MT_LED_LEVEL_BIT 10
-
+#ifdef ODM_WT_EDIT
+//Hao.liang@ODM_WT.MM.Display.Lcd, 2019/10/30, LCD backlight switch 8bit to 11bit
+	#define MT_LED_LEVEL_BIT 11
+#else
+	#define MT_LED_LEVEL_BIT 10
+#endif
 #ifndef CONFIG_MTK_PWM
 #define CLK_DIV1 0
 #endif
@@ -72,7 +76,12 @@ static int debug_enable_led = 1;
  * for DISP backlight High resolution
  *****************************************************************************/
 #ifdef LED_INCREASE_LED_LEVEL_MTKPATCH
+#ifdef ODM_WT_EDIT
+//Hao.liang@ODM_WT.MM.Display.Lcd, 2019/12/05, LCD backlight switch 10bit to 11bit
+#define LED_INTERNAL_LEVEL_BIT_CNT 11
+#else
 #define LED_INTERNAL_LEVEL_BIT_CNT 10
+#endif
 #endif
 /* Fix dependency if CONFIG_MTK_LCM not ready */
 void __weak disp_aal_notify_backlight_changed(int bl_1024) {};
@@ -139,8 +148,27 @@ int setMaxbrightness(int max_level, int enable)
 	}
 #else
 	LEDS_DRV_DEBUG("%s go through AAL\n", __func__);
+	#ifndef VENDOR_EDIT
+
+#ifdef ODM_WT_EDIT
+//Hao.liang@ODM_WT.MM.Display.Lcd, 2019/10/30, LCD backlight switch 8bit to 11bit
+	disp_bls_set_max_backlight(LED_2047);
+#else
+	/*
+	Yongpeng.Yi@PSW.MultiMedia.Display.LCD.Machine, 2017/12/08,
+	modify for multibits backlight.
+	*/
 	disp_bls_set_max_backlight(((((1 << LED_INTERNAL_LEVEL_BIT_CNT) -
 				      1) * max_level + 127) / 255));
+#endif
+	#else
+#ifdef ODM_WT_EDIT
+//Hao.liang@ODM_WT.MM.Display.Lcd, 2019/10/30, LCD backlight switch 8bit to 11bit
+	disp_bls_set_max_backlight(LED_2047);
+#else
+	disp_bls_set_max_backlight(LED_FULL);
+#endif
+	#endif
 #endif
 	return 0;
 }
@@ -354,12 +382,30 @@ EXPORT_SYMBOL(mt65xx_leds_brightness_set);
 int backlight_brightness_set(int level)
 {
 	struct cust_mt65xx_led *cust_led_list = mt_get_cust_led_list();
-
+	pr_err("%s level=%d\n",__func__,level);
+	#ifndef VENDOR_EDIT
+	/*
+	Yongpeng.Yi@PSW.MultiMedia.Display.LCD.Machine, 2017/12/08,
+	modify for multibits backlight.
+	*/
 	if (level > ((1 << MT_LED_LEVEL_BIT) - 1))
 		level = ((1 << MT_LED_LEVEL_BIT) - 1);
 	else if (level < 0)
 		level = 0;
-
+	#else
+#ifdef ODM_WT_EDIT
+//Hao.liang@ODM_WT.MM.Display.Lcd, 2019/10/30, LCD backlight switch 8bit to 11bit
+	if (level > LED_2047)
+		level = LED_2047;
+	else if (level < 0)
+		level = 0;
+#else
+	if (level > LED_FULL)
+		level = LED_FULL;
+	else if (level < 0)
+		level = 0;
+#endif
+	#endif
 	if (MT65XX_LED_MODE_CUST_BLS_PWM ==
 	    cust_led_list[TYPE_LCD].mode) {
 #ifdef CONTROL_BL_TEMPERATURE
@@ -381,8 +427,21 @@ int backlight_brightness_set(int level)
 		    mt_mt65xx_led_set_cust(&cust_led_list[TYPE_LCD],
 					   level);
 	} else {
+#ifndef VENDOR_EDIT
+	#ifdef ODM_WT_EDIT
+//Hao.liang@ODM_WT.MM.Display.Lcd, 2019/10/30, LCD backlight switch 8bit to 11bit
+		return mt65xx_led_set_cust(&cust_led_list[TYPE_LCD],level);
+	#else
+		/*
+		Yongpeng.Yi@PSW.MultiMedia.Display.LCD.Machine, 2017/12/08,
+		modify for multibits backlight.
+		*/
 		return mt65xx_led_set_cust(&cust_led_list[TYPE_LCD],
 					   (level >> (MT_LED_LEVEL_BIT - 8)));
+	#endif
+#else
+		return mt65xx_led_set_cust(&cust_led_list[TYPE_LCD],level);
+#endif
 	}
 	return 0;
 }

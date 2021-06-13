@@ -258,4 +258,9 @@ extern int IMM_GetOneChannelValue(int dwChannel, int data[4], int *rawdata);
 extern bool is_clk_buf_from_pmic(void);
 extern void clk_buf_get_rf_drv_curr(void *rf_drv_curr);
 extern void clk_buf_save_afc_val(unsigned int afcdac);
+
+#ifdef ODM_WT_EDIT 
+//Yong.Cheng@ODM_WT.NW.RF.1941873, 2019/11/06, Add for tristate gpio
+extern int gpio_get_tristate_input(unsigned int pin);
+#endif /* ODM_WT_EDIT */
 #endif	/* __PORT_RPC_H__ */

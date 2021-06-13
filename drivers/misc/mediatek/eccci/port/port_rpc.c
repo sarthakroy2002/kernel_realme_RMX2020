@@ -71,7 +71,12 @@ static struct gpio_item gpio_mapping_table[] = {
 
 static int get_md_gpio_val(unsigned int num)
 {
+#ifdef ODM_WT_EDIT 
+//Yong.Cheng@ODM_WT.NW.RF.1941873, 2019/11/06, Add for tristate gpio
+	return gpio_get_tristate_input(num);
+#else
 	return gpio_get_value(num);
+#endif /* ODM_WT_EDIT */
 }
 
 static int get_md_adc_val(__attribute__((unused))unsigned int num)

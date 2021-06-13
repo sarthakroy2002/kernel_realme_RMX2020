@@ -16,7 +16,6 @@
 #define __TEEI_COMMON_H_
 
 #include <linux/types.h>
-#include <notify_queue.h>
 #include <mt-plat/met_drv.h>
 
 #define TEEI_MAX_REQ_PARAMS  12
@@ -143,7 +142,7 @@ struct service_handler {
 	unsigned int size;
 	long (*init)(struct service_handler *handler);
 	void (*deinit)(struct service_handler *handler);
-	int (*handle)(struct NQ_entry *handler);
+	int (*handle)(struct service_handler *handler);
 };
 
 /* [KTRACE] Begin-End */

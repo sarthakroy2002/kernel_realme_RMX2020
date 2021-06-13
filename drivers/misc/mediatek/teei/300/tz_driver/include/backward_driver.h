@@ -19,16 +19,25 @@
 
 #include "teei_common.h"
 
-extern struct service_handler reetime;
-extern struct service_handler vfs_handler;
+extern struct completion VFS_rd_comp;
+extern struct completion VFS_wr_comp;
 extern unsigned char *daulOS_VFS_share_mem;
 
-int notify_vfs_handle(void);
-int wait_for_vfs_done(void);
+#pragma pack(1)
+struct create_vdrv_struct {
+	u32 vdrv_type;
+	u64 vdrv_phy_addr;
+	u32 vdrv_size;
+};
+#pragma pack()
 
-int init_all_service_handlers(void);
-int vfs_thread_function(unsigned long virt_addr,
-			unsigned long para_vaddr, unsigned long buff_vaddr);
+struct ack_vdrv_struct {
+	unsigned int sysno;
+};
 
+void invoke_fastcall(void);
+void secondary_invoke_fastcall(void *info);
+int __vfs_handle(struct service_handler *handler);
+int __reetime_handle(struct service_handler *handler);
 
 #endif /* end of BACKWARD_DRIVER_H */

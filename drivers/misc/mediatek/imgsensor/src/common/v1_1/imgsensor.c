@@ -56,6 +56,9 @@
 #include "imgsensor_ca.h"
 #endif
 
+#ifndef VENDOR_EDIT
+#define VENDOR_EDIT
+#endif
 static DEFINE_MUTEX(gimgsensor_mutex);
 static DEFINE_MUTEX(gimgsensor_open_mutex);
 
@@ -92,7 +95,62 @@ void IMGSENSOR_PROFILE(struct timeval *ptv, char *tag)
 {
 }
 #endif
+#ifdef VENDOR_EDIT
+/* Add by LiuBin for register device info at 20160616 */
+#include <soc/oppo/device_info.h>
+#define DEVICE_MANUFACUTRE_NA		    "None"
+#define DEVICE_MANUFACUTRE_SUNNY        "Sunny"
+#define DEVICE_MANUFACUTRE_TRULY        "Truly"
+#define DEVICE_MANUFACUTRE_SEMCO        "Semco"
+#define DEVICE_MANUFACUTRE_LITEON       "Liteon"
+#define DEVICE_MANUFACUTRE_QTECH        "Qtech"
+#define DEVICE_MANUFACUTRE_OFILM        "Ofilm"
+#define DEVICE_MANUFACUTRE_SHINE        "Shine"
 
+#define IMGSENSOR_MODULE_ID_SUNNY       0x01
+#define IMGSENSOR_MODULE_ID_TRULY       0x02
+#define IMGSENSOR_MODULE_ID_SEMCO       0x03
+#define IMGSENSOR_MODULE_ID_LITEON      0x04
+#define IMGSENSOR_MODULE_ID_QTECH       0x05
+#define IMGSENSOR_MODULE_ID_OFILM       0x06
+#define IMGSENSOR_MODULE_ID_SHINE       0x07
+void register_imgsensor_deviceinfo(char *name, char *version, u8 module_id)
+{
+    char *manufacture;
+    if (name == NULL || version == NULL)
+    {
+        PK_PR_ERR("name or version is NULL");
+        return;
+    }
+    switch (module_id)
+    {
+        case IMGSENSOR_MODULE_ID_SUNNY:  /* Sunny */
+            manufacture = DEVICE_MANUFACUTRE_SUNNY;
+            break;
+        case IMGSENSOR_MODULE_ID_TRULY:  /* Truly */
+            manufacture = DEVICE_MANUFACUTRE_TRULY;
+            break;
+        case IMGSENSOR_MODULE_ID_SEMCO:  /* Semco */
+            manufacture = DEVICE_MANUFACUTRE_SEMCO;
+            break;
+        case IMGSENSOR_MODULE_ID_LITEON:  /* Lite-ON */
+            manufacture = DEVICE_MANUFACUTRE_LITEON;
+            break;
+        case IMGSENSOR_MODULE_ID_QTECH:  /* Q-Tech */
+            manufacture = DEVICE_MANUFACUTRE_QTECH;
+            break;
+        case IMGSENSOR_MODULE_ID_OFILM:  /* O-Film */
+            manufacture = DEVICE_MANUFACUTRE_OFILM;
+            break;
+        case IMGSENSOR_MODULE_ID_SHINE:  /* Shine */
+            manufacture = DEVICE_MANUFACUTRE_SHINE;
+            break;
+        default:
+            manufacture = DEVICE_MANUFACUTRE_NA;
+    }
+    register_device_proc(name, version, manufacture);
+}
+#endif
 /******************************************************************************
  * sensor function adapter
  ******************************************************************************/
@@ -149,7 +207,7 @@ MINT32 imgsensor_sensor_open(struct IMGSENSOR_SENSOR *psensor)
 #endif
 	struct IMGSENSOR             *pimgsensor   = &gimgsensor;
 	struct IMGSENSOR_SENSOR_INST *psensor_inst = &psensor->inst;
-	struct SENSOR_FUNCTION_STRUCT *psensor_func =  psensor->pfunc;
+	struct SENSOR_FUNCTION_STRUCT       *psensor_func =  psensor->pfunc;
 
 #ifdef CONFIG_MTK_CCU
 	struct ccu_sensor_info ccuSensorInfo;
@@ -241,7 +299,7 @@ imgsensor_sensor_get_info(
 {
 	MUINT32 ret = ERROR_NONE;
 	struct IMGSENSOR_SENSOR_INST *psensor_inst = &psensor->inst;
-	struct SENSOR_FUNCTION_STRUCT *psensor_func =  psensor->pfunc;
+	struct SENSOR_FUNCTION_STRUCT       *psensor_func =  psensor->pfunc;
 
 	IMGSENSOR_FUNCTION_ENTRY();
 
@@ -278,7 +336,7 @@ imgsensor_sensor_get_resolution(
 {
 	MUINT32 ret = ERROR_NONE;
 	struct IMGSENSOR_SENSOR_INST *psensor_inst = &psensor->inst;
-	struct SENSOR_FUNCTION_STRUCT *psensor_func =  psensor->pfunc;
+	struct SENSOR_FUNCTION_STRUCT       *psensor_func =  psensor->pfunc;
 
 	IMGSENSOR_FUNCTION_ENTRY();
 
@@ -315,7 +373,7 @@ imgsensor_sensor_feature_control(
 	struct command_params c_params;
 #endif
 	struct IMGSENSOR_SENSOR_INST  *psensor_inst = &psensor->inst;
-	struct SENSOR_FUNCTION_STRUCT *psensor_func =  psensor->pfunc;
+	struct SENSOR_FUNCTION_STRUCT        *psensor_func =  psensor->pfunc;
 
 	IMGSENSOR_FUNCTION_ENTRY();
 
@@ -366,7 +424,7 @@ imgsensor_sensor_control(
 	struct command_params c_params;
 #endif
 	struct IMGSENSOR_SENSOR_INST *psensor_inst = &psensor->inst;
-	struct SENSOR_FUNCTION_STRUCT *psensor_func =  psensor->pfunc;
+	struct SENSOR_FUNCTION_STRUCT       *psensor_func =  psensor->pfunc;
 
 	MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT image_window;
 	MSDK_SENSOR_CONFIG_STRUCT sensor_config_data;
@@ -1243,15 +1301,13 @@ static inline int adopt_CAMERA_HW_FeatureControl(void *pBuf)
 			void *usr_ptr =
 				(void *)(uintptr_t) (*(pFeaturePara_64 + 1));
 
-			pPdInfo = kmalloc(sizeof(struct SET_PD_BLOCK_INFO_T),
-					GFP_KERNEL);
+			pPdInfo = kmalloc(sizeof(struct SET_PD_BLOCK_INFO_T), GFP_KERNEL);
 			if (pPdInfo == NULL) {
 				kfree(pFeaturePara);
 				PK_PR_ERR(" ioctl allocate mem failed\n");
 				return -ENOMEM;
 			}
-			memset(pPdInfo, 0x0,
-				sizeof(struct SET_PD_BLOCK_INFO_T));
+			memset(pPdInfo, 0x0, sizeof(struct SET_PD_BLOCK_INFO_T));
 			*(pFeaturePara_64 + 1) = (uintptr_t) pPdInfo;
 
 			ret = imgsensor_sensor_feature_control(psensor,
@@ -1260,8 +1316,7 @@ static inline int adopt_CAMERA_HW_FeatureControl(void *pBuf)
 					(unsigned int *)&FeatureParaLen);
 
 			if (copy_to_user((void __user *)usr_ptr,
-					(void *)pPdInfo,
-					sizeof(struct SET_PD_BLOCK_INFO_T))) {
+					 (void *)pPdInfo, sizeof(struct SET_PD_BLOCK_INFO_T))) {
 
 				PK_DBG("[CAMERA_HW]ERROR: copy_to_user fail\n");
 			}

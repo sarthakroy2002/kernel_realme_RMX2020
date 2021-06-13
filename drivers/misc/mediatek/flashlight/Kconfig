@@ -36,6 +36,21 @@ config MTK_FLASHLIGHT_LM3642
 
 	  Say M here if you want to compile this driver as a module.
 
+# ifdef ODM_WT_EDIT
+# XingYu.Liu@ODM_WT.CAMERA.Driver.2019/10/16,Add for flashlight bring up
+config MTK_FLASHLIGHT_MONET
+	tristate "Mediatek flashlight with driver IC(monet vendor)"
+	depends on MTK_FLASHLIGHT
+	default n
+	help
+		This is for the flashlight driver IC(monet vendor).
+
+		Say Y here if you want a flashlight driver IC monet vendor.
+		Select this only if your board has this IC.
+
+		Say M here if you want to compile this driver as a module.
+# endif /* ODM_WT_EDIT */
+
 config MTK_FLASHLIGHT_LM3643
 	tristate "Mediatek flashlight with driver IC (TI LM3643)"
 	depends on MTK_FLASHLIGHT
@@ -47,6 +62,31 @@ config MTK_FLASHLIGHT_LM3643
 	  Select this only if your board has this IC.
 
 	  Say M here if you want to compile this driver as a module.
+#ifdef VENDOR_EDIT
+#Feng.Hu@Camera.Driver 20171121 add for mp3331 flash driver IC
+config MTK_FLASHLIGHT_MP3331
+	tristate "Mediatek flashlight with driver IC (MP3331)"
+	depends on MTK_FLASHLIGHT
+	default n
+	help
+	  This is for the flashlight driver IC (MP3331).
+
+	  Say Y here if you want a flashlight driver IC MP3331.
+	  Select this only if your board has this IC.
+
+	  Say M here if you want to compile this driver as a module.
+config MTK_FLASHLIGHT_AW3642
+	tristate "Mediatek flashlight with driver IC (AW3642)"
+	depends on MTK_FLASHLIGHT
+	default n
+	help
+	  This is for the flashlight driver IC (TI AW3642).
+
+	  Say Y here if you want a flashlight driver IC AW3642.
+	  Select this only if your board has this IC.
+
+	  Say M here if you want to compile this driver as a module.
+#endif
 
 config MTK_FLASHLIGHT_LM3644
 	tristate "Mediatek flashlight with driver IC (TI LM3644)"

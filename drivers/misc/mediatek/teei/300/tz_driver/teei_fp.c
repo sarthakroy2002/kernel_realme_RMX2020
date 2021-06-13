@@ -28,9 +28,9 @@ unsigned long create_fp_fdrv(int buff_size)
 		IMSG_ERROR("Wrong buffer size %d:", buff_size);
 		return 0;
 	}
-	addr = (unsigned long)vmalloc(buff_size);
+	addr = (unsigned long) vmalloc(buff_size);
 	if (addr == 0) {
-		IMSG_ERROR("vmalloc buffer failed");
+		IMSG_ERROR("kmalloc buffer failed");
 		return 0;
 	}
 	memset((void *)addr, 0, buff_size);

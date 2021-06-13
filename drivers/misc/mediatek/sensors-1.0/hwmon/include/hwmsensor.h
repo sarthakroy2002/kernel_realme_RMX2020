@@ -79,11 +79,29 @@
 #define SENSOR_TYPE_EKG                                67
 #define SENSOR_TYPE_PPG1                               68
 #define SENSOR_TYPE_PPG2                               69
+#ifdef VENDOR_EDIT
+/*Fei.Mo@PSW.BSP.Sensor, 2017/12/13, Add for oppo sensor type to send some info to scp*/
+#define SENSOR_TYPE_OPPO						SENSOR_TYPE_TEMPERATURE
+#endif
 #define SENSOR_TYPE_RGBW                               70
 #define SENSOR_TYPE_GYRO_TEMPERATURE                   71
 #define SENSOR_TYPE_SAR                                72
+#ifdef VENDOR_EDIT
+/*tangjh@PSW.BSP.Sensor, 2019/7/1, Add for oppo algo*/
+#define SENSOR_TYPE_FFD                                73
+#define SENSOR_TYPE_FREE_FALL                          74
+#define SENSOR_TYPE_PICKUP_MOTION                      75
+#define SENSOR_TYPE_ACTION_DETECT                      76
+#define SENSOR_TYPE_SAR_MODEM                          77
+#define SENSOR_TYPE_LUX_AOD                            78
+
+/* end sensor type */
+#define SENSOR_TYPE_MAX_NUM                            SENSOR_TYPE_LUX_AOD
+#else
 /* end sensor type */
 #define SENSOR_TYPE_MAX_NUM                            SENSOR_TYPE_SAR
+#endif /*VENDOR_EDIT*/
+
 #define SENSOR_TYPE_MAX_NUM_PLUS_ONE                   (SENSOR_TYPE_MAX_NUM + 1)
 
 /*---------------------------------------------------------------------------*/
@@ -152,11 +170,29 @@
 #define ID_EKG                  (ID_BASE + SENSOR_TYPE_EKG - 1)
 #define ID_PPG1                 (ID_BASE + SENSOR_TYPE_PPG1 - 1)
 #define ID_PPG2                 (ID_BASE + SENSOR_TYPE_PPG2 - 1)
+#ifdef VENDOR_EDIT
+/*Fei.Mo@PSW.BSP.Sensor, 2017/12/13, Add for oppo sensor type to send some info to scp*/
+#define ID_OPPO_SENSOR                  (ID_TEMPRERATURE)
+#endif /* VENDOR_EDIT */
 #define ID_RGBW                 (ID_BASE + SENSOR_TYPE_RGBW - 1)
 #define ID_GYRO_TEMPERATURE     (ID_BASE + SENSOR_TYPE_GYRO_TEMPERATURE - 1)
 #define ID_SAR                  (ID_BASE + SENSOR_TYPE_SAR - 1)
+#ifdef VENDOR_EDIT
+/*tangjh@PSW.BSP.Sensor, 2019/6/29, Add for oppo algo*/
+#define ID_FFD                  (ID_BASE + SENSOR_TYPE_FFD - 1)
+#define ID_FREE_FALL            (ID_BASE + SENSOR_TYPE_FREE_FALL - 1)
+#define ID_PICKUP_MOTION        (ID_BASE + SENSOR_TYPE_PICKUP_MOTION - 1)
+#define ID_ACTION_DETECT        (ID_BASE + SENSOR_TYPE_ACTION_DETECT - 1)
+#define ID_SAR_MODEM            (ID_BASE + SENSOR_TYPE_SAR_MODEM - 1)
+#define ID_LUX_AOD              (ID_BASE + SENSOR_TYPE_LUX_AOD - 1)
+
+/* end sensor ID */
+#define ID_SENSOR_MAX_HANDLE    (ID_LUX_AOD)
+#else
 /* end sensor ID */
 #define ID_SENSOR_MAX_HANDLE    (ID_SAR)
+#endif /*VENDOR_EDIT*/
+
 #define ID_SENSOR_MAX_HANDLE_PLUS_ONE    (ID_SENSOR_MAX_HANDLE + 1)
 
 #if (ID_SENSOR_MAX_HANDLE_PLUS_ONE != SENSOR_TYPE_MAX_NUM)

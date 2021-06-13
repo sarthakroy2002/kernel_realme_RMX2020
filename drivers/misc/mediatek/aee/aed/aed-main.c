@@ -947,7 +947,7 @@ static void ee_gen_ind_msg(struct aed_eerec *eerec)
 		return;
 
 	rep_msg->cmdType = AE_IND;
-	rep_msg->cmdId = AE_IND_EXP_RAISED;
+    rep_msg->cmdId = AE_IND_FATAL_RAISED;
 	rep_msg->arg = AE_EE;
 	rep_msg->len = 0;
 	rep_msg->dbOption = eerec->db_opt;
@@ -2355,9 +2355,15 @@ static void external_exception(const char *assert_type, const int *log,
 	struct timeval tv = { 0 };
 	char trigger_time[60];
 
-	if ((aee_mode >= AEE_MODE_CUSTOMER_USER) &&
-		(aee_force_exp == AEE_FORCE_EXP_NOT_SET))
-		return;
+//#ifdef VENDOR_EDIT
+//WenLong.Cai@NW.AP.Cfg, 2016/10/10
+//Delete for enable create DB file when modem crash on release build
+/*
+    if ((aee_mode >= AEE_MODE_CUSTOMER_USER) &&
+        (aee_force_exp == AEE_FORCE_EXP_NOT_SET))
+        return;
+*/
+//#endif /* VENDOR_EDIT */
 	eerec = kzalloc(sizeof(struct aed_eerec), GFP_ATOMIC);
 	if (eerec == NULL) {
 		return;

@@ -42,6 +42,8 @@
 
 #include <mt-plat/mtk_perfobserver.h>
 
+#include <soc/oppo/oppo_project.h>
+
 #ifdef CONFIG_MTK_GPU_SUPPORT
 #include "ged_kpi.h"
 #endif
@@ -1130,12 +1132,20 @@ static int fstb_get_queue_fps(struct FSTB_FRAME_INFO *iter,
 	if (avg_frame_interval != 0) {
 		retval = 1000000000ULL * frame_interval_count;
 		do_div(retval, avg_frame_interval);
+#if defined(VENDOR_EDIT)
+	if (get_eng_version() != 0) {
 		mtk_fstb_dprintk_always("%s  %d %llu\n",
 				__func__, iter->pid, retval);
+	}
+#endif
 		fpsgo_systrace_c_fstb_man(iter->pid, (int)retval, "queue_fps");
 		return retval;
 	}
+#if defined(VENDOR_EDIT)
+	if (get_eng_version() != 0) {
 	mtk_fstb_dprintk_always("%s  %d %d\n", __func__, iter->pid, 0);
+	}
+#endif
 	fpsgo_systrace_c_fstb_man(iter->pid, 0, "queue_fps");
 
 	return 0;

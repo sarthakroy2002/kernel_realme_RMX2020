@@ -1611,11 +1611,79 @@ int mipi_clk_change(int msg, int en)
 {
 	struct cmdqRecStruct *handle = NULL;
 
-	DISPMSG("%s,msg=%d,en=%d\n", __func__, msg, en);
+	pr_err("%s,msg=%d,en=%d\n", __func__, msg, en);
 
 	_primary_path_lock(__func__);
 
 	if (en) {
+#ifdef ODM_WT_EDIT
+//Hao.Liang@ODM_WT.MM.Display.Lcd, 2019/10/22, Add clk_change function
+		if (!strcmp(mtkfb_lcm_name,
+		"ilt9881h_txd_hdp_dsi_vdo_lcm_drv") ||!strcmp(mtkfb_lcm_name,
+		"ilt9881h_truly_hdp_dsi_vdo_lcm_drv")){
+		struct LCM_DSI_PARAMS *dsi_params =&(_dsi_context[0].dsi_params);
+		unsigned int hbp_wc;
+		unsigned int dsiTmpBufBpp;
+
+			def_data_rate = 720;
+			//def_dsi_hbp = 0xD2; /* adaptive HBP value */
+			if ((dsi_params->data_format).format == LCM_DSI_FORMAT_RGB565)
+				dsiTmpBufBpp = 2;
+			else
+				dsiTmpBufBpp = 3;
+
+			if (dsi_params->mode == SYNC_EVENT_VDO_MODE ||
+				dsi_params->mode == BURST_VDO_MODE ||
+				dsi_params->switch_mode == SYNC_EVENT_VDO_MODE ||
+				dsi_params->switch_mode == BURST_VDO_MODE) {
+
+				hbp_wc = ((dsi_params->horizontal_backporch_ext+
+					dsi_params->horizontal_sync_active_ext) *
+					dsiTmpBufBpp - 10);
+			} else {
+				hbp_wc =
+				(dsi_params->horizontal_backporch_ext * dsiTmpBufBpp - 10);
+			}
+		hbp_wc = ALIGN_TO((hbp_wc), 4);
+		def_dsi_hbp = hbp_wc;
+		pr_err("%s,name=%s,def_dsi_hbp=%d,def_data_rate=%d\n", __func__, mtkfb_lcm_name, def_dsi_hbp,def_data_rate);
+		}else if(!strcmp(mtkfb_lcm_name,
+		"nt36525b_hlt_hdp_dsi_vdo_lcm_drv")) {
+		struct LCM_DSI_PARAMS *dsi_params =&(_dsi_context[0].dsi_params);
+		unsigned int hbp_wc;
+		unsigned int dsiTmpBufBpp;
+
+			def_data_rate = 720;
+			//def_dsi_hbp = 0xD2; /* adaptive HBP value */
+			if ((dsi_params->data_format).format == LCM_DSI_FORMAT_RGB565)
+				dsiTmpBufBpp = 2;
+			else
+				dsiTmpBufBpp = 3;
+
+			if (dsi_params->mode == SYNC_EVENT_VDO_MODE ||
+				dsi_params->mode == BURST_VDO_MODE ||
+				dsi_params->switch_mode == SYNC_EVENT_VDO_MODE ||
+				dsi_params->switch_mode == BURST_VDO_MODE) {
+
+				hbp_wc = ((dsi_params->horizontal_backporch_ext+
+					dsi_params->horizontal_sync_active_ext) *
+					dsiTmpBufBpp - 10);
+			} else {
+				hbp_wc =
+				(dsi_params->horizontal_backporch_ext * dsiTmpBufBpp - 10);
+			}
+		hbp_wc = ALIGN_TO((hbp_wc), 4);
+		def_dsi_hbp = hbp_wc;
+		pr_err("%s,name=%s,def_dsi_hbp=%d,def_data_rate=%d\n", __func__, mtkfb_lcm_name, def_dsi_hbp,def_data_rate);
+		}
+		else {
+			DISPERR("%s,lcm(%s) not support change mipi clock\n",
+				__func__, mtkfb_lcm_name);
+
+			_primary_path_unlock(__func__);
+			return 0;
+		}
+#else
 		if (!strcmp(mtkfb_lcm_name,
 		"nt35521_hd_dsi_vdo_truly_rt5081_drv")) {
 			def_data_rate = 460;
@@ -1625,9 +1693,9 @@ int mipi_clk_change(int msg, int en)
 				__func__, mtkfb_lcm_name);
 
 			_primary_path_unlock(__func__);
-			return 0;
-		}
-
+	return 0;
+}
+#endif
 		/*TODO: for other lcm */
 	} else {
 		struct LCM_DSI_PARAMS *dsi_params =
@@ -1840,15 +1908,14 @@ void DSI_PHY_TIMCONFIG(enum DISP_MODULE_ENUM module,
 
 	hs_trail_m = 1;
 	hs_trail_n = (dsi_params->HS_TRAIL == 0) ?
-		(NS_TO_CYCLE(((hs_trail_m * 0x4 * ui) + 0x50)
-		* dsi_params->PLL_CLOCK * 2, 0x1F40) + 0x1) :
+		NS_TO_CYCLE(((hs_trail_m * 0x4 * ui) + 0x50), cycle_time) :
 		dsi_params->HS_TRAIL;
 	/* +3 is recommended from designer becauase of HW latency */
 	timcon0.HS_TRAIL = (hs_trail_m > hs_trail_n) ? hs_trail_m : hs_trail_n;
 
 	timcon0.HS_PRPR =
 		(dsi_params->HS_PRPR == 0) ?
-		(NS_TO_CYCLE((0x40 + 0x5 * ui), cycle_time) + 0x1) :
+		NS_TO_CYCLE((0x40 + 0x5 * ui), cycle_time) :
 		dsi_params->HS_PRPR;
 	/* HS_PRPR can't be 1. */
 	if (timcon0.HS_PRPR < 1)
@@ -1864,8 +1931,7 @@ void DSI_PHY_TIMCONFIG(enum DISP_MODULE_ENUM module,
 
 	timcon0.LPX =
 		(dsi_params->LPX == 0) ?
-		(NS_TO_CYCLE(dsi_params->PLL_CLOCK * 2 * 0x4b, 0x1F40) + 0x1) :
-		dsi_params->LPX;
+		NS_TO_CYCLE(0x55, cycle_time) : dsi_params->LPX;
 	if (timcon0.LPX < 1)
 		timcon0.LPX = 1;
 
@@ -1890,8 +1956,8 @@ void DSI_PHY_TIMCONFIG(enum DISP_MODULE_ENUM module,
 
 	timcon2.CLK_TRAIL =
 		((dsi_params->CLK_TRAIL == 0) ?
-		NS_TO_CYCLE(0x64 * dsi_params->PLL_CLOCK * 2,
-		0x1F40) : dsi_params->CLK_TRAIL) + 0x01;
+		NS_TO_CYCLE(0x60, cycle_time) :
+		dsi_params->CLK_TRAIL) + 0x01;
 	/* CLK_TRAIL can't be 1. */
 	if (timcon2.CLK_TRAIL < 2)
 		timcon2.CLK_TRAIL = 2;
@@ -1904,8 +1970,8 @@ void DSI_PHY_TIMCONFIG(enum DISP_MODULE_ENUM module,
 
 	timcon3.CLK_HS_PRPR =
 		(dsi_params->CLK_HS_PRPR == 0) ?
-		NS_TO_CYCLE(0x50 * dsi_params->PLL_CLOCK * 2,
-		0x1F40) : dsi_params->CLK_HS_PRPR;
+		NS_TO_CYCLE(0x40, cycle_time) :
+		dsi_params->CLK_HS_PRPR;
 
 	if (timcon3.CLK_HS_PRPR < 1)
 		timcon3.CLK_HS_PRPR = 1;
@@ -3959,6 +4025,48 @@ int DSI_Send_ROI(enum DISP_MODULE_ENUM module, void *handle, unsigned int x,
 	return 0;
 }
 
+#ifdef ODM_WT_EDIT
+/* Hao.Liang@ODM_WT.MM.Display.Lcd, 2019/9/25, LCD gate ic setting*/
+static void lcm_set_reset_pin(UINT32 value)
+{
+#if 0
+	DSI_OUTREG32(NULL, DISP_REG_CONFIG_MMSYS_LCM_RST_B, value);
+#else
+#if !defined(CONFIG_MTK_LEGACY)
+	if (value)
+		disp_dts_gpio_select_state(DTS_GPIO_STATE_LCM_RST_OUT1);
+	else
+		disp_dts_gpio_select_state(DTS_GPIO_STATE_LCM_RST_OUT0);
+#endif
+#endif
+}
+
+ void lcm_bias_vsp(UINT32 value)
+{
+	pr_debug("[lcm]set vsp value is %d\n",value);
+	if (value)
+		disp_dts_gpio_select_state(DTS_GPIO_STATE_LCD_BIAS_ENP1);
+	else
+		disp_dts_gpio_select_state(DTS_GPIO_STATE_LCD_BIAS_ENP0);
+}
+ void lcm_bias_vsn(UINT32 value)
+{
+	 pr_debug("[lcm]set vsn value is %d\n",value);
+
+	if (value)
+		disp_dts_gpio_select_state(DTS_GPIO_STATE_LCD_BIAS_ENN1);
+	else
+		disp_dts_gpio_select_state(DTS_GPIO_STATE_LCD_BIAS_ENN0);
+}
+
+static void lcm_vddio18_enable(UINT32 value)
+{
+	if (value)
+		disp_dts_gpio_select_state(DTS_GPIO_STATE_LCD_VDDIO18_EN1);
+	else
+		disp_dts_gpio_select_state(DTS_GPIO_STATE_LCD_VDDIO18_EN0);
+}
+#else
 static void lcm_set_reset_pin(UINT32 value)
 {
 	if (dts_gpio_state != 0)
@@ -3970,6 +4078,7 @@ static void lcm_set_reset_pin(UINT32 value)
 			disp_dts_gpio_select_state(DTS_GPIO_STATE_LCM_RST_OUT0);
 	}
 }
+#endif
 
 static void lcm1_set_reset_pin(UINT32 value)
 {
@@ -4182,6 +4291,12 @@ int ddp_dsi_set_lcm_utils(enum DISP_MODULE_ENUM module,
 	}
 
 	utils->set_reset_pin = lcm_set_reset_pin;
+#ifdef ODM_WT_EDIT
+//Hao.Liang@ODM_WT.MM.Display.Lcd, 2019/9/25, LCD voltage control
+	utils->set_gpio_lcd_enp_bias = lcm_bias_vsp;
+	utils->set_gpio_lcd_enn_bias = lcm_bias_vsn;
+	utils->set_gpio_lcm_vddio_ctl = lcm_vddio18_enable;
+#endif
 	utils->udelay = lcm_udelay;
 	utils->mdelay = lcm_mdelay;
 	utils->set_te_pin = NULL;
@@ -4290,7 +4405,14 @@ int ddp_dsi_set_lcm_utils(enum DISP_MODULE_ENUM module,
 	utils->set_gpio_pull_enable =
 		(int (*)(unsigned int, unsigned char))mt_set_gpio_pull_enable;
 #else
+#ifdef ODM_WT_EDIT
+/* Hao.Liang@ODM_WT.MM.Display.Lcd, 2019/9/25, LCD gate ic setting*/
+	//utils->set_gpio_lcd_enp_bias = lcd_enp_bias_setting;
+//#else
+//	utils->set_gpio_lcd_enp_bias = lcd_enp_bias_setting;
+#else
 	utils->set_gpio_lcd_enp_bias = lcd_enp_bias_setting;
+#endif
 #endif
 #endif
 
@@ -5859,7 +5981,7 @@ int ddp_dsi_build_cmdq(enum DISP_MODULE_ENUM module,
 
 				DISPDBG("buffer[%d]=0x%x\n", j, buffer[j]);
 				if (buffer[j] != lcm_esd_tb->para_list[j]) {
-					DISPDBG
+					DISPERR
 			("buffer[%d]0x%x != lcm_esd_tb->para_list[%d]0x%x\n",
 				j, buffer[j], j, lcm_esd_tb->para_list[j]);
 

@@ -301,6 +301,44 @@ void sched_max_util_task(int *cpu, int *pid, int *util, int *boost)
 }
 EXPORT_SYMBOL(sched_max_util_task);
 
+unsigned long sched_get_capacity_orig(int cpu)
+{
+	unsigned long capacity, flags;
+	struct rq *rq = cpu_rq(cpu);
+	raw_spin_lock_irqsave(&rq->lock, flags);
+	capacity = capacity_orig_of(cpu);
+	raw_spin_unlock_irqrestore(&rq->lock, flags);
+
+	return capacity;
+}
+
+/*
+ * Returns the CPU utilization % in the last window.
+ *
+ */
+unsigned int sched_get_cpu_util(int cpu)
+{
+	struct rq *rq = cpu_rq(cpu);
+	u64 util;
+	unsigned long capacity, flags;
+	unsigned int busy;
+
+	raw_spin_lock_irqsave(&rq->lock, flags);
+
+	util = rq->cfs.avg.util_avg;
+	capacity = capacity_orig_of(cpu);
+
+#ifdef CONFIG_SCHED_WALT
+	util = rq->prev_runnable_sum + rq->grp_time.prev_runnable_sum;
+	util = div64_u64(util, sched_ravg_window >> SCHED_CAPACITY_SHIFT);
+#endif
+	raw_spin_unlock_irqrestore(&rq->lock, flags);
+
+	util = (util >= capacity) ? capacity : util;
+	busy = div64_ul((util * 100), capacity);
+	return busy;
+}
+
 /**
  * sched_get_nr_running_avg
  * @return: Average nr_running and iowait value since last poll.

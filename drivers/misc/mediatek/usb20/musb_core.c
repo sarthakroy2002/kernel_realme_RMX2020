@@ -99,6 +99,12 @@
 #include "mtk_musb.h"
 #endif
 
+#ifdef ODM_WT_EDIT
+//Mingyao.Xie@ODM_WT.BSP.Storage.Usb, 2018/08/07, Modify for USB
+#include <soc/oppo/oppo_project.h>
+extern unsigned int is_project(OPPO_PROJECT project );
+#endif /*ODM_WT_EDIT*/
+
 static void (*usb_hal_dpidle_request_fptr)(int);
 void usb_hal_dpidle_request(int mode)
 {
@@ -2641,6 +2647,14 @@ static int musb_init_controller
 	mt_usb_dual_role_init(musb);
 #endif
 #endif
+#ifdef ODM_WT_EDIT
+//Mingyao.Xie@ODM_WT.BSP.Storage.Usb, 2018/08/07, Modify for USB
+	if (is_project(19741)) {
+#ifdef CONFIG_DUAL_ROLE_USB_INTF
+		mt_usb_dual_role_init(musb);
+#endif
+	}
+#endif /*ODM_WT_EDIT*/
 
 	/*initial done, turn off usb */
 	musb_platform_disable(musb);

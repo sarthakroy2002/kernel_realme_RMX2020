@@ -810,6 +810,10 @@ void set_mcdi_enable_status(bool enabled)
 	if (!enabled)
 		mcdi_wakeup_all_cpu();
 }
+#ifdef VENDOR_EDIT
+//cuixiaogang@swdp.shanghai, 2017/12/08, Add gpufreq min limit interface
+EXPORT_SYMBOL(set_mcdi_enable_status);
+#endif /* VENDOR_EDIT */
 
 void set_mcdi_s_state(int state)
 {

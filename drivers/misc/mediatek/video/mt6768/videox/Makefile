@@ -38,6 +38,9 @@ obj-$(CONFIG_MTK_FB) += mtkfb_console.o		\
 			layering_rule.o \
 			frame_queue.o
 
+ifeq ($(ODM_WT_EDIT), yes)
+obj-y +=oppo_display_private_api.o
+endif
 #ifneq ($(CONFIG_MTK_FB), y) # already in video/common/
 #obj-y += mtkfb_dummy.o
 #endif

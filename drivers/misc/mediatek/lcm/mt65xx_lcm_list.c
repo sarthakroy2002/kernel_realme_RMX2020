@@ -28,8 +28,166 @@ enum LCM_DSI_MODE_CON lcm_dsi_mode;
 #define LCD_HW_ID_STATUS_ERROR  0x03
 
 struct LCM_DRIVER *lcm_driver_list[] = {
+#ifdef ODM_WT_EDIT
+//Hao.Liang@ODM_WT.MM.Display.Lcd, 2019/9/25, LCD bringup
+#if defined(ILT9881H_TRULY_HDP_DSI_VDO_LCM)
+		&ilt9881h_truly_hdp_dsi_vdo_lcm_drv,
+#endif
+//Hao.Liang@ODM_WT.MM.Display.Lcd, 2019/9/25, LCD bringup
+#if defined(NT36525B_HLT_HDP_DSI_VDO_LCM)
+		&nt36525b_hlt_hdp_dsi_vdo_lcm_drv,
+#endif
+
+#if defined(ILT9881H_TXD_HDP_DSI_VDO_LCM)
+		&ilt9881h_txd_hdp_dsi_vdo_lcm_drv,
+#endif
+#if defined(VIRTUAL_DSI_VDO_DEFAULT)
+	&virtual_dsi_vdo_default,
+#endif
+
+#endif
 #if defined(ES6311_ANX6585_ZIGZAG_WXGA)
 	&es6311_anx6585_zigzag_wxga_lcm_drv,
+#endif
+
+#ifdef VENDOR_EDIT
+/* zhoujian-xinzhi@PSW.MM.Display.LCD.Machine, 2019/09/17, Add for porting lcd driver */
+#if defined(OPPO18311_DEPUTE_NT36672_1080P_DSI_VDO)
+        &oppo18311_depute_nt36672_1080p_dsi_vdo_lcm_drv,
+#endif
+
+#if defined(OPPO18311_DSJM_HIMAX83112A_1080P_DSI_VDO)
+        &oppo18311_dsjm_himax83112a_1080p_dsi_vdo_lcm_drv,
+#endif
+
+#if defined(OPPO18311_TIANMA_NT36672_1080P_DSI_VDO)
+        &oppo18311_tianma_nt36672_1080p_dsi_vdo_lcm_drv,
+#endif
+
+#if defined(OPPO18311_TRULY_TD4320_1080P_DSI_VDO)
+        &oppo18311_truly_td4320_1080p_dsi_vdo_lcm_drv,
+#endif
+
+#if defined(OPPO19531_SAMSUNG_AMS641RW01_1080P_DSI_CMD)
+        &oppo19531_samsung_ams641rw01_1080p_dsi_cmd_lcm_drv,
+#endif
+
+#if defined(OPPO17321_BOE_TD4310_1080P_DSI_VDO)
+        &oppo17321_boe_td4310_1080p_dsi_vdo_lcm_drv,
+#endif
+
+#if defined(OPPO17321_DSJM_TD4310_1080P_DSI_VDO)
+        &oppo17321_dsjm_td4310_1080p_dsi_vdo_lcm_drv,
+#endif
+
+#if defined(OPPO17321_TIANMA_TD4310_1080P_DSI_VDO)
+        &oppo17321_tianma_td4310_1080p_dsi_vdo_lcm_drv,
+#endif
+
+#if defined(OPPO_DSJM_NT36672_1080P_DSI_VDO)
+        &oppo_dsjm_nt36672_1080p_dsi_vdo_lcm_drv,
+#endif
+
+#if defined(OPPO_HIMAX83112B_1080P_DSI_CMD)
+        &oppo_himax83112b_1080p_dsi_cmd_lcm_drv,
+#endif
+
+#if defined(OPPO_JDI_NT36672_1080P_DSI_VDO)
+        &oppo_jdi_nt36672_1080p_dsi_vdo_lcm_drv,
+#endif
+
+#if defined(OPPO_JDI_TD4310_1080P_DSI_VDO)
+        &oppo_jdi_td4310_1080p_dsi_vdo_lcm_drv,
+#endif
+
+#if defined(OPPO_JDI_TD4330_1080P_DSI_CMD)
+        &oppo_jdi_td4330_1080p_dsi_cmd_lcm_drv,
+#endif
+
+#if defined(OPPO_SAMSUNG_AMS628NW_1080P_DSI_CMD)
+        &oppo_samsung_ams628nw_1080p_dsi_cmd_lcm_drv,
+#endif
+
+#if defined(OPPO_SAMSUNG_AMS628NW_LSI_1080P_DSI_CMD)
+        &oppo_samsung_ams628nw_lsi_1080p_dsi_cmd_lcm_drv,
+#endif
+
+#if defined(OPPO_TIANMA_NT36672_1080P_DSI_VDO)
+        &oppo_tianma_nt36672_1080p_dsi_vdo_lcm_drv,
+#endif
+
+#if defined(OPPO_TRULY_NT36672_AUO_1080P_DSI_VDO)
+        &oppo_truly_nt36672_auo_1080p_dsi_vdo_lcm_drv,
+#endif
+
+#if defined(OPPO_AUO_NT36672_1080P_DSI_VDO)
+       &oppo_auo_nt36672_1080p_dsi_vdo_lcm_drv,
+#endif
+
+#if defined(OPPO_DPT_JDI_HX83112A_1080P_DSI_VDO)
+        &oppo_dpt_jdi_hx83112a_1080p_dsi_vdo_lcm_drv,
+#endif
+
+#if defined(OPPO_DPT_JDI_NT36672_1080P_DSI_VDO)
+        &oppo_dpt_jdi_nt36672_1080p_dsi_vdo_lcm_drv,
+#endif
+
+#if defined(OPPO_DPT_JDI_TD4330_1080P_DSI_CMD)
+        &oppo_dpt_jdi_td4330_1080p_dsi_cmd_lcm_drv,
+#endif
+#endif /* VENDOR_EDIT*/
+
+/* zhoujian-xinzhi@PSW.MM.Display.LCD.Machine, 2019/09/03, Add for porting 18561 lcd driver */
+#ifdef VENDOR_EDIT
+#if defined(OPPO18561_DJN_JDI_HIMAX83112B_1080P_DSI_CMD)
+	&oppo18561_djn_jdi_himax83112b_1080p_dsi_cmd_lcm_drv,
+#endif
+
+#if defined(OPPO18561_DPT_JDI_TD4330_1080P_DSI_CMD)
+	&oppo18561_dpt_jdi_td4330_1080p_dsi_cmd_lcm_drv,
+#endif
+
+#if defined(OPPO18561_DSJM_JDI_HIMAX83112A_1080P_DSI_VDO)
+	&oppo18561_dsjm_jdi_himax83112a_1080p_dsi_vdo_lcm_drv,
+#endif
+
+#if defined(OPPO18561_DSJM_JDI_TD4330_1080P_DSI_CMD)
+	&oppo18561_dsjm_jdi_td4330_1080p_dsi_cmd_lcm_drv,
+#endif
+
+#if defined(OPPO18561_TIANMA_HIMAX83112A_1080P_DSI_VDO)
+	&oppo18561_tianma_himax83112a_1080p_dsi_vdo_lcm_drv,
+#endif
+
+#if defined(OPPO18561_TIANMA_TD4330_1080P_DSI_CMD)
+	&oppo18561_tianma_td4330_1080p_dsi_cmd_lcm_drv,
+#endif
+#endif /* VENDOR_EDIT*/
+/* zhoujian-xinzhi@PSW.MM.Display.LCD.Machine, 2019/08/30, Add for porting 18531 lcd driver */
+#ifdef VENDOR_EDIT
+#if defined(OPPO18531_TM_HIMAX83112A_2_1080P_DSI_VDO)
+	&oppo18531_tm_himax83112a_2_1080p_dsi_vdo_lcm_drv,
+#endif
+#if defined(OPPO18531_TM_NT36670A_1080P_DSI_CMD)
+	&oppo18531_tm_nt36670a_1080p_dsi_cmd_lcm_drv,
+#endif
+#if defined(OPPO18531_DSJM_JDI_HIMAX83112B_1080P_DSI_CMD)
+	&oppo18531_dsjm_jdi_himax83112b_1080p_dsi_cmd_lcm_drv,
+#endif
+#if defined(OPPO18531_DPT_JDI_HIMAX83112A_2_1080P_DSI_VDO)
+	&oppo18531_dpt_jdi_himax83112a_2_1080p_dsi_vdo_lcm_drv,
+#endif
+#endif /*VENDOR_EDIT*/
+#if defined(OPPO18531_TIANMA_TD4330_1080P_DSI_CMD)
+	&oppo18531_tianma_td4330_1080p_dsi_cmd_lcm_drv,
+#endif
+
+#if defined(OPPO18531_DPT_JDI_TD4330_1080P_DSI_CMD)
+	&oppo18531_dpt_jdi_td4330_1080p_dsi_cmd_lcm_drv,
+#endif
+
+#if defined(OPPO18531_DSJM_JDI_TD4330_1080P_DSI_CMD)
+	&oppo18531_dsjm_jdi_td4330_1080p_dsi_cmd_lcm_drv,
 #endif
 
 #if defined(OTM1284A_HD720_DSI_VDO_TM)
@@ -1170,10 +1328,6 @@ struct LCM_DRIVER *lcm_driver_list[] = {
 	&hx83112b_fhdp_dsi_cmd_auo_rt5081_hdp_lcm_drv,
 #endif
 
-#if defined(HX83112B_FHDP_DSI_CMD_AUO_RT5081_HDP_1560)
-	&hx83112b_fhdp_dsi_cmd_auo_rt5081_hdp_1560_lcm_drv,
-#endif
-
 #if defined(HX83112B_FHDP_DSI_VDO_AUO_RT5081_HDP)
 	&hx83112b_fhdp_dsi_vdo_auo_rt5081_hdp_lcm_drv,
 #endif
@@ -1245,8 +1399,20 @@ struct LCM_DRIVER *lcm_driver_list[] = {
 	&nt36672c_fhdp_dsi_vdo_auo_cphy_lcm_drv,
 #endif
 
-#if defined(NT36672C_FHDP_DSI_VDO_AUO_CPHY_90HZ)
-	&nt36672c_fhdp_dsi_vdo_auo_cphy_90hz_lcm_drv,
+#if defined(NT36672C_FHDP_DSI_VDO_AUO_CPHY_90HZ_JDI)
+	&nt36672c_fhdp_dsi_vdo_auo_cphy_90hz_jdi_lcm_drv,
+#endif
+
+#if defined(NT36672C_FHDP_DSI_VDO_AUO_CPHY_90HZ_JDI_HFP)
+	&nt36672c_fhdp_dsi_vdo_auo_cphy_90hz_jdi_hfp_lcm_drv,
+#endif
+
+#if defined(NT36672C_FHDP_DSI_VDO_AUO_CPHY_90HZ_TIANMA)
+	&nt36672c_fhdp_dsi_vdo_auo_cphy_90hz_tianma_lcm_drv,
+#endif
+
+#if defined(NT36672C_FHDP_DSI_VDO_AUO_CPHY_90HZ_TIANMA_HFP)
+	&nt36672c_fhdp_dsi_vdo_auo_cphy_90hz_tianma_hfp_lcm_drv,
 #endif
 
 #if defined(OTM1287_WXGA_DSI_VDO_AUO_GUOXIAN)

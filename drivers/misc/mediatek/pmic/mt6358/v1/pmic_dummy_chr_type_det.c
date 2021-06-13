@@ -43,6 +43,13 @@
 #include <mt-plat/mtk_boot.h>
 #include <mt-plat/charger_type.h>
 
+
+#ifdef ODM_WT_EDIT
+//Mingyao.Xie@ODM_WT.BSP.Storage.Usb, 2018/08/07, Modify for USB
+#include <soc/oppo/oppo_project.h>
+extern unsigned int is_project(OPPO_PROJECT project );
+#endif /*ODM_WT_EDIT*/
+
 #define __SW_CHRDET_IN_PROBE_PHASE__
 
 static enum charger_type g_chr_type;
@@ -156,7 +163,14 @@ void chrdet_int_handler(void)
 #ifndef CONFIG_TCPC_CLASS
 			orderly_poweroff(true);
 #else
-			return;
+#ifdef ODM_WT_EDIT
+//Mingyao.Xie@ODM_WT.BSP.Storage.Usb, 2019/11/05, Modify for USB
+			if(is_project(19741))
+				orderly_poweroff(true);
+			else
+#endif /*ODM_WT_EDIT*/
+				return;
+
 #endif
 		}
 	}

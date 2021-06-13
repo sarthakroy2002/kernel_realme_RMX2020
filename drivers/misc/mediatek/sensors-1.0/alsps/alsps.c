@@ -36,22 +36,39 @@ int als_data_report_t(int value, int status, int64_t time_stamp)
 	event.time_stamp = time_stamp;
 	/* pr_debug(" +als_data_report! %d, %d\n", value, status); */
 	/* force trigger data update after sensor enable. */
+#ifdef ODM_WT_EDIT
+// Jianfeng.Liang@ODM_WT.BSP.Sensors.Config, 2019/11/01, Add for engmode sensors
 	if (cxt->is_get_valid_als_data_after_enable == false) {
 		event.handle = ID_LIGHT;
 		event.flush_action = DATA_ACTION;
 		event.word[0] = value + 1;
+		if (event.word[0] > 0)
+		{
+			event.word[1] = 1000 * 1000/event.word[0];
+		}
+		else
+			event.word[1] = 0;
+
 		err = sensor_input_event(cxt->als_mdev.minor, &event);
 		cxt->is_get_valid_als_data_after_enable = true;
 	}
-	if (value != last_als_report_data) {
-		event.handle = ID_LIGHT;
-		event.flush_action = DATA_ACTION;
-		event.word[0] = value;
-		event.status = status;
-		err = sensor_input_event(cxt->als_mdev.minor, &event);
-		if (err >= 0)
-			last_als_report_data = value;
+	// Li.Tao@ODM_WT.BSP.Sensors.Config, 2020/01/09, change report mode from on-change to continue
+	//if (value != last_als_report_data) {
+	event.handle = ID_LIGHT;
+	event.flush_action = DATA_ACTION;
+	event.word[0] = value;
+	if (event.word[0] > 0)
+	{
+		event.word[1] = 1000 * 1000/event.word[0];
 	}
+	else
+		event.word[1] = 0;
+	event.status = status;
+	err = sensor_input_event(cxt->als_mdev.minor, &event);
+	if (err >= 0)
+		last_als_report_data = value;
+	//}
+#endif
 	return err;
 }
 int als_data_report(int value, int status)
@@ -67,6 +84,10 @@ int als_cali_report(int *value)
 	event.handle = ID_LIGHT;
 	event.flush_action = CALI_ACTION;
 	event.word[0] = value[0];
+#ifdef ODM_WT_EDIT
+// LiTao@ODM_WT.BSP.Sensors.Config, 2019/10/25, Add for bringup sensors
+	event.word[1] = value[1];
+#endif
 	err = sensor_input_event(alsps_context_obj->als_mdev.minor, &event);
 	return err;
 }
@@ -121,6 +142,10 @@ int rgbw_flush_report(void)
 	return err;
 }
 
+#ifdef VENDOR_EDIT
+/*zhq@PSW.BSP.Sensor, 2018/11/20, Add for prox report count*/
+extern uint32_t kernel_prox_report_count;
+#endif /*VENDOR_EDIT*/
 int ps_data_report_t(int value, int status, int64_t time_stamp)
 {
 	int err = 0;
@@ -128,10 +153,15 @@ int ps_data_report_t(int value, int status, int64_t time_stamp)
 
 	memset(&event, 0, sizeof(struct sensor_event));
 
-	pr_notice("[ALS/PS]%s! %d, %d\n", __func__, value, status);
 	event.flush_action = DATA_ACTION;
 	event.time_stamp = time_stamp;
 	event.word[0] = value + 1;
+#ifdef VENDOR_EDIT
+/*zhq@PSW.BSP.Sensor, 2018/11/20, Add for prox report count*/
+	event.word[1] = kernel_prox_report_count;
+
+	pr_notice("[ALS/PS] ps_data_report! value %d, count %d\n", value, event.word[1]);
+#endif /*VENDOR_EDIT*/
 	event.status = status;
 	err = sensor_input_event(alsps_context_obj->ps_mdev.minor, &event);
 	return err;
@@ -789,9 +819,15 @@ static ssize_t ps_store_batch(struct device *dev, struct device_attribute *attr,
 					cxt->ps_latency_ns);
 	else
 		err = cxt->ps_ctl.batch(0, cxt->ps_delay_ns, 0);
+
+#ifndef VENDOR_EDIT
+//zhq@PSW.BSP.Sensor, 2018-11-26, remove PS report default status
+	ps_data_report(1, SENSOR_STATUS_ACCURACY_HIGH);
+#endif
 #else
 	err = ps_enable_and_batch();
 #endif
+
 	mutex_unlock(&alsps_context_obj->alsps_op_mutex);
 	pr_debug("%s done: %d\n", __func__, cxt->is_ps_batch_enable);
 	if (err)

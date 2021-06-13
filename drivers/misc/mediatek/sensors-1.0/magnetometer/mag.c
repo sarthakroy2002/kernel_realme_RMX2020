@@ -16,9 +16,55 @@
 #include "inc/mag.h"
 #include "sensor_performance.h"
 #include <linux/vmalloc.h>
+#ifdef ODM_WT_EDIT
+// LiTao@ODM_WT.BSP.Sensors.Config, 2019/11/07, Add for judging if has nfc
+#include <soc/oppo/oppo_project.h>
+#endif /* ODM_WT_EDIT */
 
 struct mag_context *mag_context_obj /* = NULL*/;
 static struct mag_init_info *msensor_init_list[MAX_CHOOSE_G_NUM] = {0};
+
+#ifdef ODM_WT_EDIT
+// LiTao@ODM_WT.BSP.Sensors.Config, 2019/11/07, Add for judging if has nfc
+static bool get_nfc_config(int ov)
+{
+	bool has_nfc = false;
+
+	switch (ov) {
+	case OPERATOR_19741_RUSSIA:
+	case OPERATOR_19747_RUSSIA:
+		has_nfc = true;
+		break;
+	default:
+		break;
+	}
+
+	return has_nfc;
+}
+#endif /* ODM_WT_EDIT */
+
+#ifdef ODM_WT_EDIT
+// LiTao@ODM_WT.BSP.Sensors.Config, 2019/12/24, Add for judging if has gyro
+static bool get_gyro_config(int ov)
+{
+	bool has_gyro = false;
+
+	switch (ov) {
+	case OPERATOR_19747_ASIA_SIMPLE:
+	case OPERATOR_19747_RUSSIA:
+	case OPERATOR_19747_All_BAND:
+	case OPERATOR_19747_VIETNAM_3X64G:
+	case OPERATOR_19747_VIETNAM_4X128G:
+	case OPERATOR_19747_TELECOM:
+		has_gyro = true;
+		break;
+	default:
+		break;
+	}
+
+	return has_gyro;
+}
+#endif /* ODM_WT_EDIT */
 
 static void initTimer(struct hrtimer *timer,
 		      enum hrtimer_restart (*callback)(struct hrtimer *))
@@ -425,6 +471,58 @@ static ssize_t mag_show_libinfo(struct device *dev,
 	return sizeof(struct mag_libinfo_t);
 }
 
+#ifdef ODM_WT_EDIT
+// LiTao@ODM_WT.BSP.Sensors.Config, 2019/11/07, Add for judging if has nfc
+static ssize_t mag_show_has_nfc(struct device *dev,
+				struct device_attribute *attr, char *buf)
+{
+	bool has_nfc = false;
+	int oppo_op_version = 0;
+
+	if (!buf)
+		return -1;
+
+	oppo_op_version = get_Operator_Version();
+
+	printk(KERN_ERR "[MAG] %s oppo operation version is %d\n", __func__, oppo_op_version);
+
+	if (!oppo_op_version)
+		return -1;
+
+	has_nfc = get_nfc_config(oppo_op_version);
+
+	printk(KERN_ERR "[MAG] %s has_nfc is %d\n", __func__, has_nfc);
+
+	return snprintf(buf, PAGE_SIZE, "%d\n", has_nfc);
+}
+#endif /* ODM_WT_EDIT */
+
+#ifdef ODM_WT_EDIT
+// LiTao@ODM_WT.BSP.Sensors.Config, 2019/12/24, Add for judging if has gyro
+static ssize_t mag_show_has_gyro(struct device *dev,
+				struct device_attribute *attr, char *buf)
+{
+	bool has_gyro = false;
+	int oppo_op_version = 0;
+
+	if (!buf)
+		return -1;
+
+	oppo_op_version = get_Operator_Version();
+
+	printk(KERN_ERR "[MAG] %s oppo operation version is %d\n", __func__, oppo_op_version);
+
+	if (!oppo_op_version)
+		return -1;
+
+	has_gyro = get_gyro_config(oppo_op_version);
+
+	printk(KERN_ERR "[MAG] %s has_gyro is %d\n", __func__, has_gyro);
+
+	return snprintf(buf, PAGE_SIZE, "%d\n", has_gyro);
+}
+#endif /* ODM_WT_EDIT */
+
 static int msensor_remove(struct platform_device *pdev)
 {
 	pr_debug("%s\n", __func__);
@@ -569,6 +667,14 @@ DEVICE_ATTR(magflush, 0644, mag_show_flush, mag_store_flush);
 DEVICE_ATTR(magcali, 0644, mag_show_cali, mag_store_cali);
 DEVICE_ATTR(magdevnum, 0644, mag_show_sensordevnum, NULL);
 DEVICE_ATTR(maglibinfo, 0644, mag_show_libinfo, NULL);
+#ifdef ODM_WT_EDIT
+// LiTao@ODM_WT.BSP.Sensors.Config, 2019/11/07, Add for judging if has nfc
+DEVICE_ATTR(maghasnfc, 0664, mag_show_has_nfc, NULL);
+#endif /* ODM_WT_EDIT */
+#ifdef ODM_WT_EDIT
+// LiTao@ODM_WT.BSP.Sensors.Config, 2019/12/24, Add for judging if has gyro
+DEVICE_ATTR(maghasgyro, 0664, mag_show_has_gyro, NULL);
+#endif /* ODM_WT_EDIT */
 
 static struct attribute *mag_attributes[] = {
 	&dev_attr_magdev.attr,
@@ -578,6 +684,14 @@ static struct attribute *mag_attributes[] = {
 	&dev_attr_magcali.attr,
 	&dev_attr_magdevnum.attr,
 	&dev_attr_maglibinfo.attr,
+#ifdef ODM_WT_EDIT
+// LiTao@ODM_WT.BSP.Sensors.Config, 2019/11/07, Add for judging if has nfc
+	&dev_attr_maghasnfc.attr,
+#endif /* ODM_WT_EDIT */
+#ifdef ODM_WT_EDIT
+// LiTao@ODM_WT.BSP.Sensors.Config, 2019/12/24, Add for judging if has gyro
+	&dev_attr_maghasgyro.attr,
+#endif /* ODM_WT_EDIT */
 	NULL
 };
 

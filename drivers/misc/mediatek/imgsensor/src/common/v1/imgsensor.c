@@ -21,7 +21,10 @@
 #include <linux/workqueue.h>
 #include <linux/init.h>
 #include <linux/types.h>
-
+#ifdef ODM_WT_EDIT
+/*xiaojun.Pu@Camera.Driver, 2019/10/15, add for [add hardware_info for factory]*/
+#include <linux/hardware_info.h>
+#endif /* ODM_WT_EDIT */
 #undef CONFIG_MTK_SMI_EXT
 #ifdef CONFIG_MTK_SMI_EXT
 #include "mmdvfs_mgr.h"
@@ -54,7 +57,7 @@
 #include "imgsensor_proc.h"
 #include "imgsensor_clk.h"
 #include "imgsensor.h"
-
+#include "imgsensor_read_eeprom.h"
 #define PDAF_DATA_SIZE 4096
 
 #ifdef CONFIG_MTK_SMI_EXT
@@ -87,7 +90,10 @@ struct mutex imgsensor_mutex;
 
 
 DEFINE_MUTEX(pinctrl_mutex);
-
+#ifdef ODM_WT_EDIT
+/*xiaojun.Pu@Camera.Driver, 2019/10/15, add for [add hardware_info for factory]*/
+extern int hardwareinfo_set_prop(int cmd, const char *name);
+#endif /* ODM_WT_EDIT */
 /************************************************************************
  * Profiling
  ************************************************************************/
@@ -796,10 +802,36 @@ static void cam_temperature_report_wq_routine(
 
 }
 #endif
-
+#ifdef ODM_WT_EDIT
+/*xiaojun.Pu@Camera.Driver, 2019/10/15, add for [add hardware_info for factory]*/
+/*Zhen.Quan@Camera.Driver, 2019/11/20, add for [otp bringup] */
+struct match_hardwareinfo hardwareinfo_camera_name[] = {
+	{ SENSOR_DRVNAME_MONET_TRULY_MAIN_OV12A10, "monet_truly_main_ov12a10", " 0x1241"},
+	{ SENSOR_DRVNAME_MONET_HLT_FRONT_GC5035,   "monet_hlt_front_gc5035", " 0x5035"},
+	{ SENSOR_DRVNAME_MONETX_SHENGTAI_WIDE_OV8856, "monetx_shengtai_wide_ov8856", " 0x885A"},
+	{ SENSOR_DRVNAME_MONET_HLT_DEPTH_OV02A1B, "monet_hlt_depth_ov02a1b", " 0x2509"},
+	{ SENSOR_DRVNAME_MONETX_HLT_DEPTH_OV02A1B, "monetx_hlt_depth_ov02a1b", " 0x250A"},
+	{ SENSOR_DRVNAME_MONET_HLT_MACRO_GC2375H, "monet_hlt_macro_gc2375h", " 0x2375"},
+	{ SENSOR_DRVNAME_MONET_LH_MACRO_GC2375H, "monet_lh_macro_gc2375h", " 0x2376"},
+	{ SENSOR_DRVNAME_MONETX_HLT_MACRO_GC2375H, "monetx_hlt_macro_gc2375h", " 0x2377"},
+	{ SENSOR_DRVNAME_MONETX_TRULY_MAIN_S5KGM1SP, "monetx_truly_main_s5kgm1sp", "  0x08D1"},
+	{ SENSOR_DRVNAME_MONETX_OFILM_FRONT_OV16A1Q, "monetx_ofilm_front_ov16a1q", "   0x1641"},
+	{ SENSOR_DRVNAME_MONET_TXD_FRONT_HI556, "monet_txd_front_hi556", "0x0556"},
+	{ SENSOR_DRVNAME_MONETD_CXT_DEPTH_GC2375H, "monetd_cxt_depth_gc2375h", " 0x2378"},
+	{ SENSOR_DRVNAME_MONETD_LH_DEPTH_GC2375H, "monetd_lh_depth_gc2375h", " 0x2379"},
+	{ SENSOR_DRVNAME_MONETX_HLT_MACRO_GC2385, "monetx_hlt_macro_gc2385", " 0x2385"},
+	{ SENSOR_DRVNAME_MONETD_TRULY_MAIN_OV12A10, "monetd_truly_main_ov12a10", " 0x1242"},
+	{ SENSOR_DRVNAME_MONET_HLT_CUSTFRONT_GC5035,   "monet_hlt_custfront_gc5035", " 0x5036"},
+	{"NULL", "UNKNOWN", "0"},
+};
+#endif /* ODM_WT_EDIT */
 static inline int adopt_CAMERA_HW_GetInfo2(void *pBuf)
 {
 	int ret = 0;
+#ifdef ODM_WT_EDIT
+/*xiaojun.Pu@Camera.Driver, 2019/10/15, add for [add hardware_info for factory] */
+	int i = 0;
+#endif /* ODM_WT_EDIT */
 	struct IMAGESENSOR_GETINFO_STRUCT *pSensorGetInfo;
 	struct IMGSENSOR_SENSOR    *psensor;
 
@@ -1082,6 +1114,43 @@ static inline int adopt_CAMERA_HW_GetInfo2(void *pBuf)
 				"\n\nCAM_Info[%d]:%s;",
 				pSensorGetInfo->SensorId,
 				psensor->inst.psensor_name);
+
+#ifdef ODM_WT_EDIT
+/*xiaojun.Pu@Camera.Driver, 2019/10/15, add for [add hardware_info for factory]*/
+	for(i = 0; strcmp(hardwareinfo_camera_name[i].psensor_name, "NULL"); i++){
+		if(!strcmp(hardwareinfo_camera_name[i].psensor_name, psensor->inst.psensor_name)){
+			break;
+		}
+	}
+	pr_info("i = %d, hardwareinfo_camera_name:%s, psensor->inst.psensor_name:%s, sensor_idx:%s",
+		i, hardwareinfo_camera_name[i].psensor_name, psensor->inst.psensor_name, hardwareinfo_camera_name[i].sensor_id);
+
+	if(pSensorGetInfo->SensorId == 0){//main
+		hardwareinfo_set_prop(HARDWARE_BACK_CAM, hardwareinfo_camera_name[i].hardwareinfo_set_name);
+		hardwareinfo_set_prop(HARDWARE_BACK_CAM_SENSORID, hardwareinfo_camera_name[i].sensor_id);
+	}
+	if(pSensorGetInfo->SensorId == 1){//sub
+		hardwareinfo_set_prop(HARDWARE_FRONT_CAM, hardwareinfo_camera_name[i].hardwareinfo_set_name);
+		hardwareinfo_set_prop(HARDWARE_FRONT_CAM_SENSORID, hardwareinfo_camera_name[i].sensor_id);
+	}
+	if(pSensorGetInfo->SensorId == 2){//wide
+		hardwareinfo_set_prop(HARDWARE_WIDE_ANGLE_CAM, hardwareinfo_camera_name[i].hardwareinfo_set_name);
+		hardwareinfo_set_prop(HARDWARE_WIDE_ANGLE_CAM_SENSORID, hardwareinfo_camera_name[i].sensor_id);
+	}
+	if(pSensorGetInfo->SensorId == 3){//depth
+		hardwareinfo_set_prop(HARDWARE_BACK_SUB_CAM, hardwareinfo_camera_name[i].hardwareinfo_set_name);
+		hardwareinfo_set_prop(HARDWARE_BACK_SUBCAM_SENSORID, hardwareinfo_camera_name[i].sensor_id);
+	}
+	if(pSensorGetInfo->SensorId == 4){//mono
+		if (!check_board_id(board_monetd)){
+			hardwareinfo_set_prop(HARDWARE_MONO_CAM, hardwareinfo_camera_name[i].hardwareinfo_set_name);
+			hardwareinfo_set_prop(HARDWARE_MONO_CAM_SENSORID, hardwareinfo_camera_name[i].sensor_id);
+		}else{//depth
+			hardwareinfo_set_prop(HARDWARE_BACK_SUB_CAM, hardwareinfo_camera_name[i].hardwareinfo_set_name);
+			hardwareinfo_set_prop(HARDWARE_BACK_SUBCAM_SENSORID, hardwareinfo_camera_name[i].sensor_id);
+		}
+	}
+#endif /* ODM_WT_EDIT */
 
 	pmtk_ccm_name = strchr(mtk_ccm_name, '\0');
 	snprintf(pmtk_ccm_name,

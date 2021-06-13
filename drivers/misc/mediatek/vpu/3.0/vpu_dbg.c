@@ -107,7 +107,7 @@ static const struct file_operations vpu_debug_ ## name ## _fops = {   \
 	.open = vpu_debug_ ## name ## _open,                               \
 	.read = seq_read,                                                    \
 	.llseek = seq_lseek,                                                \
-	.release = single_release,                                             \
+	.release = seq_release,                                             \
 }
 
 /*IMPLEMENT_VPU_DEBUGFS(algo);*/

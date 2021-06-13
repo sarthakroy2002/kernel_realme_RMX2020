@@ -230,5 +230,6 @@ struct mdee_dumper_v3 {
 	/* request by modem, change to 2k: include struct ex_PL_log*/
 	unsigned char ex_pl_info[MD_HS1_FAIL_DUMP_SIZE];
 };
+
 #endif	/* __MDEE_DUMPER_V3_H__ */
 

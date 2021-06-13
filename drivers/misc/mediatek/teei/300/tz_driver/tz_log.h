@@ -53,7 +53,6 @@ struct tz_log_state {
 	struct log_rb *log;
 	struct boot_log_rb *boot_log;
 	uint32_t get;
-	uint32_t read_get;
 
 	struct page *log_pages;
 	struct page *boot_log_pages;
@@ -66,7 +65,6 @@ struct tz_log_state {
 
 int tz_log_probe(struct platform_device *pdev);
 int tz_log_remove(struct platform_device *pdev);
-int tz_driver_read_logs(char *buffer, unsigned long count);
 
 #endif
 

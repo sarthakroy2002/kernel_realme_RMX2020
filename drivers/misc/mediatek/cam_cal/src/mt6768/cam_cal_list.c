@@ -18,6 +18,21 @@
 
 struct stCAM_CAL_LIST_STRUCT g_camCalList[] = {
 	/*Below is commom sensor */
+#ifdef ODM_WT_EDIT
+	/* Zhen.Quan@Camera.Driver, 2019/11/20, add for [otp bringup] */
+	{OV12A10_SENSOR_ID, 0xA0, Common_read_region},
+	{S5KGM1SP_SENSOR_ID, 0xA0, Common_read_region},
+	{OV16A1Q_SENSOR_ID, 0xA8, Common_read_region},
+	{OV8856_SENSOR_ID, 0xA2, Common_read_region},
+	{GC5035_SENSOR_ID, 0xA8, Common_read_region},
+	{GC2375H_SENSOR_ID, 0xA4, Common_read_region},
+	{MONET_LH_MACRO_GC2375H_SENSOR_ID, 0xA4, Common_read_region},
+	{MONETX_HLT_MACRO_GC2375H_SENSOR_ID, 0xA4, Common_read_region},
+	{MONETD_LH_DEPTH_GC2375H_SENSOR_ID, 0xA4, Common_read_region},
+	{MONETD_CXT_DEPTH_GC2375H_SENSOR_ID, 0xA4, Common_read_region},
+	{MONETX_HLT_MACRO_GC2385_SENSOR_ID, 0xA4, Common_read_region},
+	{MONETD_TRULY_OV12A10_SENSOR_ID, 0xA0, Common_read_region},
+#else
 	{IMX519_SENSOR_ID, 0xA0, Common_read_region},
 	{S5K2T7SP_SENSOR_ID, 0xA4, Common_read_region},
 	{IMX338_SENSOR_ID, 0xA0, Common_read_region},
@@ -31,6 +46,7 @@ struct stCAM_CAL_LIST_STRUCT g_camCalList[] = {
 	{IMX386_MONO_SENSOR_ID, 0xA0, Common_read_region},
 	/*B+B. No Cal data for main2 OV8856*/
 	{S5K2P7_SENSOR_ID, 0xA0, Common_read_region},
+#endif /* ODM_WT_EDIT */
 	/*  ADD before this line */
 	{0, 0, 0}       /*end of list */
 };

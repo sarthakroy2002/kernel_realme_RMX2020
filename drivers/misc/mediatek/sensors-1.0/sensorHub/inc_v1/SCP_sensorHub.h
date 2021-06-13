@@ -199,7 +199,38 @@ struct in_pocket_event_t {
 struct geofence_event_t {
 	uint32_t state;  /* geofence [source, result, operation_mode] */
 };
+#ifdef VENDOR_EDIT
+/*tangjh@PSW.BSP.Sensor, 2019/7/1, Add for oppo algo*/
+typedef struct {
+	uint32_t value;
+	uint16_t report_count;
+}ffd_event_t;
 
+typedef struct {
+	uint32_t free_fall_time;
+	uint32_t angle;
+	uint16_t report_count;
+}free_fall_event_t;
+
+typedef struct {
+	uint32_t value;
+	uint16_t report_count;
+}pickup_motion_event_t;
+
+typedef struct {
+	uint32_t value;
+	uint16_t report_count;
+}action_detect_event_t;
+
+typedef struct {
+	int32_t state;
+}sar_modem_event_t;
+
+typedef struct {
+	int16_t state;
+    uint16_t report_count;
+}lux_aod_event_t;
+#endif /*VENDOR_EDIT*/
 struct sar_event_t {
 	struct {
 		int32_t data[3];
@@ -265,6 +296,15 @@ struct data_unit_t {
 		struct tilt_event_t tilt_event;
 		struct in_pocket_event_t inpocket_event;
 		struct geofence_event_t geofence_data_t;
+#ifdef VENDOR_EDIT
+/*tangjh@PSW.BSP.Sensor, 2019/7/1, Add for oppo algo*/
+		ffd_event_t ffd_data_t;
+		free_fall_event_t free_fall_data_t;
+		pickup_motion_event_t pickup_motion_data_t;
+        action_detect_event_t action_detect_data_t;
+        sar_modem_event_t sar_modem_event;
+        lux_aod_event_t lux_aod_event;
+#endif /*VENDOR_EDIT*/		
 		struct sar_event_t sar_event;
 		int32_t data[8];
 	};
@@ -376,6 +416,12 @@ enum CUST_ACTION {
 	CUST_ACTION_SHOW_ALSVAL,
 	CUST_ACTION_SET_FACTORY,
 	CUST_ACTION_GET_SENSOR_INFO,
+#ifdef VENDOR_EDIT
+//ye.zhang@PSE.BSP.Sensor, 2017-12-20, add for sensor self test
+	CUST_ACTION_SELFTEST,
+	CUST_ACTION_RW_REGISTER,
+	CUST_ACTION_SCP_SYNC_UTC,
+#endif//VENDOR_EDIT
 };
 
 struct SCP_SENSOR_HUB_CUST {
@@ -467,6 +513,22 @@ enum {
 	USE_IN_FACTORY_MODE
 };
 
+#ifdef VENDOR_EDIT
+//ye.zhang@PSE.BSP.Sensor, 2017-12-20, add for sensor self test
+typedef struct {
+	enum CUST_ACTION    action;
+	union{
+		uint8_t buff[4];
+		int32_t testResult;
+	};
+} SCP_SENSOR_HUB_SHOW_SELFTEST;
+typedef struct {
+	enum CUST_ACTION    action;
+	union{
+		uint32_t u32_data[4];  //date hour minute second
+	};
+} SCP_SENSOR_HUB_SYNC_UTC;
+#endif//VENDOR_EDIT
 struct SCP_SENSOR_HUB_SET_CUST_REQ {
 	uint8_t sensorType;
 	uint8_t action;
@@ -486,6 +548,11 @@ struct SCP_SENSOR_HUB_SET_CUST_REQ {
 		struct SCP_SENSOR_HUB_SHOW_ALSVAL showAlsval;
 		struct SCP_SENSOR_HUB_SET_FACTORY setFactory;
 		struct scp_sensor_hub_get_sensor_info getInfo;
+	#ifdef VENDOR_EDIT
+	//ye.zhang@PSE.BSP.Sensor, 2017-12-20, add for sensor self test
+		SCP_SENSOR_HUB_SHOW_SELFTEST showSelftest;
+		SCP_SENSOR_HUB_SYNC_UTC syncUTC;
+	#endif//VENDOR_EDIT
 	};
 };
 
@@ -498,6 +565,10 @@ struct SCP_SENSOR_HUB_SET_CUST_RSP {
 		uint32_t custData[11];
 		struct SCP_SENSOR_HUB_GET_RAW_DATA getRawData;
 		struct scp_sensor_hub_get_sensor_info getInfo;
+	#ifdef VENDOR_EDIT
+	//ye.zhang@PSE.BSP.Sensor, 2017-12-20, add for sensor self test
+		SCP_SENSOR_HUB_SHOW_SELFTEST showSelftest;
+	#endif//VENDOR_EDIT
 	};
 };
 

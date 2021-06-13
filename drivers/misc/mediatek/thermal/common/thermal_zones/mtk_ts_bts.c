@@ -67,7 +67,7 @@ static kgid_t gid = KGIDT_INIT(1000);
 static DEFINE_SEMAPHORE(sem_mutex);
 
 static unsigned int interval = 1;	/* seconds, 0 : no auto polling */
-static int trip_temp[10] = { 100000, 96000, 95000, 90000, 80000,
+static int trip_temp[10] = { 120000, 110000, 100000, 90000, 80000,
 				70000, 65000, 60000, 55000, 50000 };
 
 static struct thermal_zone_device *thz_dev;
@@ -75,8 +75,8 @@ static int mtkts_bts_debug_log;
 static int kernelmode;
 static int g_THERMAL_TRIP[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-static int num_trip = 1;
-static char g_bind0[20] = "mtktsAP-sysrst";
+static int num_trip;
+static char g_bind0[20] = {"mtktsAP-sysrst"};
 static char g_bind1[20] = { 0 };
 static char g_bind2[20] = { 0 };
 static char g_bind3[20] = { 0 };
@@ -499,6 +499,14 @@ static struct BTS_TEMPERATURE BTS_Temperature_Table7[] = {
 	{125, 2522}
 };
 
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/11/21, add for ap temp monitor*/
+static int ap_temp = 25000;
+int get_ap_temp(void)
+{
+	return ap_temp;
+}
+#endif /*ODM_WT_EDIT*/
 
 /* convert register to temperature  */
 static __s16 mtkts_bts_thermistor_conver_temp(__s32 Res)
@@ -726,7 +734,10 @@ int mtkts_bts_get_hw_temp(void)
 
 	if (t_ret > 40000)	/* abnormal high temp */
 		mtkts_bts_printk("T_AP=%d\n", t_ret);
-
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/11/21, add for ap temp monitor*/
+	ap_temp = t_ret;
+#endif /*ODM_WT_EDIT*/
 	mtkts_bts_dprintk("[%s] T_AP, %d\n", __func__, t_ret);
 	return t_ret;
 }
