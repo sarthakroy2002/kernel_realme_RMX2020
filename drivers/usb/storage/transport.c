@@ -480,7 +480,6 @@ int usb_stor_bulk_srb(struct us_data* us, unsigned int pipe,
 {
 	unsigned int partial;
 	int result;
-
 	usb_boost();
 	result = usb_stor_bulk_transfer_sglist(us, pipe, scsi_sglist(srb),
 				      scsi_sg_count(srb), scsi_bufflen(srb),

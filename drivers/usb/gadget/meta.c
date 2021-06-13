@@ -1270,9 +1270,15 @@ void enable_meta_vcom(int mode)
 	enable_store(pdev, NULL, "0", 1);
 
 	if (mode == 1) {
+#ifndef ODM_WT_EDIT
 		strncpy(serial_str, "", sizeof(serial_str) - 1);
 		device_desc.idVendor = 0x0e8d;
 		device_desc.idProduct = 0x2007;
+#else
+/* Yanchao.Hu@ODM_WT.BSP.Storage.usb, 2018/10/22, Modify for summer VID&PID */
+		device_desc.idVendor = 0x22d9;
+		device_desc.idProduct = 0x0006;
+#endif
 		device_desc.bDeviceClass = 0x02;
 
 		/*ttyGS0*/
@@ -1283,8 +1289,14 @@ void enable_meta_vcom(int mode)
 
 
 		strncpy(serial_str, "", sizeof(serial_str) - 1);
+#ifndef ODM_WT_EDIT
 		device_desc.idVendor = 0x0e8d;
 		device_desc.idProduct = 0x202d;
+#else
+/* Yanchao.Hu@ODM_WT.BSP.Storage.usb, 2018/10/22, Modify for summer VID&PID */
+		device_desc.idVendor = 0x22d9;
+		device_desc.idProduct = 0x202d;
+#endif
 
 		/*ttyGS0 + ttyGS3*/
 		quick_vcom_num = (1 << 0) + (1 << 3);
