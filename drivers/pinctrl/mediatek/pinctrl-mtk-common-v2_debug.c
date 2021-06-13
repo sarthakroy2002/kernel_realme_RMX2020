@@ -170,45 +170,6 @@ static ssize_t mtk_gpio_show_pin(struct device *dev,
 	return len;
 }
 
-void gpio_dump_regs_range(int start, int end)
-{
-	struct gpio_device *gdev;
-	struct mtk_pinctrl *hw;
-	struct gpio_chip *chip = NULL;
-	unsigned long flags;
-	char buf[96];
-	int i;
-
-	spin_lock_irqsave(&gpio_lock, flags);
-	list_for_each_entry(gdev, &gpio_devices, list) {
-
-		chip = gdev->chip;
-
-		if (start < 0) {
-			start = 0;
-			end = chip->ngpio - 1;
-		}
-		if (end > chip->ngpio - 1)
-			end = chip->ngpio - 1;
-
-		pr_notice("PIN: (MODE)(DIR)(DOUT)(DIN)(DRIVE)(SMT)(IES)(PULL_EN)(PULL_SEL)(R1 R0)\n");
-
-		hw = gpiochip_get_data(chip);
-		for (i = start; i < end; i++) {
-			(void)mtk_pctrl_show_one_pin(hw, i, buf, 96);
-			pr_notice("%s", buf);
-		}
-		break;
-	}
-
-	spin_unlock_irqrestore(&gpio_lock, flags);
-}
-
-void gpio_dump_regs(void)
-{
-	gpio_dump_regs_range(-1, -1);
-}
-
 static ssize_t mtk_gpio_store_pin(struct device *dev,
 	struct device_attribute *attr, const char *buf, size_t count)
 {
