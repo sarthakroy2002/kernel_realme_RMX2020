@@ -29,6 +29,11 @@ enum {
 	MT6768_MEMIF_NUM,
 	MT6768_DAI_ADDA = MT6768_MEMIF_NUM,
 	MT6768_DAI_VOW,
+#if defined(ODM_WT_EDIT) && !defined(CONFIG_SND_SIA81XX_PA)
+//Zengchao.Duan@ODM_WT.MM.Audiodriver.Machine, 2019/10/04, Add for odm audio
+//Zengchao.Duan@ODM_WT.MM.AudioDriver.Machine, 2019/10/19, MonetX audio sia8108 bringup
+	MT6768_EXT_AMP,
+#endif
 	MT6768_DAI_CONNSYS_I2S,
 	MT6768_DAI_I2S_0,
 	MT6768_DAI_I2S_1,

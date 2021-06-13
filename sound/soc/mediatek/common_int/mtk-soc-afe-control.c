@@ -2749,6 +2749,111 @@ void Auddrv_DL1_Interrupt_Handler(void)
 	spin_unlock_irqrestore(&Mem_Block->substream_lock, flags);
 }
 
+#ifdef VENDOR_EDIT
+/* Yongzhi.Zhang@PSW.MM.AudioDriver.feature.1209435, 2017/08/01,
+ * add for KTV */
+#ifdef CONFIG_OPPO_KTV_DEV
+
+/* Yongzhi.Zhang@PSW.MM.AudioDriver.Feature, 2018/03/01,
+ * set offset as 1920 bytes which refers to 5ms */
+#define NOISE_OFFSET (1920)
+#define NOISE_MIN_OFFSET (480)
+
+/* Yongzhi.Zhang@PSW.MM.AudioDriver.feature.1217318, 2018/01/09,
+ * add 24bit limit for mixing sound and music to reduce noise */
+#define LIMIT_24BIT 8388608
+void ktv_data_mix(char *sourseFile1, char *sourseFile2, int32_t frames) // the third param is frame not byte
+{
+	int i = 0;
+
+	int32_t max32 = LIMIT_24BIT - 1;
+	int32_t min32 = -LIMIT_24BIT;
+
+	int32_t *data1 = (int32_t *)sourseFile1;
+	int32_t *data2 = (int32_t *)sourseFile2;
+	long dataout = 0;
+
+	for (i = 0; i < frames; i++) {
+		dataout = (long)(*(data1 + i) + *(data2 + i));
+		if (dataout >= max32) {
+			*(data1 + i) = max32;
+		} else if (dataout <= min32) {
+			*(data1 + i) = min32;
+		} else {
+			*(data1 + i) = (int32_t)dataout;
+		}
+	}
+
+	return;
+}
+
+void auddrv_dl1_write_init(void)
+{
+	struct afe_block_t *afe_block = &(afe_mem_ctrl[Soc_Aud_Digital_Block_MEM_DL1]->rBlock);
+	int noiseOffset = NOISE_OFFSET;
+
+	pr_info("%s: auddrv_dl1_write_init\n", __func__);
+
+	user_dl_block.u4DMAReadIdx = (afe_block->u4DMAReadIdx + noiseOffset) % afe_block->u4BufferSize;
+	user_dl_block.u4BufferSize = afe_block->u4BufferSize;
+
+	pr_info("%s: User_Block->u4DMAReadIdx = %d, Afe_Block->u4DMAReadIdx = %d, afe_block->u4BufferSize = %d\n",
+		__func__, user_dl_block.u4DMAReadIdx, afe_block->u4DMAReadIdx, afe_block->u4BufferSize);
+	return;
+}
+
+void auddrv_dl1_write_handler(kal_uint32 bytes)
+{
+	kal_uint32 ktvWriteIdx_tmp = 0;
+	kal_uint32 ktvUnitSize = bytes;
+
+	struct afe_block_t *afe_block = &(afe_mem_ctrl[Soc_Aud_Digital_Block_MEM_DL1]->rBlock);
+	struct afe_block_t *user_block = &(user_dl_block);
+	unsigned long flags;
+
+	spin_lock_irqsave(&ktv_dl_data_lock, flags);
+
+	if (((user_block->u4DMAReadIdx + afe_block->u4BufferSize - afe_block->u4DMAReadIdx) % afe_block->u4BufferSize) >= NOISE_OFFSET * 4) {
+		pr_warn("%s: data speed does not match, reset\n", __func__);
+		auddrv_dl1_write_init();
+	}
+	if (((user_block->u4DMAReadIdx + afe_block->u4BufferSize - afe_block->u4DMAReadIdx) % afe_block->u4BufferSize) <= NOISE_MIN_OFFSET) {
+		pr_warn("%s: offset is not enough, reset\n", __func__);
+		auddrv_dl1_write_init();
+	}
+
+	if (afe_block->u4DataRemained < NOISE_OFFSET) {
+		ktvUnitSize = 0;
+		pr_warn("%s: remained size is less than noiseOffset, u4DataRemained = 0x%x\n", __func__, afe_block->u4DataRemained);
+	} else if (afe_block->u4DataRemained < (NOISE_OFFSET + ktvUnitSize)) {
+		ktvUnitSize = word_size_align(afe_block->u4DataRemained - NOISE_OFFSET);
+		pr_warn("%s: remained size is less than requested, u4DataRemained = 0x%x\n", __func__, afe_block->u4DataRemained);
+	}
+
+	ktvWriteIdx_tmp = user_block->u4DMAReadIdx % user_block->u4BufferSize;
+
+	if ((ktvWriteIdx_tmp + ktvUnitSize) <= user_block->u4BufferSize) {
+		ktv_data_mix((afe_block->pucVirtBufAddr + ktvWriteIdx_tmp), ktv_dl_data_unit, ktvUnitSize/4);
+	} else {
+		kal_uint32 ktvUnitSize_1 = 0, ktvUnitSize_2 = 0;
+		ktvUnitSize_1 = word_size_align((user_block->u4BufferSize - ktvWriteIdx_tmp));
+		ktvUnitSize_2 = word_size_align((ktvUnitSize - ktvUnitSize_1));
+		ktv_data_mix((afe_block->pucVirtBufAddr + ktvWriteIdx_tmp), ktv_dl_data_unit, ktvUnitSize_1/4);
+
+		ktvWriteIdx_tmp = (ktvWriteIdx_tmp + ktvUnitSize_1) % user_block->u4BufferSize;
+		ktv_data_mix((afe_block->pucVirtBufAddr + ktvWriteIdx_tmp), (ktv_dl_data_unit + ktvUnitSize_1), ktvUnitSize_2/4);
+	}
+
+	user_block->u4DMAReadIdx = (user_block->u4DMAReadIdx + ktvUnitSize) % user_block->u4BufferSize;
+
+	spin_unlock_irqrestore(&ktv_dl_data_lock, flags);
+
+	return;
+
+}
+
+#endif /* CONFIG_OPPO_KTV_DEV */
+#endif /* VENDOR_EDIT */
 void Auddrv_DL1_Data2_Interrupt_Handler(enum soc_aud_digital_block mem_block)
 {
 	/* irq6 ISR handler */

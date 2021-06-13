@@ -277,8 +277,13 @@ static int mtk_voice1_ext_prepare(struct snd_pcm_substream *substream)
 			  Soc_Aud_AFE_IO_Block_I2S1_DAC_2);
 
 	/* start I2S DAC out */
-	SetI2SDacOut(substream->runtime->rate, false,
-		     Soc_Aud_I2S_WLEN_WLEN_16BITS);
+#ifdef VENDOR_EDIT
+	/* Yongpei.Zhang@PSW.MM.AudioDriver.Machine, 2018/09/17,
+	 * modify for enable low-jitter mode of I2S1 for smartpa */
+	SetI2SDacOut(substream->runtime->rate, true, Soc_Aud_I2S_WLEN_WLEN_16BITS);
+#else /* VENDOR_EDIT */
+	SetI2SDacOut(substream->runtime->rate, false, Soc_Aud_I2S_WLEN_WLEN_16BITS);
+#endif /* VENDOR_EDIT */
 	SetMemoryPathEnable(Soc_Aud_Digital_Block_I2S_OUT_DAC, true);
 	SetI2SDacEnable(true);
 

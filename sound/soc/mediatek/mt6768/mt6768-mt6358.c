@@ -16,6 +16,12 @@
 #include "../../codecs/mt6358.h"
 #include "../common/mtk-sp-spk-amp.h"
 
+#if defined(ODM_WT_EDIT) && defined(CONFIG_SND_SIA81XX_PA)
+//Zengchao.Duan@ODM_WT.MM.AudioDriver.Machine 2019/10/19, MonetX audio sia8108 bringup
+#include "../sia81xx/sia81xx_aux_dev_if.h"
+#endif
+
+
 /*
  * if need additional control for the ext spk amp that is connected
  * after Lineout Buffer / HP Buffer on the codec, put the control in
@@ -75,15 +81,31 @@ static int mt6768_mt6358_spk_amp_event(struct snd_soc_dapm_widget *w,
 {
 	struct snd_soc_dapm_context *dapm = w->dapm;
 	struct snd_soc_card *card = dapm->card;
+#if defined(ODM_WT_EDIT) && !defined(CONFIG_SND_SIA81XX_PA)
+//Zengchao.Duan@ODM_WT.MM.Audiodriver.Machine, 2019/10/04, Add for odm audio
+//Zengchao.Duan@ODM_WT.MM.AudioDriver.Machine 2019/10/19, MonetX audio sia8108 bringup
+    struct mtk_base_afe afe; // Fake afe used for afe_gpio_request ONLY!
+    afe.dev = card->dev;
+#endif
 
 	dev_info(card->dev, "%s(), event %d\n", __func__, event);
 
 	switch (event) {
 	case SND_SOC_DAPM_POST_PMU:
 		/* spk amp on control */
+#if defined(ODM_WT_EDIT) && !defined(CONFIG_SND_SIA81XX_PA)
+//Zengchao.Duan@ODM_WT.MM.Audiodriver.Machine, 2019/10/04, Add for odm audio
+//Zengchao.Duan@ODM_WT.MM.AudioDriver.Machine 2019/10/19, MonetX audio sia8108 bringup
+        mt6768_afe_gpio_request(&afe, true, MT6768_EXT_AMP, 0);
+#endif
 		break;
 	case SND_SOC_DAPM_PRE_PMD:
 		/* spk amp off control */
+#if defined(ODM_WT_EDIT) && !defined(CONFIG_SND_SIA81XX_PA)
+//Zengchao.Duan@ODM_WT.MM.Audiodriver.Machine, 2019/10/04, Add for odm audio
+//Zengchao.Duan@ODM_WT.MM.AudioDriver.Machine 2019/10/19, MonetX audio sia8108 bringup
+        mt6768_afe_gpio_request(&afe, false, MT6768_EXT_AMP, 0);
+#endif
 		break;
 	default:
 		break;
@@ -809,6 +831,14 @@ static int mt6768_mt6358_dev_probe(struct platform_device *pdev)
 	}
 
 	card->dev = &pdev->dev;
+
+#if defined(ODM_WT_EDIT) && defined(CONFIG_SND_SIA81XX_PA)
+//Zengchao.Duan@ODM_WT.MM.AudioDriver.Machine 2019/10/19, MonetX audio sia8108 bringup
+	ret = soc_aux_init_only_sia81xx(pdev, card);
+	if (ret)
+		dev_err(&pdev->dev, "%s soc_aux_init_only_sia8108 fail %d\n",
+			__func__, ret);
+#endif
 
 	ret = devm_snd_soc_register_card(&pdev->dev, card);
 	if (ret)
