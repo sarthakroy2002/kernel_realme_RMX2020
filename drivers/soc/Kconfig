@@ -17,5 +17,8 @@ source "drivers/soc/ti/Kconfig"
 source "drivers/soc/ux500/Kconfig"
 source "drivers/soc/versatile/Kconfig"
 source "drivers/soc/zte/Kconfig"
-
+#ifdef VENDOR_EDIT
+# Bin.Li@EXP.BSP.bootloader.bootflow, 2017/05/15, Add for oppo device info and oppo project
+source "drivers/soc/oppo/Kconfig"
+#endif /*VENDOR_EDIT*/
 endmenu
