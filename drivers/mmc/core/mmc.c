@@ -15,6 +15,10 @@
 #include <linux/slab.h>
 #include <linux/stat.h>
 #include <linux/pm_runtime.h>
+#ifdef ODM_WT_EDIT
+//Mingyao.Xie@ODM_WT.BSP.Storage.eMCP, 2019/10/07, Add for flash info
+#include <linux/mm.h>
+#endif
 
 #include <linux/mmc/host.h>
 #include <linux/mmc/card.h>
@@ -838,6 +842,12 @@ MMC_DEV_ATTR(pre_eol_info, "0x%02x\n", card->ext_csd.pre_eol_info);
 MMC_DEV_ATTR(life_time, "0x%02x 0x%02x\n",
 	card->ext_csd.device_life_time_est_typ_a,
 	card->ext_csd.device_life_time_est_typ_b);
+#ifdef ODM_WT_EDIT
+//Mingyao.Xie@ODM_WT.BSP.Storage.eMCP, 2019/09/27, Add for flash info
+MMC_DEV_ATTR(life_time_est_typ_a, "0x%02x\n",card->ext_csd.device_life_time_est_typ_a);
+MMC_DEV_ATTR(life_time_est_typ_b, "0x%02x\n",card->ext_csd.device_life_time_est_typ_b);
+#endif
+
 MMC_DEV_ATTR(serial, "0x%08x\n", card->cid.serial);
 MMC_DEV_ATTR(enhanced_area_offset, "%llu\n",
 		card->ext_csd.enhanced_area_offset);
@@ -862,6 +872,10 @@ static ssize_t mmc_fwrev_show(struct device *dev,
 }
 
 static DEVICE_ATTR(fwrev, S_IRUGO, mmc_fwrev_show, NULL);
+#ifdef ODM_WT_EDIT
+//Mingyao.Xie@ODM_WT.BSP.Storage.eMCP, 2019/09/27, Add for flash info
+static DEVICE_ATTR(fw_version, S_IRUGO, mmc_fwrev_show, NULL);
+#endif
 
 static ssize_t mmc_dsr_show(struct device *dev,
 			    struct device_attribute *attr,
@@ -878,7 +892,109 @@ static ssize_t mmc_dsr_show(struct device *dev,
 }
 
 static DEVICE_ATTR(dsr, S_IRUGO, mmc_dsr_show, NULL);
+#ifdef ODM_WT_EDIT
+//Mingyao.Xie@ODM_WT.BSP.Storage.eMCP, 2019/09/27, Add for flash info
+static int calc_mem_size(void)
+{
+	int temp_size;
+	temp_size = (int)totalram_pages/1024; //page size 4K
 
+	if ((temp_size > 0*256) && (temp_size <= 1*256))
+		return 1;
+	else if ((temp_size > 1*256) && (temp_size <= 2*256))
+		return 2;
+	else if ((temp_size > 2*256) && (temp_size <= 3*256))
+		return 3;
+	else if ((temp_size > 3*256) && (temp_size <= 4*256))
+		return 4;
+	else if ((temp_size > 4*256) && (temp_size <= 6*256))
+		return 6;
+	else if ((temp_size > 6*256) && (temp_size <= 8*256))
+		return 8;
+	else
+		return 0;
+}
+
+static int calc_mmc_size(struct mmc_card *card)
+{
+	int temp_size;
+	temp_size = (int)card->ext_csd.sectors/2/1024/1024; //sector size 512B
+
+	if ((temp_size > 8) && (temp_size <= 16))
+		return 16;
+	else if ((temp_size > 16) && (temp_size <= 32))
+		return 32;
+	else if ((temp_size > 32) && (temp_size <= 64))
+		return 64;
+	else if ((temp_size > 64) && (temp_size <= 128))
+		return 128;
+	else if ((temp_size > 128) && (temp_size <= 256))
+		return 256;
+	else
+		return 0;
+}
+
+static ssize_t flash_name_show(struct device *dev,
+	struct device_attribute *attr,
+	char *buf)
+{
+	struct mmc_card *card = mmc_dev_to_card(dev);
+	char *vendor_name = NULL;
+	char *emcp_name = NULL;
+
+	switch (card->cid.manfid) {
+		case 0x11:
+			vendor_name = "Toshiba";
+			break;
+		case 0x13:
+			vendor_name = "Micron";
+			if (strncmp(card->cid.prod_name, "S0J9K9", strlen("S0J9K9")) == 0)
+				emcp_name = "MT29VZZZAD9DQKSM_046W_9K9";
+			else
+				emcp_name = NULL;
+			break;
+		case 0x15:
+			vendor_name = "Samsung";
+			if (strncmp(card->cid.prod_name, "DV6DMB", strlen("DV6DMB")) == 0)
+				emcp_name = "KMDV6001DM_B620";
+			else if (strncmp(card->cid.prod_name, "DH6DAB", strlen("DH6DAB")) == 0)
+				emcp_name = "KMDH6001DA_B422";
+			else if (strncmp(card->cid.prod_name, "DD68MB", strlen("DD68MB")) == 0)
+				emcp_name = "KMDD60018M_B320";
+			else if (strncmp(card->cid.prod_name, "DP68MB", strlen("DP68MB")) == 0)
+				emcp_name = "KMDP60018M_B425";
+			else if (strncmp(card->cid.prod_name, "4X6KMB", strlen("4X6KMB")) == 0)
+				emcp_name = "KM4X6001KM_B321";
+			else
+				emcp_name = NULL;
+			break;
+		case 0x45:
+			vendor_name = "Sandisk";
+			break;
+		case 0x90:
+			vendor_name = "Hynix";
+			if (strncmp(card->cid.prod_name, "hB8aP>", strlen("hB8aP>")) == 0)
+				emcp_name = "H9HP27ADAMADAR_KMM";
+			else if (strncmp(card->cid.prod_name, "hC9aP3", strlen("hC9aP3")) == 0)
+				emcp_name = "H9HP53ACPMMDAR_KMM";
+			else if (strncmp(card->cid.prod_name, "hC8aP>", strlen("hC8aP>")) == 0)
+				emcp_name = "H9HP52ADAMADAR_KMM";
+			else
+				emcp_name = NULL;
+			break;
+		default:
+			vendor_name = "Unknown";
+			break;
+	}
+
+	if (emcp_name == NULL)
+		emcp_name = card->cid.prod_name;
+	return sprintf(buf, "%s_%s_%dGB_%dGB\n",vendor_name, emcp_name, calc_mem_size(), calc_mmc_size(card));
+}
+
+static DEVICE_ATTR(flash_name, S_IRUGO, flash_name_show, NULL);
+
+#endif
 static struct attribute *mmc_std_attrs[] = {
 	&dev_attr_cid.attr,
 	&dev_attr_csd.attr,
@@ -904,6 +1020,13 @@ static struct attribute *mmc_std_attrs[] = {
 	&dev_attr_ocr.attr,
 	&dev_attr_dsr.attr,
 	&dev_attr_cmdq_en.attr,
+#ifdef ODM_WT_EDIT
+//Mingyao.Xie@ODM_WT.BSP.Storage.eMCP, 2019/09/27, Add for flash info
+	&dev_attr_fw_version.attr,
+	&dev_attr_life_time_est_typ_a.attr,
+	&dev_attr_life_time_est_typ_b.attr,
+	&dev_attr_flash_name.attr,
+#endif
 	NULL,
 };
 ATTRIBUTE_GROUPS(mmc_std);
