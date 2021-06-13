@@ -25,14 +25,14 @@
 			 * Main charger: primary_chg
 			 * Slave charger: secondary_chg
 			 */
-			charger_name = "secondary_chg";
+			charger_name = "primary_chg";
 			chg_alias_name = "rt9471_chg";
 			rm-slave-addr = /bits/ 8 <0x53>;
 			rm-name = "rt9471";
 			interrupt-names = "wdt", "chg_mivr", "vbus_gd",
 					  "bc12_done", "detach", "vac_ov",
 					  "otg_fault", "chg_rdy", "chg_done";
-			ichg = <1800000>;		/* uA */
+			ichg = <1000000>;		/* uA */
 			aicr = <500000>;		/* uA */
 			mivr = <4400000>;		/* uV */
 			cv = <4350000>;			/* uV */
@@ -46,7 +46,7 @@
 			 * >= 3: MIVR = VBAT + 300mV
 			 */
 			mivr-track = <0>;
-			/* en-te; */
+			en-te;
 			/* en-jeita; */
 			/* ceb-invert; */
 			/* dis-i2c-tout; */

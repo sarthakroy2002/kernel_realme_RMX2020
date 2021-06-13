@@ -356,7 +356,7 @@ page_owner=on loop.max_part=7";
 			no-map;
 #if defined(CONFIG_MTK_SEC_VIDEO_PATH_SUPPORT) || \
 	defined(CONFIG_MTK_CAM_SECURITY_SUPPORT)
-			size = <0 0x800000>;
+			size = <0 0x2000000>;
 			alignment = <0 0x1000000>;
 #else
 			size = <0 0x200000>;
@@ -1163,6 +1163,7 @@ page_owner=on loop.max_part=7";
 		disp_mutex_reg = <0x14016000 0x1000>;
 		g3d_config_base = <0x13000000 0 0xffff0000>;
 		mmsys_config_base = <0x14000000 1 0xffff0000>;
+		mipitx0_base = <0x11c80000 99 0xffff0000>;
 		disp_dither_base = <0x14010000 2 0xffff0000>;
 		mm_na_base = <0x14020000 3 0xffff0000>;
 		imgsys_base = <0x15020000 4 0xffff0000>;
@@ -1375,9 +1376,25 @@ defined(CONFIG_MTK_CAM_SECURITY_SUPPORT)
 		interrupts = <GIC_SPI 163 IRQ_TYPE_LEVEL_LOW>;
 	};
 
+//#ifdef VENDOR_EDIT
+//Qingwen.Liu@RM.BSP.Fingerprint.Basic 2019/1/26 add for fpc fingerprint driver start
 	goodix_fp: fingerprint {
 		compatible = "mediatek,goodix-fp";
 	};
+	egis_fp: egis_fp {
+		compatible = "mediatek,finger-fp";
+	};
+	fpc_interrupt:fpc_interrupt {
+		compatible    = "fpc,fpc_irq";
+	};
+	oppo_fp_common:oppo_fp_common {
+		compatible = "oppo,fp_common";
+	};
+	oppo_secure_common:oppo_secure_common {
+		compatible = "oppo,secure_common";
+	};
+//Qingwen.Liu@RM.BSP.Fingerprint.Basic 2019/1/26 add for fpc fingerprint driver end
+//#endif //VENDOR_EDIT
 
 	accdet: accdet {
 		compatible = "mediatek,pmic-accdet";
@@ -1952,6 +1969,10 @@ defined(CONFIG_MTK_CAM_SECURITY_SUPPORT)
 		pu_cfg = <0x60>;
 		rsel_cfg = <0x90>;
 		aed = <0x1a>;
+//#ifdef ODM_WT_EDIT
+/*XingYu.Liu@ODM_WT.CAMERA.Driver.2019/10/9,Add for flashlight bring up*/
+		//ch_offset_default = <0x100>;
+//#endif /* ODM_WT_EDIT */
 	};
 
 	i2c7: i2c7@11004000 {
@@ -2326,7 +2347,9 @@ defined(CONFIG_MTK_CAM_SECURITY_SUPPORT)
 			"vow_dat_miso_off",
 			"vow_dat_miso_on",
 			"vow_clk_miso_off",
-			"vow_clk_miso_on";
+			"vow_clk_miso_on",
+			"aud_pins_extamp_pulllow",
+			"aud_pins_extamp_pullhigh";
 		pinctrl-0 = <&aud_clk_mosi_off>;
 		pinctrl-1 = <&aud_clk_mosi_on>;
 		pinctrl-2 = <&aud_clk_miso_off>;
@@ -2347,6 +2370,8 @@ defined(CONFIG_MTK_CAM_SECURITY_SUPPORT)
 		pinctrl-17 = <&vow_dat_miso_on>;
 		pinctrl-18 = <&vow_clk_miso_off>;
 		pinctrl-19 = <&vow_clk_miso_on>;
+		pinctrl-20 = <&aud_pins_extamp_pulllow>;
+		pinctrl-21 = <&aud_pins_extamp_pullhigh>;
 	};
 
 	mt6358_snd: mt6358_snd {
@@ -3234,22 +3259,23 @@ defined(CONFIG_MTK_CAM_SECURITY_SUPPORT)
 	flashlight_core: flashlight_core {
 		compatible = "mediatek,flashlight_core";
 	};
-
-	flashlights_mt6370: flashlights_mt6370 {
-		compatible = "mediatek,flashlights_mt6370";
-		decouple = <0>;
+//#ifdef ODM_WT_EDIT
+/*XingYu.Liu@ODM_WT.CAMERA.Driver.2019/10/16,Add for flashlight bring up*/
+	flashlights_monet: flashlights_monet {
+		compatible = "mediatek,flashlights_monet";
+		decouple = <1>;
 		channel@1 {
 			type = <0>;
 			ct = <0>;
 			part = <0>;
 		};
-		channel@2 {
+		/*channel@2 {
 			type = <0>;
 			ct = <1>;
 			part = <0>;
-		};
+		};*/
 	};
-
+//#endif /* ODM_WT_EDIT */
 	camsv1@1a050000 {
 		compatible = "mediatek,camsv1";
 		reg = <0 0x1a050000 0 0x1000>;
@@ -3323,7 +3349,8 @@ defined(CONFIG_MTK_CAM_SECURITY_SUPPORT)
 	mt_charger: mt_charger {
 		compatible = "mediatek,mt-charger";
 	};
-
+/*#ifdef ODM_WT_EDIT*/
+/*Sidong.Zhao@ODM_WT.BSP.CHG 2019/11/12,bootloader charge configuration*/
 	lk_charger: lk_charger {
 		compatible = "mediatek,lk_charger";
 		enable_anime;
@@ -3331,23 +3358,23 @@ defined(CONFIG_MTK_CAM_SECURITY_SUPPORT)
 		enable_pd20_reset;
 		power_path_support;
 		max_charger_voltage = <6500000>;
-		fast_charge_voltage = <3000000>;
+		fast_charge_voltage = <3100000>;
 
 		/* charging current */
 		usb_charger_current = <500000>;
-		ac_charger_current = <2050000>;
-		ac_charger_input_current = <3200000>;
+		ac_charger_current = <500000>;
+		ac_charger_input_current = <500000>;
 		non_std_ac_charger_current = <500000>;
-		charging_host_charger_current = <1500000>;
-		ta_ac_charger_current = <3000000>;
+		charging_host_charger_current = <500000>;
+		ta_ac_charger_current = <500000>;
 		pd_charger_current = <500000>;
 
 		/* battery temperature protection */
-		temp_t4_threshold = <50>;
-		temp_t3_threshold = <45>;
+		temp_t4_threshold = <53>;
+		temp_t3_threshold = <44>;
 		temp_t1_threshold = <0>;
 	};
-
+/*#endif ODM_WT_EDIT*/
 	charger: charger {
 		compatible = "mediatek,charger";
 		algorithm_name = "SwitchCharging";
@@ -3488,6 +3515,12 @@ defined(CONFIG_MTK_CAM_SECURITY_SUPPORT)
 	tcpc_pd: tcpc_pd_eint {
 	};
 
+//#ifdef ODM_WT_EDIT
+//Mingyao.Xie@ODM_WT.BSP.Storage.Usb, 2019/10/07, Modify for OTG
+	otg_iddig: otg_iddig {
+	};
+//#endif
+
 	irtx_pwm:irtx_pwm {
 		compatible = "mediatek,irtx-pwm";
 		pwm_ch = <0>;
@@ -3505,16 +3538,25 @@ defined(CONFIG_MTK_CAM_SECURITY_SUPPORT)
 		compatible = "mediatek,touch";
 	};
 
-	nfc:nfc {
-		compatible = "mediatek,nfc-gpio-v2";
-		gpio-rst = <159>;
-		gpio-rst-std = <&pio 159 0x0>;
-		gpio-irq = <9>;
-		gpio-irq-std = <&pio 9 0x0>;
-	};
-
-	irq_nfc: irq_nfc {
-		compatible = "mediatek,irq_nfc-eint";
+        //#ifndef ODM_WT_EDIT
+        //Yuexiu.Wu@ODM_WT.WCN.NFC.Basic.1941873,2019/12/14,modify for use MTk driver
+        /*nfc:nfc {
+                compatible = "mediatek,nfc-gpio-v2";
+                gpio-rst = <159>;
+                gpio-rst-std = <&pio 159 0x0>;
+                gpio-irq = <9>;
+                gpio-irq-std = <&pio 9 0x0>;
+        };*/
+        //#else
+        nfc553:nfc553 {
+                compatible = "mediatek,nfc-gpios";
+                gpio-ven = <54>;
+                gpio-eint = <6>;
+                gpio-irq = <6>;
+        };
+        //#endif
+        irq_nfc: irq_nfc {
+                compatible = "mediatek,irq_nfc-eint";
 	};
 	/* NFC end */
 
@@ -3724,6 +3766,22 @@ defined(CONFIG_MTK_CAM_SECURITY_SUPPORT)
 			pinmux = <PINMUX_GPIO143__FUNC_VOW_CLK_MISO>;
 		};
 	};
+
+	aud_pins_extamp_pulllow: aud_pins_extamp_pulllow {
+		pins_cmd_dat {
+			pinmux = <PINMUX_GPIO160__FUNC_GPIO160>;
+			slew-rate = <1>;
+			output-low;
+		};
+	};
+
+	aud_pins_extamp_pullhigh: aud_pins_extamp_pullhigh {
+		pins_cmd0_dat {
+			pinmux = <PINMUX_GPIO160__FUNC_GPIO160>;
+			slew-rate = <1>;
+			output-high;
+		};
+	};
 };
 
 
@@ -3731,12 +3789,26 @@ defined(CONFIG_MTK_CAM_SECURITY_SUPPORT)
 #include "cust_mt6768_msdc.dtsi"
 #include "mt6370.dtsi"
 #include "mt6370_pd.dtsi"
+#ifndef CONFIG_ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/19, add for charger bringup*/
 #ifdef CONFIG_CHARGER_RT9471
 #include "rt9471.dtsi"
 #endif
+#endif /*CONFIG_ODM_WT_EDIT*/
 #ifdef CONFIG_TCPC_CLASS
 #include "tcpc_config.dtsi"
 #endif
 #ifdef CONFIG_MTK_ENABLE_GENIEZONE
 #include "trusty.dtsi"
 #endif
+//#ifdef ODM_WT_EDIT
+// Zengchao.Duan@ODM_WT.MM.AudioDriver.Machine, 2019/10/23, MonetX audio sia8108 bringup
+#ifdef CONFIG_SND_SIA81XX_PA
+#include "mt6768-sia81xx.dtsi"
+#endif
+//#endif
+//#ifdef ODM_WT_EDIT
+//Yuexiu.Wu@ODM_WT.WCN.NFC.Basic.1941873,2019/12/14,add for use MTK driver
+#include "pn553-nfc.dtsi"
+//#endif
+
