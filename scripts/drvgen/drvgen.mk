@@ -42,12 +42,13 @@ export DRVGEN_OUT
 
 ALL_DRVGEN_FILE := $(MTK_PROJECT)/cust.dtsi
 
-DWS_FILE := $(srctree)/$(DRVGEN_PATH)/$(MTK_PROJECT).dws
+#DWS_FILE := $(srctree)/$(DRVGEN_PATH)/$(MTK_PROJECT).dws
 ifneq ($(wildcard $(DWS_FILE)),)
 DRVGEN_FILE_LIST := $(addprefix $(DRVGEN_OUT)/,$(ALL_DRVGEN_FILE))
 DRVGEN_FILE_LIST += $(PROJ_DTB_FILES)
 else
 DRVGEN_FILE_LIST :=
+DRVGEN_FILE_LIST += $(PROJ_DTB_FILES)
 endif
 DRVGEN_TOOL := $(srctree)/tools/dct/DrvGen.py
 DRVGEN_FIG := $(wildcard $(dir $(DRVGEN_TOOL))config/*.fig)
