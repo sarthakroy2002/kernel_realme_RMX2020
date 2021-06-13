@@ -909,6 +909,10 @@ static inline bool policy_has_boost_freq(struct cpufreq_policy *policy)
 }
 #endif
 
+#ifdef VENDOR_EDIT
+struct list_head *get_cpufreq_policy_list(void);
+#endif /* VENDOR_EDIT */
+
 extern void arch_freq_prepare_all(void);
 extern unsigned int arch_freq_get_on_cpu(int cpu);
 
