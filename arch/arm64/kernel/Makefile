@@ -70,3 +70,8 @@ extra-y					+= $(head-y) vmlinux.lds
 ifeq ($(CONFIG_DEBUG_EFI),y)
 AFLAGS_head.o += -DVMLINUX_PATH="\"$(realpath $(objtree)/vmlinux)\""
 endif
+
+#ifdef VENDOR_EDIT
+#Ke.Li@ROM.Security, 2019-9-30, Add for prevent root check
+obj-$(CONFIG_OPPO_ROOT_CHECK)		+= oppo_root.o oppo_root_check.o
+#endif /* VENDOR_EDIT */

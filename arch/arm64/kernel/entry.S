@@ -961,7 +961,14 @@ el0_svc_naked:					// compat entry point
 	cmp     wscno, wsc_nr			// check upper syscall limit
 	b.hs	ni_sys
 	mask_nospec64 xscno, xsc_nr, x19	// enforce bounds for syscall number
+#ifdef VENDOR_EDIT
+//Ke.Li@ROM.Security, 2019-9-30, Add for prevent root check
+#ifdef CONFIG_OPPO_ROOT_CHECK
+	adr x16, oppo_root_check
+#else
 	ldr	x16, [stbl, xscno, lsl #3]	// address in the syscall table
+#endif /* CONFIG_OPPO_ROOT_CHECK */
+#endif /* VENDOR_EDIT */
 	blr	x16				// call sys_* routine
 	b	ret_fast_syscall
 ni_sys:
@@ -991,7 +998,14 @@ __sys_trace:
 	ldp	x2, x3, [sp, #S_X2]
 	ldp	x4, x5, [sp, #S_X4]
 	ldp	x6, x7, [sp, #S_X6]
+#ifdef VENDOR_EDIT
+//Ke.Li@ROM.Security, 2019-9-30, Add for prevent root check
+#ifdef CONFIG_OPPO_ROOT_CHECK
+	adr x16, oppo_root_check
+#else
 	ldr	x16, [stbl, xscno, lsl #3]	// address in the syscall table
+#endif /* CONFIG_OPPO_ROOT_CHECK */
+#endif /* VENDOR_EDIT */
 	blr	x16				// call sys_* routine
 
 __sys_trace_return:

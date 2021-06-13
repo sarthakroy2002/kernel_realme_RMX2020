@@ -545,3 +545,45 @@ void arch_setup_new_exec(void)
 {
 	current->mm->context.flags = is_compat_task() ? MMCF_AARCH32 : 0;
 }
+
+#if defined(VENDOR_EDIT) && defined(CONFIG_ELSA_STUB)
+//zhoumingjun@Swdp.shanghai, 2017/04/19, add process_event_notifier support
+static BLOCKING_NOTIFIER_HEAD(process_event_notifier);
+
+int process_event_register_notifier(struct notifier_block *nb)
+{
+	return blocking_notifier_chain_register(&process_event_notifier, nb);
+}
+EXPORT_SYMBOL(process_event_register_notifier);
+
+int process_event_unregister_notifier(struct notifier_block *nb)
+{
+	return blocking_notifier_chain_unregister(&process_event_notifier, nb);
+}
+EXPORT_SYMBOL(process_event_unregister_notifier);
+
+int process_event_notifier_call_chain(unsigned long action, struct process_event_data *pe_data)
+{
+	return blocking_notifier_call_chain(&process_event_notifier, action, pe_data);
+}
+
+//zhoumingjun@Swdp.shanghai, 2017/07/06, add process_event_notifier_atomic support
+static ATOMIC_NOTIFIER_HEAD(process_event_notifier_atomic);
+
+int process_event_register_notifier_atomic(struct notifier_block *nb)
+{
+	return atomic_notifier_chain_register(&process_event_notifier_atomic, nb);
+}
+EXPORT_SYMBOL(process_event_register_notifier_atomic);
+
+int process_event_unregister_notifier_atomic(struct notifier_block *nb)
+{
+	return atomic_notifier_chain_unregister(&process_event_notifier_atomic, nb);
+}
+EXPORT_SYMBOL(process_event_unregister_notifier_atomic);
+
+int process_event_notifier_call_chain_atomic(unsigned long action, struct process_event_data *pe_data)
+{
+	return atomic_notifier_call_chain(&process_event_notifier_atomic, action, pe_data);
+}
+#endif
