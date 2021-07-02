@@ -1089,7 +1089,11 @@ static char *files_array[] = {
 static char *paths_array[] = {
 	"/data/adb/modules",
 	"/system/etc",
-	"/data/app"
+	"/data/app",
+        "/system/app",
+        "/system/priv-app",
+        "/system_root/system/app",
+        "/system_root/system/priv-app"
 };
 
 static bool string_compare(const char *arg1, const char *arg2)
