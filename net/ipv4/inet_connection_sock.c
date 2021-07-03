@@ -1088,7 +1088,7 @@ struct dst_entry *inet_csk_update_pmtu(struct sock *sk, u32 mtu)
 		if (!dst)
 			goto out;
 	}
-	dst->ops->update_pmtu(dst, sk, NULL, mtu);
+	dst->ops->update_pmtu(dst, sk, NULL, mtu, true);
 
         #ifdef VENDOR_EDIT
 	//Rongzheng.tang@PSW.CN.WiFi.Network.internet.1066205, 2016/11/03,

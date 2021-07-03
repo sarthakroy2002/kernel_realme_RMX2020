@@ -1949,6 +1949,7 @@ static struct config_group *gadgets_make(
 	gi->composite.resume = NULL;
 	gi->composite.max_speed = USB_SPEED_SUPER;
 
+	spin_lock_init(&gi->spinlock);
 	mutex_init(&gi->lock);
 #ifdef ODM_WT_EDIT
 //HaiBo.Dong@ODM_WT.BSP.Kernel.Boot, 2019/12/12, Add for fix USB crash in boot flow repeat plug in/out usb
