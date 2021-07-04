@@ -1541,10 +1541,10 @@ int32_t nvt_selftest_open(struct inode *inode, struct file *file)
 
 		if (ts->vendor_id == 0) {
 			/* hlt */
-			snprintf(mpcriteria, PAGE_SIZE, "novatek-mp-criteria-hlt");
+			snprintf(mpcriteria, sizeof(mpcriteria), "novatek-mp-criteria-hlt");
 		} else {
 			/* skyw */
-			snprintf(mpcriteria, PAGE_SIZE, "novatek-mp-criteria-skyw");
+			snprintf(mpcriteria, sizeof(mpcriteria), "novatek-mp-criteria-skyw");
 		}
 		if (nvt_mp_parse_dt(np, mpcriteria)) {
 			NVT_LOG("%s : Download Normal FW",__func__);
@@ -1827,9 +1827,9 @@ static int32_t nvt_lpwg_selftest_open(struct inode *inode, struct file *file)
 	/* Parsing criteria from dts */
 	if(of_property_read_bool(np, "novatek,mp-support-dt")) {
 		/* Truly */
-		snprintf(mpcriteria, PAGE_SIZE, "novatek-mp-criteria-hlt");
+		snprintf(mpcriteria, sizeof(mpcriteria), "novatek-mp-criteria-hlt");
 		/* TM */
-		//snprintf(mpcriteria, PAGE_SIZE, "novatek-mp-criteria-tm");
+		//snprintf(mpcriteria, sizeof(mpcriteria), "novatek-mp-criteria-tm");
 
 		if (nvt_mp_parse_lpwg_dt(np, mpcriteria)) {
 			//---Download Normal FW---
@@ -2343,9 +2343,9 @@ int oppo_nvt_blackscreen_test(void)
 		 *     mpcriteria = "novatek-mp-criteria-500A"
 		 */
 		if (ts->vendor_id == 0 ) {
-		    snprintf(mpcriteria, PAGE_SIZE, "novatek-mp-criteria-hlt");
+		    snprintf(mpcriteria, sizeof(mpcriteria), "novatek-mp-criteria-hlt");
 		} else {
-			snprintf(mpcriteria, PAGE_SIZE, "novatek-mp-criteria-skyw");
+			snprintf(mpcriteria, sizeof(mpcriteria), "novatek-mp-criteria-skyw");
 		}
 
 		if (nvt_mp_parse_lpwg_dt(np, mpcriteria)) {
