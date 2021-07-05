@@ -1,7 +1,4 @@
 # In case the platform does NOT support this type of sensors
-ifneq ($(call cc-option,-Wno-array-parameter),)
-ccflags-y += -Wno-array-parameter
-endif
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/sensors-1.0/hwmon/include
 obj-y   +=  alsps.o
 obj-y   +=  alsps_factory.o

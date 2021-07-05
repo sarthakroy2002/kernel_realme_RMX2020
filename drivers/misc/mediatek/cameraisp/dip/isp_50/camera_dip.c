@@ -4425,13 +4425,12 @@ static signed int DIP_probe(struct platform_device *pDev)
 		}
 		}
 
-		if (i >= DIP_IRQ_TYPE_AMOUNT) {
+		if (i >= DIP_IRQ_TYPE_AMOUNT)
 			LOG_INF("No corresponding ISR!!\n");
 			LOG_INF("nr_dip_devs=%d, devnode(%s), irq=%d\n",
 				nr_dip_devs,
 				pDev->dev.of_node->name,
 				dip_dev->irq);
-		}
 
 
 	} else {
