@@ -1,4 +1,3 @@
-CONFIG_CROSS_COMPILE="aarch64-linux-android-"
 CONFIG_COMPILE_TEST is not set
 CONFIG_LOCALVERSION="-N.E.O.L.I.T.-V2"
 # CONFIG_COMPILE_TEST is not set
