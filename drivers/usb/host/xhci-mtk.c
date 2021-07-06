@@ -882,6 +882,8 @@ static int xhci_mtk_remove(struct platform_device *dev)
 	struct usb_hcd  *shared_hcd = xhci->shared_hcd;
 
 	xhci->xhc_state |= XHCI_STATE_REMOVING;
+	pm_runtime_put_noidle(&dev->dev);
+	pm_runtime_disable(&dev->dev);
 
 	usb_remove_hcd(shared_hcd);
 	xhci->shared_hcd = NULL;
