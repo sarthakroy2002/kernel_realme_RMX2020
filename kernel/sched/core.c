@@ -6601,6 +6601,7 @@ void init_idle(struct task_struct *idle, int cpu)
 	 * And since this is boot we can forgo the serialization.
 	 */
 	set_cpus_allowed_common(idle, cpumask_of(cpu));
+
 #endif
 	/*
 	 * We're having a chicken and egg problem, even though we are
