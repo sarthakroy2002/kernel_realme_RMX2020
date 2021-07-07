@@ -128,7 +128,7 @@ kernel/configs/android-*.cfg
 
 /out/
 /clang/
-/los-4.9-64/
+/los-4.9-32/
 /los-4.9-64/
 /AnyKernel/
 /modules/
