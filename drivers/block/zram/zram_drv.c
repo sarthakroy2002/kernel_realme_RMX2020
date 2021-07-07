@@ -1090,7 +1090,7 @@ static ssize_t mm_stat_show(struct device *dev,
 			zram->limit_pages << PAGE_SHIFT,
 			max_used << PAGE_SHIFT,
 			(u64)atomic64_read(&zram->stats.same_pages),
-			pool_stats.pages_compacted,
+			atomic_long_read(&pool_stats.pages_compacted),
 			(u64)atomic64_read(&zram->stats.huge_pages));
 	up_read(&zram->init_lock);
 
@@ -2166,7 +2166,7 @@ static int zraminfo_proc_show(struct seq_file *m, void *v)
 		P2K(atomic64_read(&zram_devices->stats.num_writes)),
 		P2K(atomic64_read(&zram_devices->stats.invalid_io)),
 		P2K(atomic_long_read(&zram_devices->stats.max_used_pages)),
-		P2K(pool_stats.pages_compacted));
+		P2K(atomic_long_read(&pool_stats.pages_compacted)));
 #undef P2K
 #undef B2K
 		seq_printf(m, "Algorithm: [%s]\n", zram_devices->compressor);
