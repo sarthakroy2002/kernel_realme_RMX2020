@@ -1,0 +1,25 @@
+version: 2.1
+jobs:
+  build:
+   docker:
+      - image: RiSecID/kernel_arm-docker
+   steps:   
+      - run:
+          name: Checkout
+          command: |
+           git clone https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git . --depth=1 --branch=$CIRCLE_BRANCH --recurse-submodules -j$(nproc --all)
+      - run:
+          name: Here we go!
+          command: |
+           export KBUILD_BUILD_USER=rian@circleCI
+           make rmx2020_defconfig O=out
+           make -j$(nproc --all) O=out CC=clang AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip
+      - run:
+          name: Pack & Upload
+          command: |
+           export ZIPNAME=positron-P-$(date +%Y%m%d)-spc.zip
+           git clone https://github.com/dereference23/AnyKernel3.git --branch=marmite --depth=1
+           cp out/arch/arm/boot/Image.gz-dtb AnyKernel3
+           cd AnyKernel3
+           zip -r9 $ZIPNAME * -x .git README.md *placeholder
+           curl -F chat_id=$CHAT_ID -F document=@$ZIPNAME -F parse_mode=markdown https://api.telegram.org/bot"$BOT_API_TOKEN"/sendDocument
