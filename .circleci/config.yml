@@ -2,7 +2,7 @@ version: 2.1
 jobs:
   build:
    docker:
-      - image: ghost6482/ubuntu
+      - image: risecid/ubuntu
    steps:   
       - run:
           name: Checkout
