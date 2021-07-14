@@ -437,6 +437,7 @@ GCC_PLUGINS_CFLAGS :=
 CLANG_FLAGS :=
 TARGET_BUILD_VARIANT := user
 VENDOR_EDIT := 1
+ODM_WT_EDIT := yes
 
 #ifdef  VENDOR_EDIT
 #LiPing-m@PSW.MM.Display.LCD.Machine, 2017/11/03, Add for VENDOR_EDIT macro in kernel
@@ -481,6 +482,8 @@ export KBUILD_AFLAGS_KERNEL KBUILD_CFLAGS_KERNEL
 export KBUILD_ARFLAGS
 export TARGET_BUILD_VARIANT
 export VENDOR_EDIT
+export ODM_WT_EDIT
+
 # When compiling out-of-tree modules, put MODVERDIR in the module
 # tree rather than in the kernel tree. The kernel tree might
 # even be read-only.
