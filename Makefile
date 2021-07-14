@@ -284,7 +284,6 @@ endif
 #ifdef  VENDOR_EDIT
 #ye.zhang@Sensor.config,2016-09-09, add for CTSI support external storage or not
 ifneq ($(OPPO_BUILD_CUSTOMIZE),)
-$(info @@@@@@@@@@@ OPPO_BUILD_CUSTOMIZE is $(OPPO_BUILD_CUSTOMIZE))
 KBUILD_CFLAGS += -DMOUNT_EXSTORAGE_IF
 KBUILD_CPPFLAGS += -DMOUNT_EXSTORAGE_IF
 CFLAGS_KERNEL += -DMOUNT_EXSTORAGE_IF
@@ -824,7 +823,6 @@ endif
 
 ifdef CONFIG_ODM_WT_EDIT
 #Junbo.Guo@ODM_WT.BSP.Kernel.Boot, 2019/10/22, Add for ODM_WT_EDIT
-$(warning *****CONFIG_ODM_WT_EDIT is defined****)
 KBUILD_CFLAGS +=   -DODM_WT_EDIT
 KBUILD_CPPFLAGS += -DODM_WT_EDIT
 CFLAGS_KERNEL +=   -DODM_WT_EDIT
