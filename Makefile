@@ -438,6 +438,7 @@ CLANG_FLAGS :=
 TARGET_BUILD_VARIANT := user
 VENDOR_EDIT := 1
 ODM_WT_EDIT := yes
+CONFIG_OPPO_FINGERPRINT_PLATFORM := 6768
 
 #ifdef  VENDOR_EDIT
 #LiPing-m@PSW.MM.Display.LCD.Machine, 2017/11/03, Add for VENDOR_EDIT macro in kernel
@@ -483,6 +484,7 @@ export KBUILD_ARFLAGS
 export TARGET_BUILD_VARIANT
 export VENDOR_EDIT
 export ODM_WT_EDIT
+export CONFIG_OPPO_FINGERPRINT_PLATFORM
 
 # When compiling out-of-tree modules, put MODVERDIR in the module
 # tree rather than in the kernel tree. The kernel tree might
