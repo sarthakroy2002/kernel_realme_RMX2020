@@ -272,14 +272,6 @@ else
 scripts/Kbuild.include: ;
 include scripts/Kbuild.include
 
-#ifdef VENDOR_EDIT
-#Jianchao.Shi@PSW.BSP.CHG.Basic, 2019/05/09, sjc Add for 806 high/low temp aging test
-ifeq ($(OPPO_HIGH_TEMP_VERSION),true)
-KBUILD_CFLAGS += -DCONFIG_HIGH_TEMP_VERSION
-KBUILD_CPPFLAGS += -DCONFIG_HIGH_TEMP_VERSION
-endif
-#endif /* VENDOR_EDIT */
-
 
 #ifdef VENDOR_EDIT
 #fanhui@PhoneSW.BSP, 2016-05-18, add for DeathHealer only used in release
