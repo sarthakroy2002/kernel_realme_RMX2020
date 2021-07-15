@@ -1687,12 +1687,6 @@ static int __mt_gpufreq_create_procfs(void)
 		PROC_ENTRY(gpufreq_fixed_freq_volt),
 		PROC_ENTRY(gpufreq_sb_idx),
 		PROC_ENTRY(gpufreq_aging_test),
-#ifdef VENDOR_EDIT
-//huxiaokai@shanghai. hypnus. 2019/6/24. add max/min/cur gpu freq.
-		PROC_ENTRY(max_freq),
-		PROC_ENTRY(min_freq),
-		PROC_ENTRY(cur_freq),
-#endif /* VENDOR_EDIT */
 
 	};
 

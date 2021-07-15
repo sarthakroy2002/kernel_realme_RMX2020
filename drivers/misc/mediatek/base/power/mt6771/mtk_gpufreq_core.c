@@ -1678,12 +1678,6 @@ static int __mt_gpufreq_create_procfs(void)
 		PROC_ENTRY(gpufreq_opp_freq),
 		PROC_ENTRY(gpufreq_var_dump),
 		PROC_ENTRY(gpufreq_fixed_freq_volt),
-#ifdef VENDOR_EDIT
-        //huxiaokai@shanghai. hypnus. 2019/6/20. add max/min/cur gpu freq.
-        PROC_ENTRY(max_freq),
-        PROC_ENTRY(min_freq),
-        PROC_ENTRY(cur_freq),
-#endif /* VENDOR_EDIT */
 	};
 
 	dir = proc_mkdir("gpufreq", NULL);
