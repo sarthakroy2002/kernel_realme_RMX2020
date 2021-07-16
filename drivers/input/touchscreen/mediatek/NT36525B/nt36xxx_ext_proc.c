@@ -1013,7 +1013,7 @@ struct oppo_register_info {
 static ssize_t oppo_register_info_write(struct file *filp, const char __user *buf,
 		size_t count, loff_t *ppos)
 {
-	uint8_t tmp[5] = {0};
+	uint8_t tmp[6] = {0};
 	char cmd[128] = {0};
 
 	/* Error handler */
