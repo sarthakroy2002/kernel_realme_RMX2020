@@ -2554,15 +2554,15 @@ static void oppo_chg_set_charging_current(struct oppo_chg_chip *chip)
 		if (chip->led_temp_status == LED_TEMP_STATUS__HIGH) {
 			if (charging_current > chip->limits.input_current_led_ma_high)
 				charging_current = chip->limits.input_current_led_ma_high;
-				voter = LCD;
+			voter = LCD;
 		} else if (chip->led_temp_status == LED_TEMP_STATUS__WARM) {
 			if (charging_current > chip->limits.input_current_led_ma_warm)
 				charging_current = chip->limits.input_current_led_ma_warm;
-				voter = LCD;
+			voter = LCD;
 		} else {
 			if (charging_current > chip->limits.input_current_led_ma_normal)
 				charging_current = chip->limits.input_current_led_ma_normal;
-				voter = LCD;
+			voter = LCD;
 		}
 	}
 #endif /*ODM_WT_EDIT*/
@@ -2724,15 +2724,15 @@ static void oppo_chg_set_input_current_limit(struct oppo_chg_chip *chip)
 		if (chip->led_temp_status == LED_TEMP_STATUS__HIGH) {
 			if (current_limit > chip->limits.input_current_led_ma_high)
 				current_limit = chip->limits.input_current_led_ma_high;
-				voter = LCD;
+			voter = LCD;
 		} else if (chip->led_temp_status == LED_TEMP_STATUS__WARM) {
 			if (current_limit > chip->limits.input_current_led_ma_warm)
 				current_limit = chip->limits.input_current_led_ma_warm;
-				voter = LCD;
+			voter = LCD;
 		} else {
 			if (current_limit > chip->limits.input_current_led_ma_normal)
 				current_limit = chip->limits.input_current_led_ma_normal;
-				voter = LCD;
+			voter = LCD;
 		}
 		if ((chip->chg_ctrl_by_camera) && (chip->camera_on) && (current_limit > chip->limits.input_current_camera_ma)) {
 			current_limit = chip->limits.input_current_camera_ma;

@@ -3167,7 +3167,7 @@ static int rt9471_suspend(struct device *dev)
 	if (device_may_wakeup(dev))
 		enable_irq_wake(chip->irq);
 	//if (strcmp(chip->desc->chg_name, "primary_chg"))
-		disable_irq(chip->irq);
+	disable_irq(chip->irq);
 
 	return 0;
 }
