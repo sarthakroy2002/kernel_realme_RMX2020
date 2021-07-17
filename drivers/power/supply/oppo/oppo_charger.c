@@ -96,7 +96,7 @@ static struct oppo_chg_chip *g_charger_chip = NULL;
 
 #define OPPO_CHG_DEFAULT_CHARGING_CURRENT        512
 
-int enable_charger_log = 2;
+int enable_charger_log = 0;
 int charger_abnormal_log = 0;
 int tbatt_pwroff_enable = 1;
 #ifdef ODM_WT_EDIT
