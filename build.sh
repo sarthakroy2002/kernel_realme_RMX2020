@@ -15,7 +15,7 @@ git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86
 
 [ -d "out" ] && rm -rf out || mkdir -p out
 
-make O=out ARCH=arm64 rmx2020_defconfig
+make O=out ARCH=arm64 RMX2020_defconfig
 
 PATH="${PWD}/clang/bin:${PATH}:${PWD}/los-4.9-32/bin:${PATH}:${PWD}/los-4.9-64/bin:${PATH}" \
 make -j$(nproc --all) O=out \
