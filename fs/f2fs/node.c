@@ -2039,9 +2039,7 @@ static int f2fs_write_node_pages(struct address_space *mapping,
 	f2fs_balance_fs_bg(sbi, true);
 
 	/* collect a number of dirty node pages and write together */
-	if (wbc->sync_mode != WB_SYNC_ALL &&
-			get_pages(sbi, F2FS_DIRTY_NODES) <
-					nr_pages_to_skip(sbi, NODE))
+	if (get_pages(sbi, F2FS_DIRTY_NODES) < nr_pages_to_skip(sbi, NODE))
 		goto skip_write;
 
 	if (wbc->sync_mode == WB_SYNC_ALL)

@@ -6,6 +6,7 @@
 # Rewritten to use lists instead of if-statements.
 #
 
+subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include
 obj-y :=	open.o read_write.o file_table.o super.o \
 		char_dev.o stat.o exec.o pipe.o namei.o fcntl.o \
 		ioctl.o readdir.o select.o dcache.o inode.o \
@@ -67,7 +68,6 @@ obj-$(CONFIG_DLM)		+= dlm/
 # Do not add any filesystems before this line
 obj-$(CONFIG_FSCACHE)		+= fscache/
 obj-$(CONFIG_REISERFS_FS)	+= reiserfs/
-obj-$(CONFIG_EXT4_FS)		+= ext4/
 # We place ext4 before ext2 so that clean ext3 root fs's do NOT mount using the
 # ext2 driver, which doesn't know about journalling!  Explicitly request ext2
 # by giving the rootfstype= parameter.
@@ -85,7 +85,6 @@ obj-$(CONFIG_ISO9660_FS)	+= isofs/
 obj-$(CONFIG_HFSPLUS_FS)	+= hfsplus/ # Before hfs to find wrapped HFS+
 obj-$(CONFIG_HFS_FS)		+= hfs/
 obj-$(CONFIG_ECRYPT_FS)		+= ecryptfs/
-obj-$(CONFIG_SDCARD_FS)		+= sdcardfs/
 obj-$(CONFIG_VXFS_FS)		+= freevxfs/
 obj-$(CONFIG_NFS_FS)		+= nfs/
 obj-$(CONFIG_EXPORTFS)		+= exportfs/
@@ -128,8 +127,30 @@ obj-$(CONFIG_TRACING)		+= tracefs/
 obj-$(CONFIG_OCFS2_FS)		+= ocfs2/
 obj-$(CONFIG_BTRFS_FS)		+= btrfs/
 obj-$(CONFIG_GFS2_FS)           += gfs2/
-obj-$(CONFIG_F2FS_FS)		+= f2fs/
+ifeq ($(CONFIG_OPLUS_FEATURE_OF2FS),y)
+	obj-$(CONFIG_F2FS_FS)		+= of2fs/
+else
+	obj-$(CONFIG_F2FS_FS)		+= f2fs/
+endif
 obj-y				+= exofs/ # Multiple modules
 obj-$(CONFIG_CEPH_FS)		+= ceph/
 obj-$(CONFIG_PSTORE)		+= pstore/
 obj-$(CONFIG_EFIVAR_FS)		+= efivarfs/
+
+ifdef CONFIG_OPLUS_FEATURE_EXT4_SUPPORT
+obj-$(CONFIG_EXT4_FS)		+= oext4/
+else
+obj-$(CONFIG_EXT4_FS)		+= ext4/
+endif
+
+ifdef CONFIG_OPLUS_FEATURE_EXFAT_SUPPORT
+obj-$(CONFIG_EXFAT_FS)		+= oexfat/
+else
+obj-$(CONFIG_EXFAT_FS)		+= exfat/
+endif
+
+ifdef CONFIG_OPLUS_FEATURE_SDCARDFS_SUPPORT
+obj-$(CONFIG_SDCARD_FS)		+= osdcardfs/
+else
+obj-$(CONFIG_SDCARD_FS)		+= sdcardfs/
+endif

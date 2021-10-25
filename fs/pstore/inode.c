@@ -342,8 +342,15 @@ int pstore_mkfile(struct dentry *root, struct pstore_record *record)
 			  record->compressed ? ".enc.z" : "");
 		break;
 	case PSTORE_TYPE_CONSOLE:
-		scnprintf(name, sizeof(name), "console-%s-%llu",
-			  record->psi->name, record->id);
+//#ifdef OPLUS_BUG_STABILITY
+//Qiwu.Chen@Bsp.Kernel.Stability, 2020/10/16, keep pstore with 4.19
+//		if (record->id)
+			scnprintf(name, sizeof(name), "console-%s-%llu",
+				  record->psi->name, record->id);
+//		else
+//			scnprintf(name, sizeof(name), "console-%s",
+//				  record->psi->name);
+//#endif /*OPLUS_BUG_STABILITY*/
 		break;
 	case PSTORE_TYPE_FTRACE:
 		scnprintf(name, sizeof(name), "ftrace-%s-%llu",
