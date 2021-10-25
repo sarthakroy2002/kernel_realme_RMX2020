@@ -235,6 +235,11 @@ ifneq ($(filter $(no-dot-config-targets), $(MAKECMDGOALS)),)
 	endif
 endif
 
+#ifdef OPLUS_ARCH_INJECT
+#Sunliang@ANDROID.BUILD, 2020/04/08, export global native features to kernel
+-include OplusKernelEnvConfig.mk
+#endif /* OPLUS_ARCH_INJECT */
+
 ifeq ($(KBUILD_EXTMOD),)
         ifneq ($(filter config %config,$(MAKECMDGOALS)),)
                 config-targets := 1
@@ -412,6 +417,7 @@ LINUXINCLUDE    := \
 		-I$(srctree)/arch/$(hdr-arch)/include \
 		-I$(objtree)/arch/$(hdr-arch)/include/generated \
 		$(if $(KBUILD_SRC), -I$(srctree)/include) \
+		-I$(srctree)/drivers/misc/mediatek/include \
 		-I$(objtree)/include \
 		$(USERINCLUDE)
 
@@ -429,6 +435,42 @@ KBUILD_CFLAGS_MODULE  := -DMODULE
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
 GCC_PLUGINS_CFLAGS :=
 CLANG_FLAGS :=
+
+#ifdef VENDOR_EDIT
+#LiYue@BSP.CHG.Basic, 2019/09/12, add for 806 high/low temp aging
+ifeq ($(OPPO_HIGH_TEMP_VERSION),true)
+KBUILD_CFLAGS += -DCONFIG_HIGH_TEMP_VERSION
+endif
+#endif /* VENDOR_EDIT */
+
+#ifdef  VENDOR_EDIT
+#LiPing-m@PSW.MM.Display.LCD.Machine, 2017/11/03, Add for VENDOR_EDIT macro in kernel
+KBUILD_CFLAGS +=   -DVENDOR_EDIT
+KBUILD_CPPFLAGS += -DVENDOR_EDIT
+CFLAGS_KERNEL +=   -DVENDOR_EDIT
+CFLAGS_MODULE +=   -DVENDOR_EDIT
+#endif /* VENDOR_EDIT */
+
+#ifdef OPLUS_FEATURE_MEMLEAK_DETECT
+#Kui.Zhang@Bsp.Kernel.MM, 2020/05/19, Add for memleak test
+ifeq ($(AGING_DEBUG_MASK),1)
+# enable memleak detect daemon
+OPPO_MEMLEAK_DETECT := thread
+endif
+
+ifeq ($(TARGET_MEMLEAK_DETECT_TEST),0)
+# disable memleak detect daemon
+OPPO_MEMLEAK_DETECT := none
+else ifeq ($(TARGET_MEMLEAK_DETECT_TEST),1)
+# enable memleak detect daemon
+OPPO_MEMLEAK_DETECT := thread
+else ifeq ($(TARGET_MEMLEAK_DETECT_TEST),2)
+# enable memleak detect daemon and kasan
+OPPO_MEMLEAK_DETECT := all
+endif
+
+export OPPO_MEMLEAK_DETECT
+#endif
 
 export ARCH SRCARCH CONFIG_SHELL HOSTCC HOSTCFLAGS CROSS_COMPILE AS LD CC
 export CPP AR NM STRIP OBJCOPY OBJDUMP HOSTLDFLAGS HOST_LOADLIBES
@@ -568,6 +610,20 @@ ifeq ($(MAKECMDGOALS),)
 endif
 
 export KBUILD_MODULES KBUILD_BUILTIN
+
+#ifdef  VENDOR_EDIT
+#ye.zhang@BSP.Bootloader.Bootflow, 2020-7-24, Add for VENDOR_EDIT macro in kernel
+KBUILD_CFLAGS +=   -DVENDOR_EDIT
+KBUILD_CPPFLAGS += -DVENDOR_EDIT
+CFLAGS_KERNEL +=   -DVENDOR_EDIT
+CFLAGS_MODULE +=   -DVENDOR_EDIT
+#endif /* VENDOR_EDIT */
+
+#ifdef OPLUS_ARCH_INJECT
+#Sunliang@ANDROID.BUILD, 2020/04/08, export global native features to kernel
+-include OplusKernelEnvConfig.mk
+#endif /* OPLUS_ARCH_INJECT */
+
 
 ifeq ($(KBUILD_EXTMOD),)
 # Additional helpers built in scripts/
@@ -1411,6 +1467,9 @@ modules: $(vmlinux-dirs) $(if $(KBUILD_BUILTIN),vmlinux) modules.builtin
 	$(Q)$(AWK) '!x[$$0]++' $(vmlinux-dirs:%=$(objtree)/%/modules.order) > $(objtree)/modules.order
 	@$(kecho) '  Building modules, stage 2.';
 	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.modpost
+ifeq ($(CONFIG_MODULE_SIG), y)
+	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.modsign
+endif
 
 modules.builtin: $(vmlinux-dirs:%=%/modules.builtin)
 	$(Q)$(AWK) '!x[$$0]++' $^ > $(objtree)/modules.builtin
