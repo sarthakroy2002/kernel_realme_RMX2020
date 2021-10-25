@@ -980,6 +980,18 @@ struct kmem_cache *kmalloc_slab(size_t size, gfp_t flags)
 		index = fls(size - 1);
 	}
 
+#if defined(OPLUS_FEATURE_MEMLEAK_DETECT) && defined(CONFIG_KMALLOC_DEBUG)
+	/* Kui.Zhang@tech.kernel.mm, 2020-02-13, try to kmalloc from kmalloc_debug
+	 * caches fisrt.
+	 */
+	if (unlikely(kmalloc_debug_enable)) {
+		struct kmem_cache *s;
+
+		s = (struct kmem_cache *)atomic64_read(&kmalloc_debug_caches[kmalloc_type(flags)][index]);
+		if (unlikely(s))
+			return s;
+	}
+#endif
 	return kmalloc_caches[kmalloc_type(flags)][index];
 }
 

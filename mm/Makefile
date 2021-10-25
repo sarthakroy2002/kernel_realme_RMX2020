@@ -3,6 +3,13 @@
 # Makefile for the linux memory manager.
 #
 
+subdir-ccflags-y += -Werror
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/include
+
+ifdef CONFIG_MTK_ION
+subdir-ccflags-y += -I$(srctree)/drivers/staging/android/ion
+endif
+
 KASAN_SANITIZE_slab_common.o := n
 KASAN_SANITIZE_slab.o := n
 KASAN_SANITIZE_slub.o := n
@@ -104,3 +111,36 @@ obj-$(CONFIG_DEBUG_PAGE_REF) += debug_page_ref.o
 obj-$(CONFIG_HARDENED_USERCOPY) += usercopy.o
 obj-$(CONFIG_PERCPU_STATS) += percpu-stats.o
 obj-$(CONFIG_HMM) += hmm.o
+#ifdef VENDOR_EDIT
+#/* Jiheng.Xie@TECH.BSP.Kernel, 2019-12-11, add for slub debug*/
+obj-y += oppo_healthinfo/
+#endif /*VENDOR_EDIT*/
+
+#if defined(OPLUS_FEATURE_PROCESS_RECLAIM)
+#/* Kui.Zhang@TEC.Kernel.Performance, 2019-03-13, add new interface for process memory reclaim*/
+#ifeq ($(OPLUS_FEATURE_PROCESS_RECLAIM), yes)
+obj-$(CONFIG_PROCESS_RECLAIM_ENHANCE) += process_mm_reclaim.o
+#else
+#obj-$(CONFIG_PROCESS_RECLAIM_ENHANCE) += process_mm_reclaim_weak.o
+#endif
+#endif /*defined(OPLUS_FEATURE_PROCESS_RECLAIM)
+#if defined(OPLUS_FEATURE_MEMLEAK_DETECT)
+#/* Kui.Zhang@TEC.Kernel.Performance, 2019-03-13, collect all tasks memory info */
+#ifeq ($(OPLUS_FEATURE_MEMLEAK_DETECT), yes)
+obj-$(CONFIG_DUMP_TASKS_MEM) += task_mem/
+#endif
+#endif /*defined(OPLUS_FEATURE_MEMLEAK_DETECT)
+
+#if defined(OPLUS_FEATURE_MULTI_FREEAREA)
+#/*Peifeng.Li@PSW.Kernel.BSP.Memory, 2020/04/22, multi-freearea*/
+obj-$(CONFIG_PHYSICAL_ANTI_FRAGMENTATION) += multi_freearea.o
+#endif
+
+#if defined(OPLUS_FEATURE_VIRTUAL_RESERVE_MEMORY)
+#/* Kui.Zhang@TEC.Kernel.Performance, 2019-03-13, add for record reserved area use count*/
+obj-$(CONFIG_VIRTUAL_RESERVE_MEMORY) += resmap_account.o
+#endif /*defined(VENDOR_EDIT)
+#if defined(VENDOR_EDIT)
+#/*Peifeng.Li@PSW.Kernel.BSP.Memory, 2020/04/22,virtual reserve memory*/
+obj-$(CONFIG_VIRTUAL_RESERVE_MEMORY) += vm_anti_fragment.o
+#endif /*defined(VENDOR_EDIT)

@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Copyright (C) 2018-2020 Oplus. All rights reserved.
+
+config MEMLEAK_DETECT_THREAD
+	bool "One kernel thread to detect memleak and dump infomation to log"
+	default y if OPPO_MEMLEAK_DETECT="true"
+	default n
+	help
+	  a daemon to monitor kernel memory leak.
+
+config VMALLOC_DEBUG
+	bool "trace vmalloc called information with a stack"
+	default n
+	help
+	  trace vmalloc called information with a stack.
