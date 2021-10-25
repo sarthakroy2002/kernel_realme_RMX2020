@@ -3572,10 +3572,6 @@ static int futex_wait_requeue_pi(u32 __user *uaddr, unsigned int flags,
 		unqueue_me_pi(&q);
 	}
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 3c710d1c1fd46bb38c165cca7964c996f44f4bb2
 	if (ret == -EINTR) {
 		/*
 		 * We've already been requeued, but cannot restart by calling
