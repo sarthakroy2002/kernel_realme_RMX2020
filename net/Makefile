@@ -86,3 +86,36 @@ obj-y				+= l3mdev/
 endif
 obj-$(CONFIG_QRTR)		+= qrtr/
 obj-$(CONFIG_NET_NCSI)		+= ncsi/
+
+#ifdef OPLUS_FEATURE_DATA_EVAL
+#PengHao@NETWORK.DATA.8124, 2020/05/08, Add for network quality evaluation.
+obj-y				+= oplus_kernel2user/
+#endif /* OPLUS_FEATURE_DATA_EVAL */
+
+OPLUS_FEATURE_WIFI_LUCKYMONEY=1
+ifneq ($(OPLUS_FEATURE_WIFI_LUCKYMONEY),)
+#HuangYuan@CONNECTIVITY.WIFI.INTERNET, 2018/06/18, Add for WeChat lucky money recognition
+obj-y				+= oplus_nf_hooks/
+endif #/* OPLUS_FEATURE_WIFI_LUCKYMONEY */
+
+#ifdef OPLUS_FEATURE_WIFI_SLA
+#HuangJunyuan@CONNECTIVITY.WIFI.INTERNET.1197891, 2018/04/10,Add code for appo sla function
+obj-y                   	+= oplus_sla/
+#endif /* OPLUS_FEATURE_WIFI_SLA */
+
+OPLUS_FEATURE_DHCP=1
+ifneq ($(OPLUS_FEATURE_DHCP),)
+#LianGenglin@CONNECTIVITY.WIFI.INTERNET, 2020/05/09, Add for Dhcp conflict
+obj-y				+= oplus_dhcp/
+endif #/* OPLUS_FEATURE_DHCP */
+
+#ifdef OPLUS_FEATURE_NWPOWER
+#Asiga@PSW.NW.DATA.2120730, 2019/06/26, add for classify glink wakeup services and count IPA wakeup.
+obj-y				+= oplus_nwpower/
+#endif /* OPLUS_FEATURE_NWPOWER */
+
+#ifdef OPLUS_FEATURE_APP_MONITOR
+#Xiong.Li@TECH.CN.WiFi.Network.2022890,2019/06/14,
+#Add for apps network monitors
+obj-y				+= oplus_apps_monitor/
+#endif /* OPLUS_FEATURE_APP_MONITOR */

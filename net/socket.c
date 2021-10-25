@@ -108,6 +108,10 @@
 #include <linux/atalk.h>
 #include <net/busy_poll.h>
 #include <linux/errqueue.h>
+//#ifdef OPLUS_FEATURE_NWPOWER_NETCONTROLLER
+//PengHao@NETWORK.POWER.26376, 2020/04/27, add for oplus net controller
+#include <net/oplus_nwpower.h>
+//#endif /* OPLUS_FEATURE_NWPOWER_NETCONTROLLER */
 
 #ifdef CONFIG_NET_RX_BUSY_POLL
 unsigned int sysctl_net_busy_read __read_mostly;
@@ -425,6 +429,14 @@ struct file *sock_alloc_file(struct socket *sock, int flags, const char *dname)
 	sock->file = file;
 	file->f_flags = O_RDWR | (flags & O_NONBLOCK);
 	file->private_data = sock;
+
+	//#ifdef OPLUS_FEATURE_NWPOWER
+	//Asiga@PSW.NW.DATA.2120730, 2019/06/26, add for classify glink wakeup services and count IPA wakeup.
+	if (sock->sk) {
+		sock->sk->sk_oplus_pid = current->tgid;
+	}
+	//#endif /* OPLUS_FEATURE_NWPOWER */
+
 	return file;
 }
 EXPORT_SYMBOL(sock_alloc_file);
@@ -1647,6 +1659,12 @@ SYSCALL_DEFINE3(connect, int, fd, struct sockaddr __user *, uservaddr,
 	if (err < 0)
 		goto out_put;
 
+	//#ifdef OPLUS_FEATURE_NWPOWER_NETCONTROLLER
+	//PengHao@NETWORK.POWER.26376, 2020/04/27, add for oplus net controller
+	if(oplus_check_socket_in_blacklist(OPLUS_NET_OUTPUT, sock))
+		return -EACCES;
+	//#endif /* OPLUS_FEATURE_NWPOWER_NETCONTROLLER */
+
 	err =
 	    security_socket_connect(sock, (struct sockaddr *)&address, addrlen);
 	if (err)
@@ -1746,6 +1764,12 @@ SYSCALL_DEFINE6(sendto, int, fd, void __user *, buff, size_t, len,
 	if (!sock)
 		goto out;
 
+	//#ifdef OPLUS_FEATURE_NWPOWER_NETCONTROLLER
+	//PengHao@NETWORK.POWER.26376, 2020/04/27, add for oplus net controller
+	if(oplus_check_socket_in_blacklist(OPLUS_NET_OUTPUT, sock))
+		return -EACCES;
+	//#endif /* OPLUS_FEATURE_NWPOWER_NETCONTROLLER */
+
 	msg.msg_name = NULL;
 	msg.msg_control = NULL;
 	msg.msg_controllen = 0;
@@ -1801,6 +1825,12 @@ SYSCALL_DEFINE6(recvfrom, int, fd, void __user *, ubuf, size_t, size,
 	sock = sockfd_lookup_light(fd, &err, &fput_needed);
 	if (!sock)
 		goto out;
+
+	//#ifdef OPLUS_FEATURE_NWPOWER_NETCONTROLLER
+	//PengHao@NETWORK.POWER.26376, 2020/04/27, add for oplus net controller
+	if(oplus_check_socket_in_blacklist(OPLUS_NET_INPUT, sock))
+		return err;
+	//#endif /* OPLUS_FEATURE_NWPOWER_NETCONTROLLER */
 
 	msg.msg_control = NULL;
 	msg.msg_controllen = 0;
@@ -2072,8 +2102,14 @@ static int ___sys_sendmsg(struct socket *sock, struct user_msghdr __user *msg,
 	}
 
 out_freectl:
-	if (ctl_buf != ctl)
+	if (ctl_buf != ctl){
+#ifdef CONFIG_OPLUS_SECURE_GUARD
+#ifdef CONFIG_OPLUS_ROOT_CHECK
+		memset(ctl_buf, 0, ctl_len);
+#endif /* CONFIG_OPLUS_ROOT_CHECK */
+#endif /* CONFIG_OPLUS_SECURE_GUARD */
 		sock_kfree_s(sock->sk, ctl_buf, ctl_len);
+	}
 out_freeiov:
 	kfree(iov);
 	return err;
@@ -2092,6 +2128,12 @@ long __sys_sendmsg(int fd, struct user_msghdr __user *msg, unsigned flags)
 	sock = sockfd_lookup_light(fd, &err, &fput_needed);
 	if (!sock)
 		goto out;
+
+	//#ifdef OPLUS_FEATURE_NWPOWER_NETCONTROLLER
+	//PengHao@NETWORK.POWER.26376, 2020/04/27, add for oplus net controller
+	if(oplus_check_socket_in_blacklist(OPLUS_NET_OUTPUT, sock))
+		return -EACCES;
+	//#endif /* OPLUS_FEATURE_NWPOWER_NETCONTROLLER */
 
 	err = ___sys_sendmsg(sock, msg, &msg_sys, flags, NULL, 0);
 
@@ -2130,6 +2172,12 @@ int __sys_sendmmsg(int fd, struct mmsghdr __user *mmsg, unsigned int vlen,
 	sock = sockfd_lookup_light(fd, &err, &fput_needed);
 	if (!sock)
 		return err;
+
+	//#ifdef OPLUS_FEATURE_NWPOWER_NETCONTROLLER
+	//PengHao@NETWORK.POWER.26376, 2020/04/27, add for oplus net controller
+	if(oplus_check_socket_in_blacklist(OPLUS_NET_OUTPUT, sock))
+		return -EACCES;
+	//#endif /* OPLUS_FEATURE_NWPOWER_NETCONTROLLER */
 
 	used_address.name_len = UINT_MAX;
 	entry = mmsg;
@@ -2263,6 +2311,12 @@ long __sys_recvmsg(int fd, struct user_msghdr __user *msg, unsigned flags)
 	if (!sock)
 		goto out;
 
+	//#ifdef OPLUS_FEATURE_NWPOWER_NETCONTROLLER
+	//PengHao@NETWORK.POWER.26376, 2020/04/27, add for oplus net controller
+	if(oplus_check_socket_in_blacklist(OPLUS_NET_INPUT, sock))
+		return err;
+	//#endif /* OPLUS_FEATURE_NWPOWER_NETCONTROLLER */
+
 	err = ___sys_recvmsg(sock, msg, &msg_sys, flags, 0);
 
 	fput_light(sock->file, fput_needed);
@@ -2309,6 +2363,12 @@ int __sys_recvmmsg(int fd, struct mmsghdr __user *mmsg, unsigned int vlen,
 		datagrams = err;
 		goto out_put;
 	}
+
+	//#ifdef OPLUS_FEATURE_NWPOWER_NETCONTROLLER
+	//PengHao@NETWORK.POWER.26376, 2020/04/27, add for oplus net controller
+	if(oplus_check_socket_in_blacklist(OPLUS_NET_INPUT, sock))
+		return err;
+	//#endif /* OPLUS_FEATURE_NWPOWER_NETCONTROLLER */
 
 	entry = mmsg;
 	compat_entry = (struct compat_mmsghdr __user *)mmsg;
