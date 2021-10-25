@@ -32,6 +32,12 @@ void nf_register_queue_handler(struct net *net, const struct nf_queue_handler *q
 void nf_unregister_queue_handler(struct net *net);
 void nf_reinject(struct nf_queue_entry *entry, unsigned int verdict);
 
+#ifdef OPLUS_FEATURE_WIFI_LIMMITBGSPEED
+//HuangJunyuan@CONNECTIVITY.WIFI.INTERNET, 2018/06/26, Add for limit speed function
+void nf_register_queue_imq_handler(const struct nf_queue_handler *qh);
+void nf_unregister_queue_imq_handler(void);
+#endif /* OPLUS_FEATURE_WIFI_LIMMITBGSPEED */
+
 void nf_queue_entry_get_refs(struct nf_queue_entry *entry);
 void nf_queue_entry_release_refs(struct nf_queue_entry *entry);
 

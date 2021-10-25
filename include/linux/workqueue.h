@@ -474,6 +474,7 @@ extern unsigned int work_busy(struct work_struct *work);
 extern __printf(1, 2) void set_worker_desc(const char *fmt, ...);
 extern void print_worker_info(const char *log_lvl, struct task_struct *task);
 extern void show_workqueue_state(void);
+extern void get_worker_info(struct task_struct *task, char *name_buf, char *desc_buf, char *fn_buf);
 
 /**
  * queue_work - queue work on a workqueue

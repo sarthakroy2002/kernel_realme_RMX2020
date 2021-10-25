@@ -269,6 +269,10 @@ struct fuse_file_lock {
 #define FUSE_PARALLEL_DIROPS    (1 << 18)
 #define FUSE_HANDLE_KILLPRIV	(1 << 19)
 #define FUSE_POSIX_ACL		(1 << 20)
+#ifdef CONFIG_OPLUS_FEATURE_FUSE_FS_SHORTCIRCUIT
+//shubin@BSP.Kernel.FS 2020/08/20 improving fuse storage performance
+#define FUSE_SHORTCIRCUIT	(1 << 30)
+#endif /* CONFIG_OPLUS_FEATURE_FUSE_FS_SHORTCIRCUIT */
 
 /**
  * CUSE INIT request/reply flags

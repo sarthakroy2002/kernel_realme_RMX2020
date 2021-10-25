@@ -27,7 +27,7 @@
 #include <linux/percpu-refcount.h>
 #include <linux/scatterlist.h>
 #include <linux/blkzoned.h>
-
+#include <linux/blk_types.h>
 struct module;
 struct scsi_ioctl_command;
 
@@ -146,6 +146,19 @@ struct request {
 	int cpu;
 	unsigned int cmd_flags;		/* op and common flags */
 	req_flags_t rq_flags;
+#if defined(OPLUS_FEATURE_IOMONITOR) && defined(CONFIG_IOMONITOR)
+	ktime_t req_tg;
+	ktime_t req_ti;
+	ktime_t req_td;
+	ktime_t req_tc;
+#endif /*OPLUS_FEATURE_IOMONITOR*/
+
+#ifdef VENDOR_EDIT
+/*Hank.liu@PSW.BSP Kernel IO Latency  2019-03-19,Add some info in each request*/
+	ktime_t block_io_start;  //save block io start ktime
+	ktime_t ufs_io_start; //save ufs io start ktime
+	u64 flash_io_latency; //save mmc host command latency
+#endif /*VENDOR_EDIT*/
 
 	int internal_tag;
 
@@ -158,7 +171,10 @@ struct request {
 
 	struct bio *bio;
 	struct bio *biotail;
-
+#if defined(OPLUS_FEATURE_FG_IO_OPT) && defined(CONFIG_OPPO_FG_IO_OPT)
+/*Huacai.Zhou@Tech.Kernel.MM, 2020-03-23,add foreground io opt*/
+	struct list_head fg_list;
+#endif /*OPLUS_FEATURE_FG_IO_OPT*/
 	/*
 	 * The hash is used inside the scheduler, and killed once the
 	 * request reaches the dispatch list. The ipi_list is only used
@@ -240,6 +256,11 @@ struct request {
 
 	/* for bidi */
 	struct request *next_rq;
+#ifdef VENDOR_EDIT
+//hank.liu@Tech.Storage.UFS, 2019-10-17 add latency_hist node for ufs latency calculate in sysfs.
+	ktime_t			lat_hist_io_start;
+	int			lat_hist_enabled;
+#endif
 };
 
 static inline bool blk_op_is_scsi(unsigned int op)
@@ -407,6 +428,14 @@ struct request_queue {
 	 * Together with queue_head for cacheline sharing
 	 */
 	struct list_head	queue_head;
+	#if defined(OPLUS_FEATURE_FG_IO_OPT) && defined(CONFIG_OPPO_FG_IO_OPT)
+/*Huacai.Zhou@Tech.Kernel.MM, 2020-03-23,add foreground io opt*/
+	struct list_head	fg_head;
+	int fg_count;
+	int both_count;
+	int fg_count_max;
+	int both_count_max;
+#endif /*OPLUS_FEATURE_FG_IO_OPT*/
 	struct request		*last_merge;
 	struct elevator_queue	*elevator;
 	int			nr_rqs[2];	/* # allocated [a]sync rqs */
@@ -534,8 +563,13 @@ struct request_queue {
 	struct list_head	tag_busy_list;
 
 	unsigned int		nr_sorted;
+#ifndef OPLUS_FEATURE_HEALTHINFO
+// jiheng.xie@PSW.Tech.BSP.Performance, 2019/03/11
+// Modify for ioqueue
 	unsigned int		in_flight[2];
-
+#else /* OPLUS_FEATURE_HEALTHINFO */
+	unsigned int		in_flight[4];
+#endif /* OPLUS_FEATURE_HEALTHINFO */
 	/*
 	 * Number of active block driver functions for which blk_drain_queue()
 	 * must wait. Must be incremented around functions that unlock the
@@ -623,6 +657,10 @@ struct request_queue {
 
 #define BLK_MAX_WRITE_HINTS	5
 	u64			write_hints[BLK_MAX_WRITE_HINTS];
+
+#ifdef CONFIG_UFSTW
+	bool			turbo_write_dev;
+#endif
 };
 
 #define QUEUE_FLAG_QUEUED	0	/* uses generic tag queueing */
@@ -655,6 +693,7 @@ struct request_queue {
 #define QUEUE_FLAG_REGISTERED  26	/* queue has been registered to a disk */
 #define QUEUE_FLAG_SCSI_PASSTHROUGH 27	/* queue supports SCSI commands */
 #define QUEUE_FLAG_QUIESCED    28	/* queue has been quiesced */
+#define QUEUE_FLAG_INLINECRYPT 29	/* inline crypto support */
 
 #define QUEUE_FLAG_DEFAULT	((1 << QUEUE_FLAG_IO_STAT) |		\
 				 (1 << QUEUE_FLAG_STACKABLE)	|	\
@@ -733,7 +772,29 @@ static inline void queue_flag_clear(unsigned int flag, struct request_queue *q)
 	queue_lockdep_assert_held(q);
 	__clear_bit(flag, &q->queue_flags);
 }
+#ifdef OPLUS_FEATURE_HEALTHINFO
+// jiheng.xie@PSW.Tech.BSP.Performance, 2019/03/11
+// Add for ioqueue
+#ifdef CONFIG_OPPO_HEALTHINFO
+static inline void ohm_ioqueue_add_inflight(struct request_queue *q,
+					     struct request *rq)
+{
+	if (rq->cmd_flags & REQ_FG)
+		q->in_flight[BLK_RW_FG]++;
+	else
+		q->in_flight[BLK_RW_BG]++;
+}
 
+static inline void ohm_ioqueue_dec_inflight(struct request_queue *q,
+					     struct request *rq)
+{
+	if (rq->cmd_flags & REQ_FG)
+		q->in_flight[BLK_RW_FG]--;
+	else
+		q->in_flight[BLK_RW_BG]--;
+}
+#endif
+#endif /* OPLUS_FEATURE_HEALTHINFO */
 #define blk_queue_tagged(q)	test_bit(QUEUE_FLAG_QUEUED, &(q)->queue_flags)
 #define blk_queue_stopped(q)	test_bit(QUEUE_FLAG_STOPPED, &(q)->queue_flags)
 #define blk_queue_dying(q)	test_bit(QUEUE_FLAG_DYING, &(q)->queue_flags)
@@ -754,6 +815,8 @@ static inline void queue_flag_clear(unsigned int flag, struct request_queue *q)
 #define blk_queue_dax(q)	test_bit(QUEUE_FLAG_DAX, &(q)->queue_flags)
 #define blk_queue_scsi_passthrough(q)	\
 	test_bit(QUEUE_FLAG_SCSI_PASSTHROUGH, &(q)->queue_flags)
+#define blk_queue_inline_crypt(q) \
+	test_bit(QUEUE_FLAG_INLINECRYPT, &(q)->queue_flags)
 
 #define blk_noretry_request(rq) \
 	((rq)->cmd_flags & (REQ_FAILFAST_DEV|REQ_FAILFAST_TRANSPORT| \
@@ -1955,6 +2018,90 @@ static inline bool integrity_req_gap_front_merge(struct request *req,
 
 #endif /* CONFIG_BLK_DEV_INTEGRITY */
 
+#ifdef VENDOR_EDIT
+//hank.liu@Tech.Storage.UFS, 2019-10-17 add latency_hist node for ufs latency calculate in sysfs.
+/*
+ * X-axis for IO latency histogram support.
+ */
+static const u_int64_t latency_x_axis_us[] = {
+	100,
+	200,
+	300,
+	400,
+	500,
+	600,
+	700,
+	800,
+	900,
+	1000,
+	1200,
+	1400,
+	1600,
+	1800,
+	2000,
+	2500,
+	3000,
+	4000,
+	5000,
+	6000,
+	7000,
+	9000,
+	10000,
+	20000,
+	40000,
+	60000,
+	80000,
+	100000,
+	150000,
+	200000
+
+};
+
+#define BLK_IO_LAT_HIST_DISABLE         0
+#define BLK_IO_LAT_HIST_ENABLE          1
+#define BLK_IO_LAT_HIST_ZERO            2
+
+struct io_latency_state {
+	u_int64_t	latency_y_axis_read[ARRAY_SIZE(latency_x_axis_us) + 1];
+	u_int64_t	latency_reads_elems;
+	u_int64_t	latency_y_axis_write[ARRAY_SIZE(latency_x_axis_us) + 1];
+	u_int64_t	latency_writes_elems;
+};
+
+static inline void
+blk_update_latency_hist(struct io_latency_state *s,
+			int read,
+			u_int64_t delta_us)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(latency_x_axis_us); i++) {
+		if (delta_us < (u_int64_t)latency_x_axis_us[i]) {
+			if (read)
+				s->latency_y_axis_read[i]++;
+			else
+				s->latency_y_axis_write[i]++;
+			break;
+		}
+	}
+	if (i == ARRAY_SIZE(latency_x_axis_us)) {
+		/* Overflowed the histogram */
+		if (read)
+			s->latency_y_axis_read[i]++;
+		else
+			s->latency_y_axis_write[i]++;
+	}
+	if (read)
+		s->latency_reads_elems++;
+	else
+		s->latency_writes_elems++;
+}
+
+void blk_zero_latency_hist(struct io_latency_state *s);
+ssize_t blk_latency_hist_show(struct io_latency_state *s, char *buf);
+
+#endif/*VENDOR_EDIT*/
+
 struct block_device_operations {
 	int (*open) (struct block_device *, fmode_t);
 	void (*release) (struct gendisk *, fmode_t);
@@ -1970,6 +2117,7 @@ struct block_device_operations {
 	int (*getgeo)(struct block_device *, struct hd_geometry *);
 	/* this callback is with swap_lock and sometimes page table lock held */
 	void (*swap_slot_free_notify) (struct block_device *, unsigned long);
+	int (*check_disk_range_wp)(struct gendisk *d, sector_t s, sector_t l);
 	struct module *owner;
 	const struct pr_ops *pr_ops;
 };

@@ -31,6 +31,10 @@ void cpufreq_times_record_transition(struct cpufreq_policy *policy,
                                      unsigned int new_freq);
 void cpufreq_task_times_remove_uids(uid_t uid_start, uid_t uid_end);
 int single_uid_time_in_state_open(struct inode *inode, struct file *file);
+#ifdef CONFIG_OPLUS_FEATURE_MIDAS
+void midas_get_uid_state(void *data);
+void midas_get_pid_state(void *data, int type);
+#endif /* CONFIG_OPLUS_FEATURE_MIDAS */
 #else
 static inline void cpufreq_task_times_init(struct task_struct *p) {}
 static inline void cpufreq_task_times_alloc(struct task_struct *p) {}
@@ -42,5 +46,9 @@ static inline void cpufreq_times_record_transition(
 	struct cpufreq_policy *policy, unsigned int new_freq) {}
 static inline void cpufreq_task_times_remove_uids(uid_t uid_start,
 						  uid_t uid_end) {}
+#ifdef CONFIG_OPLUS_FEATURE_MIDAS
+void midas_get_uid_state(void *data) {}
+void midas_get_pid_state(void *data, int type) {}
+#endif /* CONFIG_OPLUS_FEATURE_MIDAS */
 #endif /* CONFIG_CPU_FREQ_TIMES */
 #endif /* _LINUX_CPUFREQ_TIMES_H */

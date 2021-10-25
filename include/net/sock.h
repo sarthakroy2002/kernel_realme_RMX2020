@@ -185,6 +185,18 @@ struct sock_common {
 	struct proto		*skc_prot;
 	possible_net_t		skc_net;
 
+	//#ifdef OPLUS_FEATURE_WIFI_SLA
+	//HuangJunyuan@CONNECTIVITY.WIFI.INTERNET.1197891, 2018/04/10,Add code for appo sla function
+	u32 skc_oplus_mark;
+	//#endif /* OPLUS_FEATURE_WIFI_SLA */
+
+	//#ifdef OPLUS_FEATURE_NWPOWER
+	//Asiga@PSW.NW.DATA.2120730, 2019/06/26, add for classify glink wakeup services and count IPA wakeup.
+	u32 skc_oplus_pid;
+	u64 skc_oplus_last_rcv_stamp[2];//index 0 = last, index 1 = now
+	u64 skc_oplus_last_send_stamp[2];//index 0 = last, index 1 = now
+	//#endif /* OPLUS_FEATURE_NWPOWER */
+
 #if IS_ENABLED(CONFIG_IPV6)
 	struct in6_addr		skc_v6_daddr;
 	struct in6_addr		skc_v6_rcv_saddr;
@@ -351,6 +363,17 @@ struct sock {
 #define sk_incoming_cpu		__sk_common.skc_incoming_cpu
 #define sk_flags		__sk_common.skc_flags
 #define sk_rxhash		__sk_common.skc_rxhash
+//#ifdef OPLUS_FEATURE_WIFI_SLA
+//HuangJunyuan@CONNECTIVITY.WIFI.INTERNET.1197891, 2018/04/10,Add code for appo sla function
+#define oplus_sla_mark   __sk_common.skc_oplus_mark
+//#endif /* OPLUS_FEATURE_WIFI_SLA */
+
+//#ifdef OPLUS_FEATURE_NWPOWER
+//Asiga@PSW.NW.DATA.2120730, 2019/06/26, add for classify glink wakeup services and count IPA wakeup.
+#define sk_oplus_pid				__sk_common.skc_oplus_pid
+#define oplus_last_rcv_stamp		__sk_common.skc_oplus_last_rcv_stamp
+#define oplus_last_send_stamp	__sk_common.skc_oplus_last_send_stamp
+//#endif /* OPLUS_FEATURE_NWPOWER */
 
 	socket_lock_t		sk_lock;
 	atomic_t		sk_drops;
@@ -1691,7 +1714,8 @@ static inline void sk_set_socket(struct sock *sk, struct socket *sock)
 	sk->sk_socket = sock;
 }
 
-static inline wait_queue_head_t *sk_sleep(struct sock *sk)
+static inline wait_queue_head_t __attribute__((no_sanitize("null")))
+	*sk_sleep(struct sock *sk)
 {
 	BUILD_BUG_ON(offsetof(struct socket_wq, wait) != 0);
 	return &rcu_dereference_raw(sk->sk_wq)->wait;
@@ -1835,6 +1859,12 @@ static inline void sk_dst_confirm(struct sock *sk)
 
 static inline void sock_confirm_neigh(struct sk_buff *skb, struct neighbour *n)
 {
+	#ifdef OPLUS_BUG_STABILITY
+	/* WangWei@CONNECTIVITY.WIFI.NETWORK.1357567, 2018/04/27. */
+	/* Remove for [1357567],some AP doesn't send arp when it needs to send data to DUT */
+	/* We remove this code to send arp more frequently to notify our mac to AP */
+	return;
+	#endif /* OPLUS_BUG_STABILITY */
 	if (skb_get_dst_pending_confirm(skb)) {
 		struct sock *sk = skb->sk;
 		unsigned long now = jiffies;

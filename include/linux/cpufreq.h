@@ -151,6 +151,14 @@ struct cpufreq_policy {
 
 	/* For cpufreq driver's internal use */
 	void			*driver_data;
+#ifdef OPLUS_FEATURE_HEALTHINFO
+//Jiheng.Xie@TECH.BSP.Performance,2019-07-29,add for cpufreq limit info
+#ifdef CONFIG_OPPO_HEALTHINFO
+	/* For get changed freq info */
+	char 			change_comm[TASK_COMM_LEN];
+	unsigned int 	org_max;
+#endif
+#endif /* OPLUS_FEATURE_HEALTHINFO */
 };
 
 /* Only for ACPI */
@@ -217,11 +225,17 @@ void cpufreq_stats_create_table(struct cpufreq_policy *policy);
 void cpufreq_stats_free_table(struct cpufreq_policy *policy);
 void cpufreq_stats_record_transition(struct cpufreq_policy *policy,
 				     unsigned int new_freq);
+#ifdef CONFIG_OPLUS_FEATURE_MIDAS
+void cpufreq_stats_idle_hook(unsigned int cpu, unsigned int in_idle);
+#endif
 #else
 static inline void cpufreq_stats_create_table(struct cpufreq_policy *policy) { }
 static inline void cpufreq_stats_free_table(struct cpufreq_policy *policy) { }
 static inline void cpufreq_stats_record_transition(struct cpufreq_policy *policy,
 						   unsigned int new_freq) { }
+#ifdef CONFIG_OPLUS_FEATURE_MIDAS
+static inline void cpufreq_stats_idle_hook(unsigned int cpu, unsigned int in_idle) { };
+#endif
 #endif /* CONFIG_CPU_FREQ_STAT */
 
 /*********************************************************************
@@ -909,6 +923,10 @@ static inline bool policy_has_boost_freq(struct cpufreq_policy *policy)
 }
 #endif
 
+#if defined(OPLUS_FEATURE_SCHEDUTIL_USE_TL) && defined(CONFIG_SCHEDUTIL_USE_TL)
+ssize_t set_sugov_tl(unsigned int cpu, char *buf);
+#endif
+
 extern void arch_freq_prepare_all(void);
 extern unsigned int arch_freq_get_on_cpu(int cpu);
 
@@ -916,6 +934,12 @@ extern void arch_set_freq_scale(struct cpumask *cpus, unsigned long cur_freq,
 				unsigned long max_freq);
 extern void arch_set_max_freq_scale(struct cpumask *cpus,
 				    unsigned long policy_max_freq);
+extern void arch_set_min_freq_scale(struct cpumask *cpus,
+				    unsigned long policy_min_freq);
+
+#ifdef OPLUS_FEATURE_HEALTHINFO
+struct list_head *get_cpufreq_policy_list(void);
+#endif /* OPLUS_FEATURE_HEALTHINFO */
 
 /* the following are really really optional */
 extern struct freq_attr cpufreq_freq_attr_scaling_available_freqs;

@@ -44,6 +44,10 @@ struct alarm {
 	enum alarmtimer_restart	(*function)(struct alarm *, ktime_t now);
 	enum alarmtimer_type	type;
 	int			state;
+#ifdef VENDOR_EDIT
+//gaowei.pu@bsp.power.basic 2020-08-13 add info to get wakeup alarm's owner
+	char		comm[TASK_COMM_LEN];
+#endif /* VENDOR_EDIT */
 	void			*data;
 };
 

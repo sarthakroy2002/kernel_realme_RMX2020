@@ -1801,6 +1801,18 @@ static inline void free_secdata(void *secdata)
 { }
 #endif /* CONFIG_SECURITY */
 
+#ifdef CONFIG_OPPO_SECURE_GUARD
+//Ke.Li@ROM.Security, 2019-9-30, Add for execve blocking(root defence)
+#ifdef CONFIG_SECURITY
+extern int get_current_security_context(char **context, u32 *context_len);
+#else
+static inline int get_current_security_context(char **context, u32 *context_len)
+{
+	return -EOPNOTSUPP;
+}
+#endif
+#endif /* CONFIG_OPPO_SECURE_GUARD */
+
 #ifdef CONFIG_PERF_EVENTS
 struct perf_event_attr;
 struct perf_event;
@@ -1838,5 +1850,14 @@ static inline int security_perf_event_write(struct perf_event *event)
 }
 #endif /* CONFIG_SECURITY */
 #endif /* CONFIG_PERF_EVENTS */
-
+#ifdef CONFIG_OPLUS_SECURE_GUARD
+#ifdef CONFIG_SECURITY
+extern int get_current_security_context(char **context, u32 *context_len);
+#else
+static inline int get_current_security_context(char **context, u32 *context_len)
+{
+	return -EOPNOTSUPP;
+}
+#endif
+#endif /* CONFIG_OPLUS_SECURE_GUARD */
 #endif /* ! __LINUX_SECURITY_H */

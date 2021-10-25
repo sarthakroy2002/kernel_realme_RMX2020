@@ -695,6 +695,9 @@ i2c_unlock_adapter(struct i2c_adapter *adapter)
 /* Internal numbers to terminate lists */
 #define I2C_CLIENT_END		0xfffeU
 
+/* recover i2c low electric potential*/
+#define I2C_RECOVER_LOW   0x0018
+
 /* Construct an I2C_CLIENT_END-terminated array of i2c addresses */
 #define I2C_ADDRS(addr, addrs...) \
 	((const unsigned short []){ addr, ## addrs, I2C_CLIENT_END })
