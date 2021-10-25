@@ -22,13 +22,14 @@ static struct file_system_type incfs_fs_type = {
 
 static struct kobject *sysfs_root, *featurefs_root;
 
-static ssize_t corefs_show(struct kobject *kobj,
-			  struct kobj_attribute *attr, char *buff)
+static ssize_t supported(struct kobject *kobj,
+			 struct kobj_attribute *attr, char *buff)
 {
 	return snprintf(buff, PAGE_SIZE, "supported\n");
 }
 
-static struct kobj_attribute corefs_attr = __ATTR_RO(corefs);
+typedef ssize_t (*const attr_show)(struct kobject *kobj,
+				   struct kobj_attribute *attr, char *buff);
 
 static ssize_t mounter_context_for_backing_rw_show(struct kobject *kobj,
 			  struct kobj_attribute *attr, char *buff)
