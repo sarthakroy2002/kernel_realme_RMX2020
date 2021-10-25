@@ -34,6 +34,7 @@
 #include <linux/pm_runtime.h>
 #include <linux/blk-cgroup.h>
 #include <linux/debugfs.h>
+#include <mt-plat/mtk_blocktag.h> /* MTK PATCH */
 #include <linux/psi.h>
 #include <linux/blk-crypto.h>
 
@@ -45,7 +46,17 @@
 #include "blk-mq-sched.h"
 #include "blk-wbt.h"
 
+#if defined(OPLUS_FEATURE_FG_IO_OPT) && defined(CONFIG_OPPO_FG_IO_OPT)
+/*Huacai.Zhou@Tech.Kernel.MM, 2020-03-23,add foreground io opt*/
+#include "oppo_foreground_io_opt/oppo_foreground_io_opt.h"
+#endif
+
 #ifdef CONFIG_DEBUG_FS
+
+#if defined(OPLUS_FEATURE_IOMONITOR) && defined(CONFIG_IOMONITOR)
+#include <linux/iomonitor/iomonitor.h>
+#endif /*OPLUS_FEATURE_IOMONITOR*/
+
 struct dentry *blk_debugfs_root;
 #endif
 
@@ -117,6 +128,10 @@ void blk_rq_init(struct request_queue *q, struct request *rq)
 	memset(rq, 0, sizeof(*rq));
 
 	INIT_LIST_HEAD(&rq->queuelist);
+#if defined(OPLUS_FEATURE_FG_IO_OPT) && defined(CONFIG_OPPO_FG_IO_OPT)
+/*Huacai.Zhou@Tech.Kernel.MM, 2020-03-23,add foreground io opt*/
+	INIT_LIST_HEAD(&rq->fg_list);
+#endif
 	INIT_LIST_HEAD(&rq->timeout_list);
 	rq->cpu = -1;
 	rq->q = q;
@@ -835,7 +850,10 @@ struct request_queue *blk_alloc_queue_node(gfp_t gfp_mask, int node_id)
 				gfp_mask | __GFP_ZERO, node_id);
 	if (!q)
 		return NULL;
-
+#if defined(OPLUS_FEATURE_FG_IO_OPT) && defined(CONFIG_OPPO_FG_IO_OPT)
+/*Huacai.Zhou@Tech.Kernel.MM, 2020-03-23,add foreground io opt*/
+	INIT_LIST_HEAD(&q->fg_head);
+#endif
 	q->id = ida_simple_get(&blk_queue_ida, 0, 0, gfp_mask);
 	if (q->id < 0)
 		goto fail_q;
@@ -857,7 +875,10 @@ struct request_queue *blk_alloc_queue_node(gfp_t gfp_mask, int node_id)
 	q->backing_dev_info->capabilities = BDI_CAP_CGROUP_WRITEBACK;
 	q->backing_dev_info->name = "block";
 	q->node = node_id;
-
+#if defined(OPLUS_FEATURE_FG_IO_OPT) && defined(CONFIG_OPPO_FG_IO_OPT)
+/*Huacai.Zhou@Tech.Kernel.MM, 2020-03-23,add foreground io opt*/
+	fg_bg_max_count_init(q);
+#endif
 	setup_timer(&q->backing_dev_info->laptop_mode_wb_timer,
 		    laptop_mode_timer_fn, (unsigned long) q);
 	setup_timer(&q->timeout, blk_rq_timed_out_timer, (unsigned long) q);
@@ -1301,7 +1322,9 @@ out:
 	 */
 	if (ioc_batching(q, ioc))
 		ioc->nr_batch_requests--;
-
+#if defined(OPLUS_FEATURE_IOMONITOR) && defined(CONFIG_IOMONITOR)
+	iomonitor_init_reqstats(rq);
+#endif /*OPLUS_FEATURE_IOMONITOR*/
 	trace_block_getrq(q, bio, op);
 	return rq;
 
@@ -1793,7 +1816,11 @@ void blk_init_request_from_bio(struct request *req, struct bio *bio)
 
 	if (bio->bi_opf & REQ_RAHEAD)
 		req->cmd_flags |= REQ_FAILFAST_MASK;
-
+#if defined(OPLUS_FEATURE_FG_IO_OPT) && defined(CONFIG_OPPO_FG_IO_OPT)
+/*Huacai.Zhou@Tech.Kernel.MM, 2020-03-23,add foreground io opt*/
+	if (bio->bi_opf & REQ_FG)
+		req->cmd_flags |= REQ_FG;
+#endif
 	req->__sector = bio->bi_iter.bi_sector;
 	if (ioprio_valid(bio_prio(bio)))
 		req->ioprio = bio_prio(bio);
@@ -2291,13 +2318,22 @@ blk_qc_t submit_bio(struct bio *bio)
 
 		if (op_is_write(bio_op(bio))) {
 			count_vm_events(PGPGOUT, count);
+#if defined(OPLUS_FEATURE_IOMONITOR) && defined(CONFIG_IOMONITOR)
+			iomonitor_update_vm_stats(PGPGOUT, count);
+#endif /*OPLUS_FEATURE_IOMONITOR*/
 		} else {
 			if (bio_flagged(bio, BIO_WORKINGSET))
 				workingset_read = true;
 			task_io_account_read(bio->bi_iter.bi_size);
 			count_vm_events(PGPGIN, count);
+#if defined(OPLUS_FEATURE_IOMONITOR) && defined(CONFIG_IOMONITOR)
+			iomonitor_update_vm_stats(PGPGIN, count);
+#endif /*OPLUS_FEATURE_IOMONITOR*/
 		}
 
+#ifdef CONFIG_MTK_BLOCK_TAG
+		mtk_btag_pidlog_submit_bio(bio);
+#endif
 		if (unlikely(block_dump)) {
 			char b[BDEVNAME_SIZE];
 			printk(KERN_DEBUG "%s(%d): %s block %Lu on %s (%u sectors)\n",
@@ -2307,7 +2343,11 @@ blk_qc_t submit_bio(struct bio *bio)
 				bio_devname(bio, b), count);
 		}
 	}
-
+#if defined(OPLUS_FEATURE_FG_IO_OPT) && defined(CONFIG_OPPO_FG_IO_OPT)
+/*Huacai.Zhou@Tech.Kernel.MM, 2020-03-23,add foreground io opt*/
+	if (high_prio_for_task(current))
+		bio->bi_opf |= REQ_FG;
+#endif
 	/*
 	 * If we're reading data that is part of the userspace
 	 * workingset, count submission time as memory stall. When the
@@ -2600,6 +2640,10 @@ struct request *blk_peek_request(struct request_queue *q)
 			 * not be passed by new incoming requests
 			 */
 			rq->rq_flags |= RQF_STARTED;
+#if defined(OPLUS_FEATURE_IOMONITOR) && defined(CONFIG_IOMONITOR)
+			rq->req_td = ktime_get();
+#endif /*OPLUS_FEATURE_IOMONITOR*/
+
 			trace_block_rq_issue(q, rq);
 		}
 
@@ -2659,7 +2703,9 @@ struct request *blk_peek_request(struct request_queue *q)
 			break;
 		}
 	}
-
+#if defined(OPLUS_FEATURE_IOMONITOR) && defined(CONFIG_IOMONITOR)
+	iomonitor_record_io_history(rq);
+#endif /*OPLUS_FEATURE_IOMONITOR*/
 	return rq;
 }
 EXPORT_SYMBOL(blk_peek_request);
@@ -2672,7 +2718,10 @@ static void blk_dequeue_request(struct request *rq)
 	BUG_ON(ELV_ON_HASH(rq));
 
 	list_del_init(&rq->queuelist);
-
+#if defined(OPLUS_FEATURE_FG_IO_OPT) && defined(CONFIG_OPPO_FG_IO_OPT)
+/*Huacai.Zhou@Tech.Kernel.MM, 2020-03-23,add foreground io opt*/
+	list_del_init(&rq->fg_list);
+#endif
 	/*
 	 * the time frame between a request being removed from the lists
 	 * and to it is freed is accounted as io that is in progress at
@@ -2682,6 +2731,13 @@ static void blk_dequeue_request(struct request *rq)
 		q->in_flight[rq_is_sync(rq)]++;
 		set_io_start_time_ns(rq);
 	}
+#ifdef OPLUS_FEATURE_HEALTHINFO
+// jiheng.xie@PSW.Tech.BSP.Performance, 2019/03/11
+// Add for ioqueue
+#ifdef CONFIG_OPPO_HEALTHINFO
+	ohm_ioqueue_add_inflight(q, rq);
+#endif
+#endif /* OPLUS_FEATURE_HEALTHINFO */
 }
 
 /**
@@ -2764,6 +2820,9 @@ bool blk_update_request(struct request *req, blk_status_t error,
 	int total_bytes;
 
 	trace_block_rq_complete(req, blk_status_to_errno(error), nr_bytes);
+#if defined(OPLUS_FEATURE_IOMONITOR) && defined(CONFIG_IOMONITOR)
+	iomonitor_record_reqstats(req, nr_bytes);
+#endif /*OPLUS_FEATURE_IOMONITOR*/
 
 	if (!req->bio)
 		return false;
@@ -3678,3 +3737,86 @@ int __init blk_dev_init(void)
 
 	return 0;
 }
+#ifdef VENDOR_EDIT
+/*
+ * Blk IO latency support. We want this to be as cheap as possible, so doing
+ * this lockless (and avoiding atomics), a few off by a few errors in this
+ * code is not harmful, and we don't want to do anything that is
+ * perf-impactful.
+ * TODO : If necessary, we can make the histograms per-cpu and aggregate
+ * them when printing them out.
+ */
+void
+blk_zero_latency_hist(struct io_latency_state *s)
+{
+	memset(s->latency_y_axis_read, 0,
+	       sizeof(s->latency_y_axis_read));
+	memset(s->latency_y_axis_write, 0,
+	       sizeof(s->latency_y_axis_write));
+	s->latency_reads_elems = 0;
+	s->latency_writes_elems = 0;
+}
+EXPORT_SYMBOL(blk_zero_latency_hist);
+
+ssize_t
+blk_latency_hist_show(struct io_latency_state *s, char *buf)
+{
+	int i;
+	int bytes_written = 0;
+	u_int64_t num_elem, elem;
+	int pct;
+
+	num_elem = s->latency_reads_elems;
+	if (num_elem > 0) {
+		bytes_written += scnprintf(buf + bytes_written,
+			   PAGE_SIZE - bytes_written,
+			   "IO svc_time Read Latency Histogram (n = %llu):\n",
+			   num_elem);
+		for (i = 0;
+		     i < ARRAY_SIZE(latency_x_axis_us);
+		     i++) {
+			elem = s->latency_y_axis_read[i];
+			pct = div64_u64(elem * 100, num_elem);
+			bytes_written += scnprintf(buf + bytes_written,
+						   PAGE_SIZE - bytes_written,
+						   "\t< %5lluus%15llu%15d%%\n",
+						   latency_x_axis_us[i],
+						   elem, pct);
+		}
+		/* Last element in y-axis table is overflow */
+		elem = s->latency_y_axis_read[i];
+		pct = div64_u64(elem * 100, num_elem);
+		bytes_written += scnprintf(buf + bytes_written,
+					   PAGE_SIZE - bytes_written,
+					   "\t> %5dms%15llu%15d%%\n", 10,
+					   elem, pct);
+	}
+	num_elem = s->latency_writes_elems;
+	if (num_elem > 0) {
+		bytes_written += scnprintf(buf + bytes_written,
+			   PAGE_SIZE - bytes_written,
+			   "IO svc_time Write Latency Histogram (n = %llu):\n",
+			   num_elem);
+		for (i = 0;
+		     i < ARRAY_SIZE(latency_x_axis_us);
+		     i++) {
+			elem = s->latency_y_axis_write[i];
+			pct = div64_u64(elem * 100, num_elem);
+			bytes_written += scnprintf(buf + bytes_written,
+						   PAGE_SIZE - bytes_written,
+						   "\t< %5lluus%15llu%15d%%\n",
+						   latency_x_axis_us[i],
+						   elem, pct);
+		}
+		/* Last element in y-axis table is overflow */
+		elem = s->latency_y_axis_write[i];
+		pct = div64_u64(elem * 100, num_elem);
+		bytes_written += scnprintf(buf + bytes_written,
+					   PAGE_SIZE - bytes_written,
+					   "\t> %5dms%15llu%15d%%\n", 10,
+					   elem, pct);
+	}
+	return bytes_written;
+}
+EXPORT_SYMBOL(blk_latency_hist_show);
+#endif

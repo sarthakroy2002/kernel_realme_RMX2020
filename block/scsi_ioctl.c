@@ -34,6 +34,13 @@
 #include <scsi/scsi_ioctl.h>
 #include <scsi/scsi_cmnd.h>
 
+/*
+ * MTK PATCH: Include UFS ioctl code definition.
+ */
+#ifdef CONFIG_MTK_UFS_SUPPORT
+#include <scsi/ufs/ufs-mtk-ioctl.h>
+#endif
+
 struct blk_cmd_filter {
 	unsigned long read_ok[BLK_SCSI_CMD_PER_LONG];
 	unsigned long write_ok[BLK_SCSI_CMD_PER_LONG];
@@ -205,6 +212,13 @@ static void blk_set_cmd_filter_defaults(struct blk_cmd_filter *filter)
 	__set_bit(GPCMD_LOAD_UNLOAD, filter->write_ok);
 	__set_bit(GPCMD_SET_STREAMING, filter->write_ok);
 	__set_bit(GPCMD_SET_READ_AHEAD, filter->write_ok);
+#ifdef OPLUS_FEATURE_STORAGE_TOOL
+// jason.wu@BSP.Storage, 2020-6-11
+// add write buffer command for common user
+// add vendor command for common user
+	__set_bit(WRITE_BUFFER, filter->write_ok);
+	__set_bit(VENDOR_SPECIFIC_CDB, filter->write_ok);
+#endif
 }
 
 int blk_verify_command(unsigned char *cmd, fmode_t has_write_perm)
@@ -327,6 +341,12 @@ static int sg_io(struct request_queue *q, struct gendisk *bd_disk,
 		return PTR_ERR(rq);
 	req = scsi_req(rq);
 
+	/* MTK PATCH for SPOH */
+	#ifdef MTK_UFS_HQA
+	if (hdr->flags & SG_FLAG_POWER_LOSS)
+		rq->cmd_flags |= REQ_POWER_LOSS;
+	#endif
+
 	if (hdr->cmd_len > BLK_MAX_CDB) {
 		req->cmd = kzalloc(hdr->cmd_len, GFP_KERNEL);
 		if (!req->cmd)
@@ -424,6 +444,12 @@ int sg_scsi_ioctl(struct request_queue *q, struct gendisk *disk, fmode_t mode,
 	int err;
 	unsigned int in_len, out_len, bytes, opcode, cmdlen;
 	char *buffer = NULL;
+#ifdef OPLUS_FEATURE_STORAGE_TOOL
+// jason.wu@BSP.Storage, 2020-03-03 workaround for samsung device.
+// vendor cmd len is 16 and not 10 in spec.
+// in current application ,only samsung health will use this cmd.
+	struct scsi_device *sdev = NULL;
+#endif
 
 	if (!sic)
 		return -EINVAL;
@@ -457,6 +483,17 @@ int sg_scsi_ioctl(struct request_queue *q, struct gendisk *disk, fmode_t mode,
 	req = scsi_req(rq);
 
 	cmdlen = COMMAND_SIZE(opcode);
+#ifdef OPLUS_FEATURE_STORAGE_TOOL
+// jason.wu@BSP.Storage, 2020-03-03 workaround for samsung device.
+// vendor cmd len is 16 and not 10 in spec.
+// in current application ,only samsung health will use this cmd.
+	sdev = (struct scsi_device*)(q->queuedata);
+	if ((VENDOR_SPECIFIC_CDB == opcode)
+		&&(0 == strncmp(sdev->vendor, "SAMSUNG ", 8))
+	){
+		cmdlen = 16;
+	}
+#endif
 
 	/*
 	 * get command and data to send to device, if any
@@ -519,7 +556,7 @@ int sg_scsi_ioctl(struct request_queue *q, struct gendisk *disk, fmode_t mode,
 		if (copy_to_user(sic->data, buffer, out_len))
 			err = -EFAULT;
 	}
-	
+
 error:
 	blk_put_request(rq);
 
@@ -713,6 +750,18 @@ int scsi_verify_blk_ioctl(struct block_device *bd, unsigned int cmd)
 		 * not have partitions, so we get here only for disks.
 		 */
 		return -ENOIOCTLCMD;
+/* MTK PATCH */
+#ifdef CONFIG_MTK_UFS_SUPPORT
+	/*
+	 * MTK PATCH: bypass CAP_SYS_RAWIO checking for UFS ioctl facility.
+	 */
+	case UFS_IOCTL_FFU:
+		return 0;
+	case UFS_IOCTL_QUERY:
+		return 0;
+	case UFS_IOCTL_GET_FW_VER:
+		return 0;
+#endif
 	default:
 		break;
 	}

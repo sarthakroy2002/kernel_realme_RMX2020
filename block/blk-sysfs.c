@@ -16,6 +16,10 @@
 #include "blk-mq.h"
 #include "blk-mq-debugfs.h"
 #include "blk-wbt.h"
+#if defined(OPLUS_FEATURE_FG_IO_OPT) && defined(CONFIG_OPPO_FG_IO_OPT)
+/*Huacai.Zhou@Tech.Kernel.MM, 2020-03-23,add foreground io opt*/
+#include "oppo_foreground_io_opt/oppo_foreground_io_opt.h"
+#endif /*OPLUS_FEATURE_FG_IO_OPT*/
 
 struct queue_sysfs_entry {
 	struct attribute attr;
@@ -395,7 +399,22 @@ static ssize_t queue_poll_delay_store(struct request_queue *q, const char *page,
 
 	return count;
 }
+#ifdef OPLUS_FEATURE_HEALTHINFO
+// jiheng.xie@PSW.Tech.BSP.Performance, 2019/03/11
+// Add for ioqueue
+#ifdef CONFIG_OPPO_HEALTHINFO
+static ssize_t queue_show_ohm_inflight(struct request_queue *q, char *page)
+{
+	ssize_t ret;
 
+	ret = sprintf(page, "async:%d\n", q->in_flight[0]);
+	ret += sprintf(page + ret, "sync:%d\n", q->in_flight[1]);
+	ret += sprintf(page + ret, "bg:%d\n", q->in_flight[2]);
+	ret += sprintf(page + ret, "fg:%d\n", q->in_flight[3]);
+	return ret;
+}
+#endif
+#endif /* OPLUS_FEATURE_HEALTHINFO */
 static ssize_t queue_poll_show(struct request_queue *q, char *page)
 {
 	return queue_var_show(test_bit(QUEUE_FLAG_POLL, &q->queue_flags), page);
@@ -503,6 +522,11 @@ static ssize_t queue_wc_store(struct request_queue *q, const char *page,
 static ssize_t queue_dax_show(struct request_queue *q, char *page)
 {
 	return queue_var_show(blk_queue_dax(q), page);
+}
+
+static ssize_t queue_inline_crypt_show(struct request_queue *q, char *page)
+{
+	return queue_var_show(blk_queue_inline_crypt(q), page);
 }
 
 static struct queue_sysfs_entry queue_requests_entry = {
@@ -637,7 +661,16 @@ static struct queue_sysfs_entry queue_rq_affinity_entry = {
 	.show = queue_rq_affinity_show,
 	.store = queue_rq_affinity_store,
 };
-
+#ifdef OPLUS_FEATURE_HEALTHINFO
+// jiheng.xie@PSW.Tech.BSP.Performance, 2019/03/11
+// Add for ioqueue
+#ifdef CONFIG_OPPO_HEALTHINFO
+static struct queue_sysfs_entry queue_ohm_inflight_entry = {
+	.attr = {.name = "ohm_inflight", .mode = S_IRUGO },
+	.show = queue_show_ohm_inflight,
+};
+#endif
+#endif /* OPLUS_FEATURE_HEALTHINFO */
 static struct queue_sysfs_entry queue_iostats_entry = {
 	.attr = {.name = "iostats", .mode = S_IRUGO | S_IWUSR },
 	.show = queue_show_iostats,
@@ -660,6 +693,11 @@ static struct queue_sysfs_entry queue_poll_delay_entry = {
 	.attr = {.name = "io_poll_delay", .mode = S_IRUGO | S_IWUSR },
 	.show = queue_poll_delay_show,
 	.store = queue_poll_delay_store,
+};
+
+static struct queue_sysfs_entry queue_inline_crypt_entry = {
+	.attr = {.name = "inline_crypt", .mode = S_IRUGO },
+	.show = queue_inline_crypt_show,
 };
 
 static struct queue_sysfs_entry queue_wc_entry = {
@@ -686,10 +724,27 @@ static struct queue_sysfs_entry throtl_sample_time_entry = {
 	.store = blk_throtl_sample_time_store,
 };
 #endif
-
+#if defined(OPLUS_FEATURE_FG_IO_OPT) && defined(CONFIG_OPPO_FG_IO_OPT)
+/*Huacai.Zhou@Tech.Kernel.MM, 2020-03-23,add foreground io opt*/
+static struct queue_sysfs_entry queue_fgio_entry = {
+	.attr = {.name = "fg_io_cnt_max", .mode = S_IRUGO | S_IWUSR },
+	.show = queue_fg_count_max_show,
+	.store = queue_fg_count_max_store,
+};
+static struct queue_sysfs_entry queue_bothio_entry = {
+	.attr = {.name = "both_io_cnt_max", .mode = S_IRUGO | S_IWUSR },
+	.show = queue_both_count_max_show,
+	.store = queue_both_count_max_store,
+};
+#endif /*OPLUS_FEATURE_FG_IO_OPT*/
 static struct attribute *default_attrs[] = {
 	&queue_requests_entry.attr,
 	&queue_ra_entry.attr,
+#if defined(OPLUS_FEATURE_FG_IO_OPT) && defined(CONFIG_OPPO_FG_IO_OPT)
+/*Huacai.Zhou@Tech.Kernel.MM, 2020-03-23,add foreground io opt*/
+	&queue_fgio_entry.attr,
+	&queue_bothio_entry.attr,
+#endif /*OPLUS_FEATURE_FG_IO_OPT*/
 	&queue_max_hw_sectors_entry.attr,
 	&queue_max_sectors_entry.attr,
 	&queue_max_segments_entry.attr,
@@ -714,12 +769,20 @@ static struct attribute *default_attrs[] = {
 	&queue_nomerges_entry.attr,
 	&queue_rq_affinity_entry.attr,
 	&queue_iostats_entry.attr,
+#ifdef OPLUS_FEATURE_HEALTHINFO
+// jiheng.xie@PSW.Tech.BSP.Performance, 2019/03/11
+// Add for ioqueue
+#ifdef CONFIG_OPPO_HEALTHINFO
+	&queue_ohm_inflight_entry.attr,
+#endif 
+#endif /* OPLUS_FEATURE_HEALTHINFO */
 	&queue_random_entry.attr,
 	&queue_poll_entry.attr,
 	&queue_wc_entry.attr,
 	&queue_dax_entry.attr,
 	&queue_wb_lat_entry.attr,
 	&queue_poll_delay_entry.attr,
+	&queue_inline_crypt_entry.attr,
 #ifdef CONFIG_BLK_DEV_THROTTLING_LOW
 	&throtl_sample_time_entry.attr,
 #endif
