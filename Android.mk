@@ -40,7 +40,7 @@ $(TARGET_KERNEL_CONFIG): $(KERNEL_MAKE_DEPENDENCIES)
 	$(hide) mkdir -p $(dir $@)
 #ifdef OPLUS_ARCH_INJECT
 #Sunliang@ANDROID.BUILD, 2020/04/08, export global native features to kernel
-	source kernel-4.14/oplus_native_features.sh ; \
+	source $(srctree)/oplus_native_features.sh ; \
 	$(PREBUILT_MAKE_PREFIX)$(MAKE) -C $(PRIVATE_DIR) $(KERNEL_MAKE_OPTION) $(KERNEL_DEFCONFIG)
 #endif /* OPLUS_ARCH_INJECT */
 $(BUILT_DTB_OVERLAY_TARGET): $(KERNEL_ZIMAGE_OUT)
@@ -51,7 +51,7 @@ $(KERNEL_ZIMAGE_OUT): $(TARGET_KERNEL_CONFIG) $(KERNEL_MAKE_DEPENDENCIES)
 	$(hide) mkdir -p $(dir $@)
 #ifdef OPLUS_ARCH_INJECT
 #Sunliang@ANDROID.BUILD, 2020/04/08, export global native features to kernel
-	source kernel-4.14/oplus_native_features.sh ; \
+	source $(srctree)/oplus_native_features.sh ; \
 	$(PREBUILT_MAKE_PREFIX)$(MAKE) -C $(PRIVATE_DIR) $(KERNEL_MAKE_OPTION)
 #endif /* OPLUS_ARCH_INJECT */
 	$(hide) $(call fixup-kernel-cmd-file,$(KERNEL_OUT)/arch/$(KERNEL_TARGET_ARCH)/boot/compressed/.piggy.xzkern.cmd)
@@ -85,7 +85,7 @@ kernel-menuconfig:
 	$(hide) mkdir -p $(KERNEL_OUT)
 #ifdef OPLUS_ARCH_INJECT
 #Sunliang@ANDROID.BUILD, 2020/04/08, export global native features to kernel
-	source kernel-4.14/oplus_native_features.sh ; \
+	source $(srctree)/oplus_native_features.sh ; \
 	$(MAKE) -C $(KERNEL_DIR) $(KERNEL_MAKE_OPTION) menuconfig
 #endif /* OPLUS_ARCH_INJECT */
 
@@ -93,7 +93,7 @@ menuconfig-kernel savedefconfig-kernel:
 	$(hide) mkdir -p $(KERNEL_OUT)
 #ifdef OPLUS_ARCH_INJECT
 #Sunliang@ANDROID.BUILD, 2020/04/08, export global native features to kernel
-	source kernel-4.14/oplus_native_features.sh ; \
+	source $(srctree)/oplus_native_features.sh ; \
 	$(MAKE) -C $(KERNEL_DIR) $(KERNEL_MAKE_OPTION) $(patsubst %config-kernel,%config,$@)
 #endif /* OPLUS_ARCH_INJECT */
 
