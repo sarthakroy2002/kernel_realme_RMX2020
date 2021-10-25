@@ -22,8 +22,8 @@ static struct file_system_type incfs_fs_type = {
 
 static struct kobject *sysfs_root, *featurefs_root;
 
-static ssize_t supported(struct kobject *kobj,
-			 struct kobj_attribute *attr, char *buff)
+static ssize_t corefs_show(struct kobject *kobj,
+			  struct kobj_attribute *attr, char *buff)
 {
 	return snprintf(buff, PAGE_SIZE, "supported\n");
 }
