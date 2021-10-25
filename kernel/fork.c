@@ -106,17 +106,43 @@
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/task.h>
+#ifdef OPLUS_FEATURE_UIFIRST
+// XieLiujie@BSP.KERNEL.PERFORMANCE, 2020/05/25, Add for UIFirst
+#include <linux/uifirst/uifirst_sched_fork.h>
+#endif /* OPLUS_FEATURE_UIFIRST */
+
+#include <mt-plat/mtk_pidmap.h>
+#ifdef CONFIG_MTK_TASK_TURBO
+#include <mt-plat/turbo_common.h>
+#endif
+#ifdef OPLUS_FEATURE_HEALTHINFO
+// Liujie.Xie@TECH.Kernel.Sched, 2019/08/29, add for jank monitor
+#ifdef CONFIG_OPPO_JANK_INFO
+#include <linux/oppo_healthinfo/oppo_jank_monitor.h>
+#endif
+#endif /* OPLUS_FEATURE_HEALTHINFO */
 
 /*
  * Minimum number of threads to boot the kernel
  */
 #define MIN_THREADS 20
 
+#if defined(OPLUS_FEATURE_VIRTUAL_RESERVE_MEMORY) && defined(CONFIG_VIRTUAL_RESERVE_MEMORY)
+/* Kui.Zhang@PSW.TEC.KERNEL.Performance, 2019/01/22,
+ * reserved area operations
+ */
+#include <linux/resmap_account.h>
+#include <linux/vm_anti_fragment.h>
+#endif
 /*
  * Maximum number of threads
  */
 #define MAX_THREADS FUTEX_TID_MASK
 
+#if defined(OPLUS_FEATURE_MEMLEAK_DETECT) && defined(CONFIG_ION) && defined(CONFIG_DUMP_TASKS_MEM)
+/* Peifeng.Li@BSP.Kernel.MM, 2020-05-20 update user tasklist */
+extern void update_user_tasklist(struct task_struct *tsk);
+#endif
 /*
  * Protected counters by write_lock_irq(&tasklist_lock)
  */
@@ -605,7 +631,7 @@ free_tsk:
 static __latent_entropy int dup_mmap(struct mm_struct *mm,
 					struct mm_struct *oldmm)
 {
-	struct vm_area_struct *mpnt, *tmp, *prev, **pprev;
+	struct vm_area_struct *mpnt, *tmp, *prev, **pprev, *last = NULL;
 	struct rb_node **rb_link, *rb_parent;
 	int retval;
 	unsigned long charge;
@@ -661,7 +687,7 @@ static __latent_entropy int dup_mmap(struct mm_struct *mm,
 		if (!tmp)
 			goto fail_nomem;
 		*tmp = *mpnt;
-		INIT_LIST_HEAD(&tmp->anon_vma_chain);
+		INIT_VMA(tmp);
 		retval = vma_dup_policy(mpnt, tmp);
 		if (retval)
 			goto fail_nomem_policy;
@@ -705,6 +731,14 @@ static __latent_entropy int dup_mmap(struct mm_struct *mm,
 		if (is_vm_hugetlb_page(tmp))
 			reset_vma_resv_huge_pages(tmp);
 
+#if defined(OPLUS_FEATURE_VIRTUAL_RESERVE_MEMORY) && defined(CONFIG_VIRTUAL_RESERVE_MEMORY)
+		/* Kui.Zhang@PSW.TEC.KERNEL.Performance, 2019/03/18,
+		 * dup the reserved vma from parent process
+		 */
+		if (BACKUP_CREATE_FLAG(tmp->vm_flags))
+			mm->reserve_vma = tmp;
+#endif
+
 		/*
 		 * Link in the new vma and copy the page table entries.
 		 */
@@ -718,8 +752,18 @@ static __latent_entropy int dup_mmap(struct mm_struct *mm,
 		rb_parent = &tmp->vm_rb;
 
 		mm->map_count++;
-		if (!(tmp->vm_flags & VM_WIPEONFORK))
+		if (!(tmp->vm_flags & VM_WIPEONFORK)) {
+			if (IS_ENABLED(CONFIG_SPECULATIVE_PAGE_FAULT)) {
+				/*
+				 * Mark this VMA as changing to prevent the
+				 * speculative page fault hanlder to process
+				 * it until the TLB are flushed below.
+				 */
+				last = mpnt;
+				vm_raw_write_begin(mpnt);
+			}
 			retval = copy_page_range(mm, oldmm, mpnt);
+		}
 
 		if (tmp->vm_ops && tmp->vm_ops->open)
 			tmp->vm_ops->open(tmp);
@@ -727,11 +771,38 @@ static __latent_entropy int dup_mmap(struct mm_struct *mm,
 		if (retval)
 			goto out;
 	}
+	
+#if defined(OPLUS_FEATURE_VIRTUAL_RESERVE_MEMORY) && defined(CONFIG_VIRTUAL_RESERVE_MEMORY)
+	/* Kui.Zhang@PSW.TEC.KERNEL.Performance, 2019/03/18,
+	 * dup the reserved vma from parent process
+	 */
+	retval = dup_reserved_mmap(mm, oldmm, vm_area_cachep);
+	if (retval)
+		goto out;
+    mm->vm_search_two_way = oldmm->vm_search_two_way;
+#endif
+
 	/* a new mm has just been created */
 	retval = arch_dup_mmap(oldmm, mm);
 out:
 	up_write(&mm->mmap_sem);
 	flush_tlb_mm(oldmm);
+
+	if (IS_ENABLED(CONFIG_SPECULATIVE_PAGE_FAULT)) {
+		/*
+		 * Since the TLB has been flush, we can safely unmark the
+		 * copied VMAs and allows the speculative page fault handler to
+		 * process them again.
+		 * Walk back the VMA list from the last marked VMA.
+		 */
+		for (; last; last = last->vm_prev) {
+			if (last->vm_flags & VM_DONTCOPY)
+				continue;
+			if (!(last->vm_flags & VM_WIPEONFORK))
+				vm_raw_write_end(last);
+		}
+	}
+
 	up_write(&oldmm->mmap_sem);
 	dup_userfaultfd_complete(&uf);
 fail_uprobe_end:
@@ -827,6 +898,15 @@ static struct mm_struct *mm_init(struct mm_struct *mm, struct task_struct *p,
 	mm->mmap = NULL;
 	mm->mm_rb = RB_ROOT;
 	mm->vmacache_seqnum = 0;
+#if defined(OPLUS_FEATURE_VIRTUAL_RESERVE_MEMORY) && defined(CONFIG_VIRTUAL_RESERVE_MEMORY)
+	/* Kui.Zhang@PSW.TEC.KERNEL.Performance, 2019/03/18,
+	 * init the reserve area
+	 */
+	init_reserve_mm(mm);
+#endif
+#ifdef CONFIG_SPECULATIVE_PAGE_FAULT
+	rwlock_init(&mm->mm_rb_lock);
+#endif
 	atomic_set(&mm->mm_users, 1);
 	atomic_set(&mm->mm_count, 1);
 	init_rwsem(&mm->mmap_sem);
@@ -1237,6 +1317,13 @@ static int copy_mm(unsigned long clone_flags, struct task_struct *tsk)
 	int retval;
 
 	tsk->min_flt = tsk->maj_flt = 0;
+#ifdef CONFIG_MTK_MLOG
+	tsk->fm_flt = 0;
+#ifdef CONFIG_SWAP
+	tsk->swap_in = tsk->swap_out = 0;
+#endif
+#endif
+
 	tsk->nvcsw = tsk->nivcsw = 0;
 #ifdef CONFIG_DETECT_HUNG_TASK
 	tsk->last_switch_count = tsk->nvcsw + tsk->nivcsw;
@@ -1859,7 +1946,23 @@ static __latent_entropy struct task_struct *copy_process(
 	p->sequential_io	= 0;
 	p->sequential_io_avg	= 0;
 #endif
-
+#ifdef CONFIG_MTK_TASK_TURBO
+	init_turbo_attr(p, current);
+#endif
+#ifdef OPLUS_FEATURE_UIFIRST
+// XieLiujie@BSP.KERNEL.PERFORMANCE, 2020/05/25, Add for UIFirst
+	init_task_ux_info(p);
+#endif /* OPLUS_FEATURE_UIFIRST */
+#ifdef OPLUS_FEATURE_HEALTHINFO
+// Liujie.Xie@TECH.Kernel.Sched, 2019/08/29, add for jank monitor
+#ifdef CONFIG_OPPO_JANK_INFO
+	p->jank_trace = 0;
+	memset(&p->oppo_jank_info, 0, sizeof(struct oppo_jank_monitor_info));
+#endif
+#endif /* OPLUS_FEATURE_HEALTHINFO */
+#ifdef CONFIG_OPLUS_FEATURE_FUSE_FS_SHORTCIRCUIT
+	p->fpack = NULL;
+#endif /* CONFIG_OPLUS_FEATURE_FUSE_FS_SHORTCIRCUIT */
 	/* Perform scheduler related setup. Assign this task to a CPU. */
 	retval = sched_fork(clone_flags, p);
 	if (retval)
@@ -2062,6 +2165,11 @@ static __latent_entropy struct task_struct *copy_process(
 							 p->real_parent->signal->is_child_subreaper;
 			list_add_tail(&p->sibling, &p->real_parent->children);
 			list_add_tail_rcu(&p->tasks, &init_task.tasks);
+#if defined(OPLUS_FEATURE_MEMLEAK_DETECT) && defined(CONFIG_ION) && defined(CONFIG_DUMP_TASKS_MEM)
+			/* Peifeng.Li@BSP.Kernel.MM, 2020-05-20 init user tasklist */
+			INIT_LIST_HEAD(&p->user_tasks);
+			update_user_tasklist(p);
+#endif
 			attach_pid(p, PIDTYPE_PGID);
 			attach_pid(p, PIDTYPE_SID);
 			__this_cpu_inc(process_counts);
@@ -2089,6 +2197,7 @@ static __latent_entropy struct task_struct *copy_process(
 	perf_event_fork(p);
 
 	trace_task_newtask(p, clone_flags);
+	mtk_pidmap_update(p);
 	uprobe_copy_process(p, clone_flags);
 
 	return p;
@@ -2227,6 +2336,10 @@ long _do_fork(unsigned long clone_flags,
 
 		pid = get_task_pid(p, PIDTYPE_PID);
 		nr = pid_vnr(pid);
+#if defined(OPLUS_FEATURE_MEMLEAK_DETECT) && defined(CONFIG_ION) && defined(CONFIG_DUMP_TASKS_MEM)
+		//perifeng.Li@Kernel.Permance, 2019/09/06, accounts process-real-phymem
+		atomic64_set(&p->ions, 0);
+#endif
 
 		if (clone_flags & CLONE_PARENT_SETTID)
 			put_user(nr, parent_tidptr);

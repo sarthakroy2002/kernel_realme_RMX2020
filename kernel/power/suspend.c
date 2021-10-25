@@ -35,6 +35,8 @@
 
 #include "power.h"
 
+#define MTK_SOLUTION 1
+
 const char * const pm_labels[] = {
 	[PM_SUSPEND_TO_IDLE] = "freeze",
 	[PM_SUSPEND_STANDBY] = "standby",
@@ -543,6 +545,116 @@ static void suspend_finish(void)
 	pm_restore_console();
 }
 
+//rendong.shi@BSP.boot,2016/1/18,port form 8939 for screenon too slowly when press pwrkey
+/**
+ * Sync the filesystem in seperate workqueue.
+ * Then check it finishing or not periodically and
+ * abort if any wakeup source comes in. That can reduce
+ * the wakeup latency
+ */
+static bool sys_sync_completed = false;
+static void sys_sync_work_func(struct work_struct *work);
+static DECLARE_WORK(sys_sync_work, sys_sync_work_func);
+static DECLARE_WAIT_QUEUE_HEAD(sys_sync_wait);
+static void sys_sync_work_func(struct work_struct *work)
+{
+	printk(KERN_INFO "PM: Syncing filesystems ... \n");
+	sys_sync();
+	sys_sync_completed = true;
+	wake_up(&sys_sync_wait);
+}
+
+static int sys_sync_queue(void)
+{
+	int work_status = work_busy(&sys_sync_work);
+
+	/*maybe some irq coming here before pending check*/
+	pm_wakeup_clear(true);
+
+	/*Check if the previous work still running.*/
+	if (!(work_status & WORK_BUSY_PENDING)) {
+		if (work_status & WORK_BUSY_RUNNING) {
+			while (wait_event_timeout(sys_sync_wait, sys_sync_completed,
+								msecs_to_jiffies(100)) == 0) {
+				if (pm_wakeup_pending()) {
+					pr_info("PM: Pre-Syncing abort\n");
+					goto abort;
+				}
+			}
+			pr_info("PM: Pre-Syncing done\n");
+		}
+		sys_sync_completed = false;
+		schedule_work(&sys_sync_work);
+	}
+
+	while (wait_event_timeout(sys_sync_wait, sys_sync_completed,
+						msecs_to_jiffies(100)) == 0) {
+		if (pm_wakeup_pending()) {
+			pr_info("PM: Syncing abort\n");
+			goto abort;
+		}
+	}
+
+	pr_info("PM: Syncing done\n");
+	return 0;
+abort:
+	return -EAGAIN;
+}
+
+#if MTK_SOLUTION
+
+#define SYS_SYNC_TIMEOUT 2000
+
+static int sys_sync_ongoing;
+
+static void suspend_sys_sync(struct work_struct *work);
+static struct workqueue_struct *suspend_sys_sync_work_queue;
+DECLARE_WORK(suspend_sys_sync_work, suspend_sys_sync);
+
+static void suspend_sys_sync(struct work_struct *work)
+{
+	pr_debug("++\n");
+	sys_sync();
+	sys_sync_ongoing = 0;
+	pr_debug("--\n");
+}
+
+int suspend_syssync_enqueue(void)
+{
+	int timeout = 0;
+
+	if (suspend_sys_sync_work_queue == NULL) {
+		suspend_sys_sync_work_queue =
+			create_singlethread_workqueue("fs_suspend_syssync");
+		if (suspend_sys_sync_work_queue == NULL) {
+			pr_err("fs_suspend_syssync workqueue create failed\n");
+			return -EBUSY;
+		}
+	}
+
+	while (timeout < SYS_SYNC_TIMEOUT) {
+		if (!sys_sync_ongoing)
+			break;
+		msleep(100);
+		timeout += 100;
+	}
+
+	if (!sys_sync_ongoing) {
+		sys_sync_ongoing = 1;
+		queue_work(suspend_sys_sync_work_queue, &suspend_sys_sync_work);
+		while (timeout < SYS_SYNC_TIMEOUT) {
+			if (!sys_sync_ongoing)
+				return 0;
+			msleep(100);
+			timeout += 100;
+		}
+	}
+
+	return -EBUSY;
+}
+
+#endif
+
 /**
  * enter_state - Do common work needed to enter system sleep state.
  * @state: System sleep state to enter.
@@ -575,7 +687,15 @@ static int enter_state(suspend_state_t state)
 #ifndef CONFIG_SUSPEND_SKIP_SYNC
 	trace_suspend_resume(TPS("sync_filesystems"), 0, true);
 	pr_info("Syncing filesystems ... ");
+#if MTK_SOLUTION
+	error = suspend_syssync_enqueue();
+	if (error) {
+		pr_err("sys_sync timeout.\n");
+		goto Unlock;
+	}
+#else
 	sys_sync();
+#endif
 	pr_cont("done.\n");
 	trace_suspend_resume(TPS("sync_filesystems"), 0, false);
 #endif

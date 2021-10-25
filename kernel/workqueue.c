@@ -52,6 +52,8 @@
 
 #include "workqueue_internal.h"
 
+#include <linux/delay.h>
+
 enum {
 	/*
 	 * worker_pool flags
@@ -1296,6 +1298,15 @@ fail:
 	if (work_is_canceling(work))
 		return -ENOENT;
 	cpu_relax();
+	/*
+	 * if queueing is in progress in another context,
+	 * pool->lock may be in a busy loop,
+	 * if pool->lock is in busy loop,
+	 * the other context may never get the lock.
+	 * just for this case if queueing is in progress,
+	 * give 1 usec delay to avoid live lock problem.
+	 */
+	udelay(1);
 	return -EAGAIN;
 }
 
@@ -2911,6 +2922,9 @@ bool flush_work(struct work_struct *work)
 	if (WARN_ON(!wq_online))
 		return false;
 
+	if (WARN_ON(!work->func))
+		return false;
+
 	lock_map_acquire(&work->lockdep_map);
 	lock_map_release(&work->lockdep_map);
 
@@ -4411,6 +4425,48 @@ void print_worker_info(const char *log_lvl, struct task_struct *task)
 		if (desc[0])
 			pr_cont(" (%s)", desc);
 		pr_cont("\n");
+	}
+}
+
+void get_worker_info(struct task_struct *task, char *name_buf, char *desc_buf, char *fn_buf)
+{
+	work_func_t *fn = NULL;
+	char name[WQ_NAME_LEN] = { };
+	char desc[WORKER_DESC_LEN] = { };
+	char fn_name[WQ_NAME_LEN] = { };
+	struct pool_workqueue *pwq = NULL;
+	struct workqueue_struct *wq = NULL;
+	bool desc_valid = false;
+	struct worker *worker;
+
+	if (!(task->flags & PF_WQ_WORKER))
+		return;
+
+	/*
+	 * This function is called without any synchronization and @task
+	 * could be in any state.  Be careful with dereferences.
+	 */
+	worker = kthread_probe_data(task);
+
+	/*
+	 * Carefully copy the associated workqueue's workfn and name.  Keep
+	 * the original last '\0' in case the original contains garbage.
+	 */
+	probe_kernel_read(&fn, &worker->current_func, sizeof(fn));
+	probe_kernel_read(&pwq, &worker->current_pwq, sizeof(pwq));
+	probe_kernel_read(&wq, &pwq->wq, sizeof(wq));
+	probe_kernel_read(name, wq->name, sizeof(name) - 1);
+
+	/* copy worker description */
+	probe_kernel_read(&desc_valid, &worker->desc_valid, sizeof(desc_valid));
+	if (desc_valid)
+		probe_kernel_read(desc, worker->desc, sizeof(desc) - 1);
+
+	if (fn || name[0] || desc[0]) {
+		strncpy(name_buf, name, sizeof(name));
+		strncpy(desc_buf, desc, sizeof(desc));
+		snprintf(fn_name, sizeof(fn_name), "%pf", fn);
+		strncpy(fn_buf, fn_name, sizeof(fn_name));
 	}
 }
 
