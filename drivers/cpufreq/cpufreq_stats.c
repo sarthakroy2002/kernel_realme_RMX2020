@@ -15,6 +15,9 @@
 #include <linux/slab.h>
 
 static DEFINE_SPINLOCK(cpufreq_stats_lock);
+#ifdef CONFIG_OPLUS_FEATURE_MIDAS
+static DEFINE_SPINLOCK(idle_lock);
+#endif
 
 struct cpufreq_stats {
 	unsigned int total_trans;
@@ -25,18 +28,75 @@ struct cpufreq_stats {
 	u64 *time_in_state;
 	unsigned int *freq_table;
 	unsigned int *trans_table;
+#ifdef CONFIG_OPLUS_FEATURE_MIDAS
+	/* stats for idle time of per freq */
+	unsigned int nr_cpu;
+	unsigned int *in_idle;
+	unsigned long long *last_idle_time;
+	u64 **idle_in_state;
+#endif
 };
 
 static int cpufreq_stats_update(struct cpufreq_stats *stats)
 {
 	unsigned long long cur_time = get_jiffies_64();
+#ifdef CONFIG_OPLUS_FEATURE_MIDAS
+	unsigned int i;
+#endif
 
 	spin_lock(&cpufreq_stats_lock);
 	stats->time_in_state[stats->last_index] += cur_time - stats->last_time;
 	stats->last_time = cur_time;
+#ifdef CONFIG_OPLUS_FEATURE_MIDAS
+	for (i = 0; i < stats->nr_cpu; i++) {
+		if (stats->in_idle[i]) {
+			if (stats->last_idle_time[i])
+				stats->idle_in_state[i][stats->last_index] += cur_time - stats->last_idle_time[i];
+
+			stats->last_idle_time[i] = cur_time;
+		}
+	}
+#endif
 	spin_unlock(&cpufreq_stats_lock);
 	return 0;
 }
+
+#ifdef CONFIG_OPLUS_FEATURE_MIDAS
+void cpufreq_stats_idle_hook(unsigned int cpu, unsigned int in_idle) {
+	struct cpufreq_policy *policy;
+	struct cpufreq_stats *stats;
+	unsigned long flags;
+	int first_cpu;
+
+	policy = cpufreq_cpu_get(cpu);
+	if (IS_ERR_OR_NULL(policy)) {
+		//pr_err("%s: policy %d is invalid", __func__, cpu);
+		return;
+	}
+
+	stats = policy->stats;
+	if (IS_ERR_OR_NULL(stats)) {
+		pr_err("%s: no stats found\n", __func__);
+		cpufreq_cpu_put(policy);
+		return;
+	}
+
+	first_cpu = cpumask_first(policy->related_cpus);
+	cpu -= first_cpu;
+
+	spin_lock_irqsave(&idle_lock, flags);
+
+	stats->in_idle[cpu] = in_idle;
+	if (!in_idle)
+		stats->last_idle_time[cpu] = 0;
+
+	spin_unlock_irqrestore(&idle_lock, flags);
+
+	cpufreq_stats_update(stats);
+	cpufreq_cpu_put(policy);
+}
+EXPORT_SYMBOL_GPL(cpufreq_stats_idle_hook);
+#endif
 
 static void cpufreq_stats_clear_table(struct cpufreq_stats *stats)
 {
@@ -57,17 +117,37 @@ static ssize_t show_time_in_state(struct cpufreq_policy *policy, char *buf)
 {
 	struct cpufreq_stats *stats = policy->stats;
 	ssize_t len = 0;
+#ifdef CONFIG_OPLUS_FEATURE_MIDAS
+	int i, j;
+#else
 	int i;
+#endif
 
 	if (policy->fast_switch_enabled)
 		return 0;
 
 	cpufreq_stats_update(stats);
+#ifdef CONFIG_OPLUS_FEATURE_MIDAS
+	for (i = 0; i < stats->state_num; i++) {
+		len += sprintf(buf + len, "%u %llu ", stats->freq_table[i],
+			(unsigned long long)
+			jiffies_64_to_clock_t(stats->time_in_state[i]));
+		for (j = 0; j < stats->nr_cpu; j++) {
+			if (j < stats->nr_cpu - 1)
+				len += sprintf(buf + len, "%llu ", (unsigned long long)
+					jiffies_64_to_clock_t(stats->idle_in_state[j][i]));
+			else
+				len += sprintf(buf + len, "%llu\n", (unsigned long long)
+					jiffies_64_to_clock_t(stats->idle_in_state[j][i]));
+		}
+	}
+#else
 	for (i = 0; i < stats->state_num; i++) {
 		len += sprintf(buf + len, "%u %llu\n", stats->freq_table[i],
 			(unsigned long long)
 			jiffies_64_to_clock_t(stats->time_in_state[i]));
 	}
+#endif
 	return len;
 }
 
@@ -171,6 +251,9 @@ void cpufreq_stats_create_table(struct cpufreq_policy *policy)
 	struct cpufreq_stats *stats;
 	unsigned int alloc_size;
 	struct cpufreq_frequency_table *pos;
+#ifdef CONFIG_OPLUS_FEATURE_MIDAS
+	unsigned int nr_cpu;
+#endif
 
 	count = cpufreq_table_count_valid_entries(policy);
 	if (!count)
@@ -208,6 +291,29 @@ void cpufreq_stats_create_table(struct cpufreq_policy *policy)
 	stats->last_time = get_jiffies_64();
 	stats->last_index = freq_table_get_index(stats, policy->cur);
 
+#ifdef CONFIG_OPLUS_FEATURE_MIDAS
+	/* Allocate memory for idle_in_state/last_idle_time/in_idle */
+	nr_cpu = cpumask_weight(policy->related_cpus);
+	stats->nr_cpu = nr_cpu;
+	stats->in_idle = kzalloc(nr_cpu * sizeof(unsigned int), GFP_KERNEL);
+	if (!stats->in_idle)
+		goto free_time_in_state;
+
+	stats->last_idle_time = kzalloc(nr_cpu * sizeof(unsigned long long),
+				GFP_KERNEL);
+	if (!stats->last_idle_time)
+		goto free_in_idle;
+
+	stats->idle_in_state = kzalloc(nr_cpu * sizeof(u64 *), GFP_KERNEL);
+	if (!stats->idle_in_state)
+		goto free_last_idle_time;
+
+	for (i = 0; i < nr_cpu; i++) {
+		stats->idle_in_state[i] = kzalloc(alloc_size, GFP_KERNEL);
+		if (!stats->idle_in_state[i])
+			goto free_idle_in_state;
+	}
+#endif
 	policy->stats = stats;
 	ret = sysfs_create_group(&policy->kobj, &stats_attr_group);
 	if (!ret)
@@ -215,6 +321,19 @@ void cpufreq_stats_create_table(struct cpufreq_policy *policy)
 
 	/* We failed, release resources */
 	policy->stats = NULL;
+
+#ifdef CONFIG_OPLUS_FEATURE_MIDAS
+free_idle_in_state:
+	for (i--; i >= 0; i--)
+		kfree(stats->idle_in_state[i]);
+
+	kfree(stats->idle_in_state);
+free_last_idle_time:
+	kfree(stats->last_idle_time);
+free_in_idle:
+	kfree(stats->in_idle);
+free_time_in_state:
+#endif
 	kfree(stats->time_in_state);
 free_stat:
 	kfree(stats);

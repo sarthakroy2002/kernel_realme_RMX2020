@@ -1,0 +1,6 @@
+config OPPO_SENSOR_MTK6885
+	bool "for MediaTek 6885"
+	default n
+	help
+	  It support 6885.
+

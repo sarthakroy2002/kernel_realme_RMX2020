@@ -1,0 +1,54 @@
+#ifdef OPLUS_FEATURE_TP_BASIC
+# Bin.Li@EXP.BSP.bootloader.bootflow, 2017/05/15, Add for config oppo software common soft
+config OPPO_ARCH_FILE
+    bool "for build directory oppo"
+    ---help---
+    say Y to buid in
+source "drivers/soc/oppo/oppo_devinfo/Kconfig"
+
+#ifdef OPLUS_FEATURE_NFC_CONSOFT
+#/* WangYukun@CONNECTIVITY.NFC.BASIC, 2020/03/24, Add for oppo nfc chipset */
+config OPPO_NFC
+  bool "config oppo nfc chipset"
+  select OPPO_ARCH_FILE
+  help
+	define this config to get nfc chipset version from dts.
+#endif /* OPLUS_FEATURE_NFC_CONSOFT
+source "drivers/soc/oppo/oppo_devinfo/Kconfig"
+#source "drivers/soc/oppo/oppo_als_cali_value/Kconfig"
+#source "drivers/soc/oppo/oppo_hypnus/Kconfig"
+#//Wen.Luo@BSP
+#Liang.Zhang@TECH.Storage.Stability.OPPO_SHUTDOWN_DETECT, 2019/04/28, Add for shutdown detect
+#source "drivers/soc/oppo/oppo_shutdown_detect/Kconfig"
+
+#Kun.Hu@TECH.BSP.Stability.PHOENIX_PROJECT 2019/06/15, Add for PHOENIX_PROJECT
+#source "drivers/soc/oppo/oppo_phoenix/Kconfig"
+#endif /* OPLUS_FEATURE_TP_BASIC */
+
+#ifdef VENDOR_EDIT
+#* Bin.Xu@BSP.Kernel.Stability, 2019/12/2, Add for oppo force dump */
+#source "drivers/soc/oppo/oppo_key_handle/Kconfig"
+#endif /* VENDOR_EDIT */
+
+#ifdef OPLUS_FEATURE_NFC_CONSOFT
+#/* WangYukun@CONNECTIVITY.NFC.BASIC, 2020/03/24, Add for oppo nfc chipset */
+source "drivers/soc/oppo/oppo_nfc/Kconfig"
+#endif /* OPLUS_FEATURE_NFC_CONSOFT */
+#ifdef OPLUS_FEATURE_SENSOR_SMEM
+source "drivers/soc/oppo/oppo_als_cali_value/Kconfig"
+#endif /*OPLUS_FEATURE_SENSOR_SMEM */
+
+#ifdef OPLUS_FEATURE_MEMLEAK_DETECT
+#Hailong.Liu@BSP.MM 2019/03/18, Add for svelte
+#source "drivers/soc/oppo/oppo_svelte/Kconfig"
+#endif /* OPLUS_FEATURE_MEMLEAK_DETECT */
+
+#ifdef VENDOR_EDIT
+#/* WuWeiZhong@BSP.Power.Basic, 2020/06/12, add for wakelock profiler*/
+source "drivers/soc/oppo/oppo_wakelock_profiler/Kconfig"
+#endif /* VENDOR_EDIT */
+
+#ifdef OPLUS_FEATURE_MEMLEAK_DETECT
+#Hailong.Liu@BSP.MM 2019/03/18, Add for svelte
+source "drivers/soc/oppo/oppo_svelte/Kconfig"
+#endif /* OPLUS_FEATURE_MEMLEAK_DETECT */

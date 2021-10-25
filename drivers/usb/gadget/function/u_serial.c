@@ -32,6 +32,8 @@
 
 #include "u_serial.h"
 
+#define USERIAL_LOG(fmt, args...) pr_notice("USB_ACM " fmt, ## args)
+
 
 /*
  * This component encapsulates the TTY layer glue needed to provide basic
@@ -81,6 +83,7 @@
  */
 #define QUEUE_SIZE		16
 #define WRITE_BUF_SIZE		8192		/* TX only */
+#define REQ_BUF_SIZE       4096
 #define GS_CONSOLE_BUF_SIZE	8192
 
 /* circular buffer */
@@ -392,7 +395,7 @@ __acquires(&port->port_lock)
 			break;
 
 		req = list_entry(pool->next, struct usb_request, list);
-		len = gs_send_packet(port, req->buf, in->maxpacket);
+		len = gs_send_packet(port, req->buf, REQ_BUF_SIZE);
 		if (len == 0) {
 			wake_up_interruptible(&port->drain_wait);
 			break;
@@ -406,6 +409,24 @@ __acquires(&port->port_lock)
 		pr_vdebug("ttyGS%d: tx len=%d, 0x%02x 0x%02x 0x%02x ...\n",
 			  port->port_num, len, *((u8 *)req->buf),
 			  *((u8 *)req->buf+1), *((u8 *)req->buf+2));
+		{
+			static unsigned int	skip;
+			static DEFINE_RATELIMIT_STATE(ratelimit, 1 * HZ, 10);
+
+			if (__ratelimit(&ratelimit)) {
+				USERIAL_LOG("%s:ttyGS%d:w=%d,0x%x0x%x0x%x\n",
+						__func__, port->port_num, len,
+						*((u8 *)req->buf),
+						*((u8 *)req->buf+1),
+						*((u8 *)req->buf+2));
+				if (skip > 0) {
+					USERIAL_LOG("%s skipped %d bytes\n",
+							__func__, skip);
+					skip = 0;
+				}
+			} else
+				skip += req->actual;
+		}
 
 		/* Drop lock while we call out of driver; completions
 		 * could be issued while we do so.  Disconnection may
@@ -534,6 +555,28 @@ static void gs_rx_push(unsigned long _port)
 		case 0:
 			/* normal completion */
 			break;
+		}
+
+		{
+			static unsigned int	skip;
+			static DEFINE_RATELIMIT_STATE(ratelimit, 1 * HZ, 10);
+
+			if (__ratelimit(&ratelimit)) {
+				USERIAL_LOG("%s:ttyGS%d:a=%d,r=%d(%x%x%x)\n",
+						__func__,
+						port->port_num,
+						req->actual,
+						port->n_read,
+						*((u8 *)req->buf),
+						*((u8 *)req->buf+1),
+						*((u8 *)req->buf+2));
+				if (skip > 0) {
+					USERIAL_LOG("%s skipped %d bytes\n",
+							__func__, skip);
+					skip = 0;
+				}
+			} else
+				skip += req->actual;
 		}
 
 		/* push data to (open) tty */
@@ -666,7 +709,7 @@ static int gs_alloc_requests(struct usb_ep *ep, struct list_head *head,
 	 * be as speedy as we might otherwise be.
 	 */
 	for (i = 0; i < n; i++) {
-		req = gs_alloc_req(ep, ep->maxpacket, GFP_ATOMIC);
+		req = gs_alloc_req(ep, REQ_BUF_SIZE, GFP_ATOMIC);
 		if (!req)
 			return list_empty(head) ? -ENOMEM : 0;
 		req->complete = fn;
@@ -693,6 +736,13 @@ static int gs_start_io(struct gs_port *port)
 	int			status;
 	unsigned		started;
 
+#ifdef OPLUS_FEATURE_CHG_BASIC
+/* tongfeng.huang@BSP.CHG.Basic, 2020/11/03, add for null point issue */
+	if(!port->port_usb) {
+		pr_err("%s: port->port_usb is a invalid device,disconnect it?\n",__func__);
+		return -ENODEV;
+	}
+#endif
 	/* Allocate RX and TX I/O buffers.  We can't easily do this much
 	 * earlier (with GFP_KERNEL) because the requests are coupled to
 	 * endpoints, as are the packet sizes we'll be using.  Different
@@ -719,7 +769,12 @@ static int gs_start_io(struct gs_port *port)
 		gs_start_tx(port);
 		/* Unblock any pending writes into our circular buffer, in case
 		 * we didn't in gs_start_tx() */
-		tty_wakeup(port->port.tty);
+#ifdef OPLUS_FEATURE_CHG_BASIC
+/* tongfeng.huang@BSP.CHG.Basic, 2020/11/03, add for null point issue  */
+		if (port->port.tty) {
+			tty_wakeup(port->port.tty);
+		}
+#endif
 	} else {
 		gs_free_requests(ep, head, &port->read_allocated);
 		gs_free_requests(port->port_usb->in, &port->write_pool,
@@ -830,6 +885,8 @@ static int gs_open(struct tty_struct *tty, struct file *file)
 	}
 
 	pr_debug("gs_open: ttyGS%d (%p,%p)\n", port->port_num, tty, file);
+	USERIAL_LOG("%s: ttyGS%d (%p,%p)\n",
+			__func__, port->port_num, tty, file);
 
 	status = 0;
 
@@ -866,6 +923,8 @@ static void gs_close(struct tty_struct *tty, struct file *file)
 	}
 
 	pr_debug("gs_close: ttyGS%d (%p,%p) ...\n", port->port_num, tty, file);
+	USERIAL_LOG("%s: ttyGS%d (%p,%p)\n",
+			__func__, port->port_num, tty, file);
 
 	/* mark port as closing but in use; we can drop port lock
 	 * and sleep if necessary
@@ -1520,6 +1579,10 @@ void gserial_disconnect(struct gserial *gser)
 	port->port_line_coding = gser->port_line_coding;
 
 	port->port_usb = NULL;
+#ifdef OPLUS_FEATURE_CHG_BASIC
+/* tongfeng.huang@BSP.CHG.Basic, 2020/11/03, add for null point issue */
+	pr_debug("%s port_usb NULL\n",__func__);
+#endif
 	gser->ioport = NULL;
 	if (port->port.count > 0 || port->openclose) {
 		wake_up_interruptible(&port->drain_wait);

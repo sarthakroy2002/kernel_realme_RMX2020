@@ -30,4 +30,10 @@ obj-$(CONFIG_INPUT_APMPOWER)	+= apm-power.o
 obj-$(CONFIG_INPUT_KEYRESET)	+= keyreset.o
 obj-$(CONFIG_INPUT_KEYCOMBO)	+= keycombo.o
 
+#ifdef VENDOR_EDIT
+#Wei.mei@BSP.Fingerprint.Secure, 2019/11/04, add for fingerpring driver
+#obj-$(CONFIG_MTK_FINGERPRINT_SUPPORT)  += fingerprint/
+obj-$(CONFIG_OPPO_FINGERPRINT)  += oppo_fp_drivers/
+obj-$(CONFIG_OPPO_FINGERPRINT)  += oppo_secure_common/
+#endif /*VENDOR_EDIT*/
 obj-$(CONFIG_RMI4_CORE)		+= rmi4/

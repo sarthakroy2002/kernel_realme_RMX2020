@@ -25,6 +25,12 @@
 #include <linux/spinlock.h>
 #include <linux/threads.h>
 
+#ifdef CONFIG_OPLUS_FEATURE_MIDAS
+#include <linux/sched/task.h>
+#include <linux/midas_proc.h>
+#include <linux/workqueue.h>
+#endif
+
 #define UID_HASH_BITS 10
 
 static DECLARE_HASHTABLE(uid_hash_table, UID_HASH_BITS);
@@ -45,6 +51,15 @@ struct uid_entry {
 	struct concurrent_times *concurrent_times;
 	u64 time_in_state[0];
 };
+
+#ifdef CONFIG_OPLUS_FEATURE_MIDAS
+static DEFINE_SPINLOCK(midas_lock); /* midas_get_uid_state/midas_get_pid_state */
+
+static struct midas_id_state midas_uid_info;
+static struct midas_id_state midas_pid_info[TYPE_TOTAL];
+static int midas_capture_flag = 0;
+#define WQ_NAME_LEN	24
+#endif
 
 /**
  * struct cpu_freqs - per-cpu frequency information
@@ -225,6 +240,98 @@ static int uid_time_in_state_seq_show(struct seq_file *m, void *v)
 	rcu_read_unlock();
 	return 0;
 }
+
+#ifdef CONFIG_OPLUS_FEATURE_MIDAS
+void midas_get_uid_state(void *data) {
+	unsigned long flags;
+
+	spin_lock_irqsave(&midas_lock, flags);
+
+	midas_capture_flag = 1;
+	memcpy(data, &midas_uid_info, sizeof(struct midas_id_state));
+	memset(&midas_uid_info, 0, sizeof(struct midas_id_state));
+
+	spin_unlock_irqrestore(&midas_lock, flags);
+}
+EXPORT_SYMBOL_GPL(midas_get_uid_state);
+
+void midas_get_pid_state(void *data, int type) {
+	unsigned long flags;
+
+	spin_lock_irqsave(&midas_lock, flags);
+
+	memcpy(data, &midas_pid_info[type], sizeof(struct midas_id_state));
+	memset(&midas_pid_info[type], 0, sizeof(struct midas_id_state));
+	if (type == TYPE_SPID)
+		midas_capture_flag = 0;
+
+	spin_unlock_irqrestore(&midas_lock, flags);
+}
+EXPORT_SYMBOL_GPL(midas_get_pid_state);
+
+static void midas_store_pid_info(uid_t uid, u64 cputime, struct task_struct *p,
+					unsigned int state) {
+	int i, type, cnt;
+	char desc[WQ_NAME_LEN] = { };
+	char name[WQ_NAME_LEN] = { };
+	char fn[WQ_NAME_LEN] = { };
+
+	type = (uid == 0) ? TYPE_RPID : ((uid == 1000) ? TYPE_SPID : -1);
+
+	if (type >= TYPE_RPID && type < TYPE_TOTAL) {
+		cnt = midas_pid_info[type].cnt;
+		for (i = 0; i < cnt; i++) {
+			if (midas_pid_info[type].insts[i].id[ID_PID] == task_pid_nr(p)) {
+				/* the unit of time_in_state is ms */
+				midas_pid_info[type].insts[i].time_in_state[state] += cputime / NSEC_PER_MSEC;
+				break;
+			}
+		}
+
+		if (i == cnt && i < CNT_MAX) {
+			midas_pid_info[type].insts[i].id[ID_PID] = task_pid_nr(p);
+			midas_pid_info[type].insts[i].id[ID_TGID] = task_tgid_nr(p);
+			midas_pid_info[type].insts[i].id[ID_UID] = uid;
+			midas_pid_info[type].insts[i].time_in_state[state] += cputime / NSEC_PER_MSEC;
+			if (!(p->flags & PF_WQ_WORKER)) {
+				strncpy(midas_pid_info[type].insts[i].name, p->comm, TASK_COMM_LEN);
+			} else {
+				get_worker_info(p, name, desc, fn);
+
+				if (name[0])
+				    strncpy(midas_pid_info[type].insts[i].name, name, TASK_COMM_LEN);
+				else if (fn[0])
+				    strncpy(midas_pid_info[type].insts[i].name, fn, TASK_COMM_LEN);
+				else
+				    strncpy(midas_pid_info[type].insts[i].name, p->comm, TASK_COMM_LEN);
+
+			}
+			midas_pid_info[type].cnt = ((cnt + 1) > CNT_MAX) ? CNT_MAX : (cnt + 1);
+		}
+	}
+
+}
+
+static void midas_store_uid_info(uid_t uid, u64 cputime, unsigned int state) {
+	int i, cnt;
+
+	cnt = midas_uid_info.cnt;
+	for (i = 0; i < cnt; i++) {
+		if (midas_uid_info.insts[i].id[ID_UID] == uid) {
+			/* the unit of time_in_state is ms */
+			midas_uid_info.insts[i].time_in_state[state] += cputime / NSEC_PER_MSEC;
+			break;
+		}
+	}
+
+	if (i == cnt && i < CNT_MAX) {
+		midas_uid_info.insts[i].id[ID_UID] = uid;
+		/* the unit of time_in_state is ms */
+		midas_uid_info.insts[i].time_in_state[state] += cputime / NSEC_PER_MSEC;
+		midas_uid_info.cnt = ((cnt + 1) > CNT_MAX) ? CNT_MAX : (cnt + 1);
+	}
+}
+#endif
 
 static int concurrent_time_seq_show(struct seq_file *m, void *v,
 	atomic64_t *(*get_times)(struct concurrent_times *))
@@ -423,6 +530,17 @@ void cpufreq_acct_update_power(struct task_struct *p, u64 cputime)
 	if (uid_entry && state < uid_entry->max_state)
 		uid_entry->time_in_state[state] += cputime;
 	spin_unlock_irqrestore(&uid_lock, flags);
+
+#ifdef CONFIG_OPLUS_FEATURE_MIDAS
+	spin_lock_irqsave(&midas_lock, flags);
+
+	if (!midas_capture_flag) {
+		midas_store_pid_info(uid, cputime, p, state);
+		midas_store_uid_info(uid, cputime, state);
+	}
+
+	spin_unlock_irqrestore(&midas_lock, flags);
+#endif
 
 	rcu_read_lock();
 	uid_entry = find_uid_entry_rcu(uid);

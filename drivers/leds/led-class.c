@@ -25,6 +25,48 @@
 
 static struct class *leds_class;
 
+//#ifdef OPLUS_BUG_STABILITY
+/*
+* Ling.Guo@PSW.MM.Display.LCD.Stability, 2019/01/28,
+* add for oppo brightness and max_brightness node
+*/
+#if defined(DRM_OPLUS_DISPLAY_NODES)
+extern unsigned long oppo_display_brightness;
+#endif
+//#endif
+
+/* #ifdef OPLUS_BUG_STABILITY */
+#ifdef OPLUS_FEATURE_MULTIBITS_BL
+/*jianbin.zhang@PSW.MultiMedia.Display, 2020/05/21,modify for multibits backlight.*/
+extern bool __attribute((weak)) oplus_display_tenbits_support;
+extern bool __attribute((weak)) oplus_display_elevenbits_support;
+extern bool __attribute((weak)) oplus_display_twelvebits_support;
+
+int get_full_backlight_level()
+{
+	if(oplus_display_twelvebits_support)
+		return 4095;
+	else if(oplus_display_elevenbits_support)
+		return 2047;
+	else if(oplus_display_tenbits_support)
+		return 1023;
+	return 255;
+}
+EXPORT_SYMBOL_GPL(get_full_backlight_level);
+int get_half_backlight_level()
+{
+        if(oplus_display_twelvebits_support)
+                return 2047;
+        else if(oplus_display_elevenbits_support)
+		return 1023;
+	else if(oplus_display_tenbits_support)
+		return 511;
+	return 127;
+}
+EXPORT_SYMBOL_GPL(get_half_backlight_level);
+#endif /* OPLUS_FEATURE_MULTIBITS_BL */
+/* #endif */ /* OPLUS_BUG_STABILITY */
+
 static ssize_t brightness_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
@@ -61,6 +103,18 @@ static ssize_t brightness_store(struct device *dev,
 	ret = size;
 unlock:
 	mutex_unlock(&led_cdev->led_access);
+
+//#ifdef OPLUS_BUG_STABILITY
+/*
+* Ling.Guo@PSW.MM.Display.LCD.Stability, 2019/01/28,
+* add for oppo brightness and max_brightness node
+*/
+#if defined(DRM_OPLUS_DISPLAY_NODES)
+	if (strncmp(led_cdev->name, "lcd-backlight", 13) == 0)
+		oppo_display_brightness = state;
+#endif
+//#endif
+
 	return ret;
 }
 static DEVICE_ATTR_RW(brightness);

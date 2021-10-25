@@ -473,6 +473,16 @@ config SRAM
 config SRAM_EXEC
 	bool
 
+config ACCESS_RAMOOPS
+	tristate "Driver to allow access for decrypting encrypted ramoops"
+	depends on PSTORE_CONSOLE
+	help
+	  This driver allows userspace to access the ramoops and ramoops
+	  metadata carveouts to decrypt the ramoops.
+	  Enable access_ramoops in default config and add device tree entry
+	  for the Resume on Reboot feature.
+	  Say 'y' if ramoops is encrypted.
+
 config VEXPRESS_SYSCFG
 	bool "Versatile Express System Configuration driver"
 	depends on VEXPRESS_CONFIG
@@ -527,6 +537,25 @@ config MEMORY_STATE_TIME
 	help
 	  Memory time statistics exported to /sys/kernel/memory_state_time
 
+#ifdef OPLUS_FEATURE_TP_BASIC
+#Qicai.Gu@BSP.TP, 2020/08/25, modify for sim detect
+config SIM_DETECT
+	tristate "SIM_DETECT system"
+	default n
+	help
+	  Say Y here to enable sim detect system support
+#endif /* OPLUS_FEATURE_TP_BASIC */
+
+#ifdef OPLUS_FEATURE_SDCARD
+#Zhenxi.Wei@BSP.Storage.Sdcard add for sdcard support
+config OPLUS_FEATURE_SDCARD
+        tristate "Sdcard add for sdcard support"
+        default n
+        help
+          Say Y here to use ldo5 in mt6360 for sdcard
+
+#endif /*OPLUS_FEATURE_SDCARD*/
+
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
 source "drivers/misc/cb710/Kconfig"
@@ -539,4 +568,9 @@ source "drivers/misc/mic/Kconfig"
 source "drivers/misc/genwqe/Kconfig"
 source "drivers/misc/echo/Kconfig"
 source "drivers/misc/cxl/Kconfig"
+source "drivers/misc/mediatek/Kconfig"
+source "drivers/misc/oppo_motor/Kconfig"
+#ifdef VENDOR_EDIT//Fanhong.Kong@ProDrv.CHG,add 2018/10/25 for vib aw8697
+source "drivers/misc/aw8697_haptic/Kconfig"
+#endif
 endmenu

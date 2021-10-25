@@ -261,8 +261,10 @@ static int verity_handle_err(struct dm_verity *v, enum verity_block_type type,
 	/* Corruption should be visible in device status in all modes */
 	v->hash_failed = 1;
 
-	if (v->corrupted_errs >= DM_VERITY_MAX_CORRUPTED_ERRS)
+	if (v->corrupted_errs >= DM_VERITY_MAX_CORRUPTED_ERRS) {
+		DMERR("%s: reached maximum errors", v->data_dev->name);
 		goto out;
+	}
 
 	v->corrupted_errs++;
 
@@ -288,6 +290,9 @@ static int verity_handle_err(struct dm_verity *v, enum verity_block_type type,
 
 	kobject_uevent_env(&disk_to_dev(dm_disk(md))->kobj, KOBJ_CHANGE, envp);
 
+	/* corrupted_errs count had not reached limits */
+	return 0;
+
 out:
 	if (v->mode == DM_VERITY_MODE_LOGGING)
 		return 0;
@@ -296,7 +301,11 @@ out:
 #ifdef CONFIG_DM_VERITY_AVB
 		dm_verity_avb_error_handler();
 #endif
-		kernel_restart("dm-verity device corrupted");
+
+//#ifdef VENDOR_EDIT
+		//Qiwu.Chen@BSP.Kernel.Stability, 2020/10/12, add feature: feedback 2.0, monitor abnormal restart
+		panic("dm-verity device corrupted");
+//#endif /* VENDOR_EDIT */
 	}
 
 	return 1;

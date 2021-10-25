@@ -79,6 +79,8 @@ source "drivers/hwmon/Kconfig"
 
 source "drivers/thermal/Kconfig"
 
+source "drivers/trusty/Kconfig"
+
 source "drivers/watchdog/Kconfig"
 
 source "drivers/ssb/Kconfig"
@@ -101,7 +103,11 @@ source "drivers/usb/Kconfig"
 
 source "drivers/uwb/Kconfig"
 
+#if CONFIG_OPLUS_FEATURE_MMCPLUS
+#source "drivers/ommc/Kconfig"
+#else
 source "drivers/mmc/Kconfig"
+#endif
 
 source "drivers/memstick/Kconfig"
 
@@ -212,5 +218,18 @@ source "drivers/fsi/Kconfig"
 source "drivers/tee/Kconfig"
 
 source "drivers/mux/Kconfig"
+
+source "drivers/nfc/nq330-i2c/Kconfig"
+
+source "drivers/nfc/p73-spi-nq330/Kconfig"
+
+##ifdef OPLUS_FEATURE_BRINGUP
+#HuangRuhong@CONNECTIVITY.NFC.BASIC.HARDWARE , 2020/08/05, add for : add NFC driver
+source "drivers/nfc/Kconfig"
+source "drivers/nfc/pn553-i2c/Kconfig"
+source "drivers/nfc/p73-spi/Kconfig"
+source "drivers/nfc/st21nfc-i2c/Kconfig"
+source "drivers/nfc/st54-spi/Kconfig"
+#endif /* OPLUS_FEATURE_NFC_BRINGUP */
 
 endmenu

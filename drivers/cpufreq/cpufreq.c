@@ -201,6 +201,14 @@ struct cpufreq_policy *cpufreq_cpu_get_raw(unsigned int cpu)
 }
 EXPORT_SYMBOL_GPL(cpufreq_cpu_get_raw);
 
+#ifdef OPLUS_FEATURE_HEALTHINFO
+struct list_head *get_cpufreq_policy_list(void)
+{
+	return &cpufreq_policy_list;
+}
+EXPORT_SYMBOL(get_cpufreq_policy_list);
+#endif /* OPLUS_FEATURE_HEALTHINFO */
+
 unsigned int cpufreq_generic_get(unsigned int cpu)
 {
 	struct cpufreq_policy *policy = cpufreq_cpu_get_raw(cpu);
@@ -377,10 +385,10 @@ static void cpufreq_notify_post_transition(struct cpufreq_policy *policy,
 	cpufreq_notify_transition(policy, freqs, CPUFREQ_POSTCHANGE);
 }
 
+extern int update_cpu_capacity_cpumask(struct cpumask *cpus);
 void cpufreq_freq_transition_begin(struct cpufreq_policy *policy,
 		struct cpufreq_freqs *freqs)
 {
-
 	/*
 	 * Catch double invocations of _begin() which lead to self-deadlock.
 	 * ASYNC_NOTIFICATION drivers are left out because the cpufreq core
@@ -406,6 +414,11 @@ wait:
 	policy->transition_task = current;
 
 	spin_unlock(&policy->transition_lock);
+
+	arch_set_freq_scale(policy->cpus, freqs->new, policy->cpuinfo.max_freq);
+	arch_set_max_freq_scale(policy->cpus, policy->max);
+	arch_set_min_freq_scale(policy->cpus, policy->min);
+	update_cpu_capacity_cpumask(policy->cpus);
 
 	cpufreq_notify_transition(policy, freqs, CPUFREQ_PRECHANGE);
 }
@@ -874,6 +887,20 @@ static ssize_t show_bios_limit(struct cpufreq_policy *policy, char *buf)
 	return sprintf(buf, "%u\n", policy->cpuinfo.max_freq);
 }
 
+#ifdef OPLUS_FEATURE_HEALTHINFO
+//Jiheng.Xie@TECH.BSP.Performance,2019-07-29,add for cpufreq limit info
+#ifdef CONFIG_OPPO_HEALTHINFO
+static ssize_t show_freq_change_info(struct cpufreq_policy *policy, char *buf)
+{
+	ssize_t i = 0;
+
+	i += sprintf(buf, "%u,%s\n", policy->org_max, policy->change_comm);
+
+	return i;
+}
+#endif
+#endif /* OPLUS_FEATURE_HEALTHINFO */
+
 cpufreq_freq_attr_ro_perm(cpuinfo_cur_freq, 0400);
 cpufreq_freq_attr_ro(cpuinfo_min_freq);
 cpufreq_freq_attr_ro(cpuinfo_max_freq);
@@ -884,6 +911,12 @@ cpufreq_freq_attr_ro(scaling_cur_freq);
 cpufreq_freq_attr_ro(bios_limit);
 cpufreq_freq_attr_ro(related_cpus);
 cpufreq_freq_attr_ro(affected_cpus);
+#ifdef OPLUS_FEATURE_HEALTHINFO
+//Jiheng.Xie@TECH.BSP.Performance,2019-07-29,add for cpufreq limit info
+#ifdef CONFIG_OPPO_HEALTHINFO
+cpufreq_freq_attr_ro(freq_change_info);
+#endif
+#endif /* OPLUS_FEATURE_HEALTHINFO */
 cpufreq_freq_attr_rw(scaling_min_freq);
 cpufreq_freq_attr_rw(scaling_max_freq);
 cpufreq_freq_attr_rw(scaling_governor);
@@ -901,6 +934,12 @@ static struct attribute *default_attrs[] = {
 	&scaling_driver.attr,
 	&scaling_available_governors.attr,
 	&scaling_setspeed.attr,
+#ifdef OPLUS_FEATURE_HEALTHINFO
+//Jiheng.Xie@TECH.BSP.Performance,2019-07-29,add for cpufreq limit info
+#ifdef CONFIG_OPPO_HEALTHINFO
+	&freq_change_info.attr,
+#endif
+#endif /* OPLUS_FEATURE_HEALTHINFO */
 	NULL
 };
 
@@ -2215,7 +2254,12 @@ static int cpufreq_set_policy(struct cpufreq_policy *policy,
 
 	pr_debug("setting new policy for CPU %u: %u - %u kHz\n",
 		 new_policy->cpu, new_policy->min, new_policy->max);
-
+#ifdef OPLUS_FEATURE_HEALTHINFO
+//Jiheng.Xie@TECH.BSP.Performance,2019-07-29,add for cpufreq limit info
+#ifdef CONFIG_OPPO_HEALTHINFO
+	policy->org_max = new_policy->max;
+#endif
+#endif /* OPLUS_FEATURE_HEALTHINFO */
 	memcpy(&new_policy->cpuinfo, &policy->cpuinfo, sizeof(policy->cpuinfo));
 
 	/*
@@ -2249,7 +2293,15 @@ static int cpufreq_set_policy(struct cpufreq_policy *policy,
 	policy->min = new_policy->min;
 	policy->max = new_policy->max;
 
+#ifdef OPLUS_FEATURE_HEALTHINFO
+//Jiheng.Xie@TECH.BSP.Performance,2019-07-29,add for cpufreq limit info
+#ifdef CONFIG_OPPO_HEALTHINFO
+	strncpy(policy->change_comm, current->comm, TASK_COMM_LEN);
+#endif
+#endif /* OPLUS_FEATURE_HEALTHINFO */
+
 	arch_set_max_freq_scale(policy->cpus, policy->max);
+	arch_set_min_freq_scale(policy->cpus, policy->min);
 
 	trace_cpu_frequency_limits(policy->max, policy->min, policy->cpu);
 
@@ -2467,6 +2519,11 @@ __weak void arch_set_max_freq_scale(struct cpumask *cpus,
 }
 EXPORT_SYMBOL_GPL(arch_set_max_freq_scale);
 
+__weak void arch_set_min_freq_scale(struct cpumask *cpus,
+				    unsigned long policy_min_freq)
+{
+}
+EXPORT_SYMBOL_GPL(arch_set_min_freq_scale);
 /*********************************************************************
  *               REGISTER / UNREGISTER CPUFREQ DRIVER                *
  *********************************************************************/

@@ -9,6 +9,8 @@ menuconfig INPUT_TOUCHSCREEN
 
 	  If unsure, say Y.
 
+source "drivers/input/touchscreen/mediatek/Kconfig"
+
 if INPUT_TOUCHSCREEN
 
 config TOUCHSCREEN_PROPERTIES
@@ -1245,5 +1247,17 @@ config TOUCHSCREEN_ROHM_BU21023
 
 	  To compile this driver as a module, choose M here: the
 	  module will be called bu21023_ts.
+
+config TOUCHSCREEN_MTK_TOUCH
+       string "Touch IC name for Mediatek package"
+       help
+         Set touch IC name if you have touch panel.
+
+         To compile this dirver for used touch IC.
+
+#ifdef OPLUS_FEATURE_TP_BASIC
+#Xuhang.Li@BSP.TP, 20200726, Add common touchpanel driver
+source "drivers/input/touchscreen/oppo_touchscreen/Kconfig"
+#endif /* OPLUS_FEATURE_TP_BASIC */
 
 endif

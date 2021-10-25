@@ -366,11 +366,18 @@ static int input_get_disposition(struct input_dev *dev,
 	return disposition;
 }
 
+#ifdef VENDOR_EDIT
+extern void __attribute__((weak)) oppo_sync_saupwk_event(unsigned int , unsigned int , int);
+#endif /* VENDOR_EDIT */
+
 static void input_handle_event(struct input_dev *dev,
 			       unsigned int type, unsigned int code, int value)
 {
 	int disposition = input_get_disposition(dev, type, code, &value);
-
+#ifdef VENDOR_EDIT
+    if(oppo_sync_saupwk_event)
+        oppo_sync_saupwk_event(type, code, value);
+#endif /* VENDOR_EDIT */
 	if (disposition != INPUT_IGNORE_EVENT && type != EV_SYN)
 		add_input_randomness(type, code, value);
 
