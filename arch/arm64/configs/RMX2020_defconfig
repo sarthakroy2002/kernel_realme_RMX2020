@@ -652,13 +652,4 @@ CONFIG_NFC_PN553_DEVICES=y
 CONFIG_OPLUS_FEATURE_EXT4_FSYNC=y
 #endif
 
-#ifdef OPLUS_FEATURE_SECURITY_COMMON
-#Qingyu.Li@BSP.Security.Basic, ModuleSig, Fix the MTK issue, resulting in the signed .ko not being correctly placed in the vendor.img. 2021-03-04
-#CONFIG_MODULE_SIG=y
-#CONFIG_MODULE_SIG_FORCE=y
-#CONFIG_MODULE_SIG_ALL=y
-#CONFIG_MODULE_SIG_SHA512=y
-#endif /* OPLUS_FEATURE_SECURITY_COMMON */
-
 CONFIG_SECURITY_SELINUX_DEVELOP=y
-
