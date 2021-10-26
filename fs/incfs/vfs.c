@@ -1058,41 +1058,6 @@ out:
 
 static int validate_name(char *file_name)
 {
-	struct path *base_path = &mi->mi_backing_dir_path;
-	int dir_fd = get_unused_fd_flags(0);
-	struct file *dir_f = NULL;
-	int error = 0;
-
-	if (dir_fd < 0)
-		return dir_fd;
-
-	dir_f = dentry_open(base_path, O_RDONLY | O_NOATIME, mi->mi_owner);
-
-	if (IS_ERR(dir_f)) {
-		error = PTR_ERR(dir_f);
-		goto out;
-	}
-	fd_install(dir_fd, dir_f);
-
-	if (!relative_path) {
-		/* No relative path given, just return the base dir. */
-		*result_path = *base_path;
-		path_get(result_path);
-		goto out;
-	}
-
-	error = user_path_at_empty(dir_fd, relative_path,
-		LOOKUP_FOLLOW | LOOKUP_DIRECTORY, result_path, NULL);
-
-out:
-	sys_close(dir_fd);
-	if (error)
-		pr_debug("incfs: %s %d\n", __func__, error);
-	return error;
-}
-
-static int validate_name(char *file_name)
-{
 	struct mem_range name = range(file_name, strlen(file_name));
 	int i = 0;
 
