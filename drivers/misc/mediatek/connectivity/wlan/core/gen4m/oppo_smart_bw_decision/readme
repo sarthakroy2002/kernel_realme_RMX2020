@@ -1,0 +1,8 @@
+For Smart Band-Width Decision feature: Stands for choose STA P2P 2.4G HT40 based on environment or other scenarios.
+Version: 2.0
+Date : 2019/10/1
+Author: Fenghua.Xu@PSW.TECH.WiFi.Connect
+------------------------------- Revision History: -------------------------------
+<author>		<data> 	   <version >	       <desc>
+Xufenghua       2019/7/31     1.0     1st versoin on P70 18531 Gen3 main branch: step 1.5 & not euclid
+Xufenghua       2019/10/31    2.0     2nd versoin on 5G-L Gen4m main branch: euclid
