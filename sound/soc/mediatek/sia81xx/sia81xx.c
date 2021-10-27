@@ -1534,11 +1534,11 @@ static int sia81xx_volme_boost_set(
 
 #ifdef VENDOR_EDIT
 /* Wenyang.Fan@PSW.MULTIMEDIA.AUDIODRIVER.MACHINE,2020/06/16, Add for adjust codec & Sia PA sequence */
-void sia81xx_start(){
+void sia81xx_start(void){
         sia81xx_resume(g_sia81xx);
 }
 
-void sia81xx_stop(){
+void sia81xx_stop(void){
         sia81xx_suspend(g_sia81xx);
 }
 #endif /* VENDOR_EDIT */
