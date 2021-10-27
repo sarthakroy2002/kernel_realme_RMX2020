@@ -136,7 +136,7 @@ int criticallog_dev_register(struct criticallog_dev *sdev)
   ret = device_create_file(sdev->dev, &dev_attr_state);
   if (ret < 0)
     goto err_create_file_1;
-    ret = device_create_file(sdev->dev, &dev_attr_name);
+  ret = device_create_file(sdev->dev, &dev_attr_name);
   if (ret < 0)
     goto err_create_file_2;
 
