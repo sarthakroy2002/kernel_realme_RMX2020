@@ -112,7 +112,7 @@ EXPORT_SYMBOL(pmic_ldo_2_set_voltage_uv);
 /*
 * set pmic_ldo IC disable,shutdown ldo2 output.
 */
-int pmic_ldo_2_set_disable()
+int pmic_ldo_2_set_disable(void)
 {
     if(ldo_type != LDO_UNKNOW){
         return ldo_ops.ldo_2_set_disable();
