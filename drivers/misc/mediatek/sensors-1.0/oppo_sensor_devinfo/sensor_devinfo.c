@@ -1029,7 +1029,7 @@ int get_msensor_parameter(int num)
     return 0;
 }
 
-void  mag_soft_parameter_init()
+void  mag_soft_parameter_init(void)
 {
     int ret = -1;
     int index = 0;
