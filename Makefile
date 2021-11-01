@@ -442,6 +442,7 @@ ODM_WT_EDIT := yes
 CONFIG_OPPO_FINGERPRINT_PLATFORM := 6768
 COMPILE_PLATFORM=oppo6769
 OPPO_COMPILE_PLATFORM=oppo6769
+OPPO_F2FS_DEBUG := false
 
 #ifdef  VENDOR_EDIT
 #LiPing-m@PSW.MM.Display.LCD.Machine, 2017/11/03, Add for VENDOR_EDIT macro in kernel
@@ -490,6 +491,7 @@ export ODM_WT_EDIT
 export CONFIG_OPPO_FINGERPRINT_PLATFORM
 export COMPILE_PLATFORM
 export OPPO_COMPILE_PLATFORM
+export OPPO_F2FS_DEBUG
 
 # When compiling out-of-tree modules, put MODVERDIR in the module
 # tree rather than in the kernel tree. The kernel tree might
