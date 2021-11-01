@@ -2,7 +2,7 @@
 # TRUSTONIC TEE configuration
 #
 config TRUSTONIC_TEE_SUPPORT
-	bool "Enable Trustonic TEE Support"
+	tristate "Enable Trustonic TEE Support"
 	select MTK_TEE_SANITY
 	default n
 	---help---
