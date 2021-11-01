@@ -112,7 +112,6 @@ OPLUS_FEATURE_APP_MONITOR \
 OPLUS_FEATURE_HDR10PLUS_CETIFICATION
 
 $(foreach myfeature,$(ALLOWED_MCROS),\
-         $(warning myfeature is $(myfeature)) \
          $(eval KBUILD_CFLAGS += -D$(myfeature)) \
          $(eval KBUILD_CPPFLAGS += -D$(myfeature)) \
          $(eval CFLAGS_KERNEL += -D$(myfeature)) \
