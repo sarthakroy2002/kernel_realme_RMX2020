@@ -456,20 +456,25 @@ CFLAGS_MODULE +=   -DVENDOR_EDIT
 ifeq ($(AGING_DEBUG_MASK),1)
 # enable memleak detect daemon
 OPPO_MEMLEAK_DETECT := thread
+OPLUS_MEMLEAK_DETECT := thread
 endif
 
 ifeq ($(TARGET_MEMLEAK_DETECT_TEST),0)
 # disable memleak detect daemon
 OPPO_MEMLEAK_DETECT := none
+OPLUS_MEMLEAK_DETECT := none
 else ifeq ($(TARGET_MEMLEAK_DETECT_TEST),1)
 # enable memleak detect daemon
 OPPO_MEMLEAK_DETECT := thread
+OPLUS_MEMLEAK_DETECT := thread
 else ifeq ($(TARGET_MEMLEAK_DETECT_TEST),2)
 # enable memleak detect daemon and kasan
 OPPO_MEMLEAK_DETECT := all
+OPLUS_MEMLEAK_DETECT := all
 endif
 
 export OPPO_MEMLEAK_DETECT
+export OPLUS_MEMLEAK_DETECT
 #endif
 
 export ARCH SRCARCH CONFIG_SHELL HOSTCC HOSTCFLAGS CROSS_COMPILE AS LD CC
