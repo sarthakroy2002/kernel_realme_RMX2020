@@ -35,7 +35,6 @@ ccflags-y += -Wno-unused-function
 ccflags-$(CONFIG_MTK_GPU_SPM_DVFS_SUPPORT) += -DMTK_GPU_SPM
 
 ccflags-$(CONFIG_MTK_FREQ_HOPPING) += -DFHCTL_READY
-#$(info *CONFIG_MTK_FREQ_HOPPING enable = $(CONFIG_MTK_FREQ_HOPPING))
 
 obj-$(CONFIG_MACH_MT6768) += mtk_picachu.o
 

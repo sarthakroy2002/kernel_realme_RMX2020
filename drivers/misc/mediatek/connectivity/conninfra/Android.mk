@@ -19,8 +19,6 @@ include $(MTK_KERNEL_MODULE)
 CONNINFRA_OPTS := TARGET_BOARD_PLATFORM_CONNINFRA=$(TARGET_BOARD_PLATFORM)
 $(linked_module): OPTS += $(CONNINFRA_OPTS)
 
-else
-        $(warning wmt_drv-MTK_COMBO_SUPPORT: [$(MTK_COMBO_SUPPORT)])
 endif
 endif
 

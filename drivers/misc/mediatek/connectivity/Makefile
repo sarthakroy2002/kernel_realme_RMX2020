@@ -46,9 +46,7 @@ endif
     $(MODULE_NAME)-objs += common/wmt_build_in_adapter.o
 
     ifeq ($(CONFIG_WLAN_DRV_BUILD_IN),y)
-        $(info $$CONFIG_MTK_COMBO_CHIP is [${CONFIG_MTK_COMBO_CHIP}])
         MTK_PLATFORM_ID := $(patsubst CONSYS_%,%,$(subst ",,$(CONFIG_MTK_COMBO_CHIP)))
-        $(info MTK_PLATFORM_ID is [${MTK_PLATFORM_ID}])
 
         # for gen4m options
         export CONFIG_MTK_COMBO_WIFI_HIF=axi
@@ -71,7 +69,6 @@ endif
         # For FM built-in mode
         # for fmradio options
         FM_CHIP_ID := $(patsubst CONSYS_%,%,$(subst ",,$(CONFIG_MTK_COMBO_CHIP)))
-        $(info FM_CHIP_ID is [${FM_CHIP_ID}])
 
         ifneq (,$(filter $(CONFIG_MTK_COMBO_CHIP), "CONSYS_6885"))
             export CFG_BUILD_CONNAC2=true
@@ -115,9 +112,6 @@ endif
 
         export CFG_FM_CHIP_ID=$(FM_CHIP_ID)
         export CFG_FM_CHIP=$(FM_CHIP)
-        $(info CFG_FM_CHIP_ID is [${CFG_FM_CHIP_ID}])
-        $(info CFG_FM_CHIP is [${CFG_FM_CHIP}])
-        $(info CFG_BUILD_CONNAC2 is [${CFG_BUILD_CONNAC2}])
 
         obj-y += fmradio/
     endif

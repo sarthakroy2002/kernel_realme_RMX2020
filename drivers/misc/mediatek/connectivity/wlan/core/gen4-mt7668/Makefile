@@ -48,7 +48,6 @@ CFG_NUM_DIFFERENT_CHANNELS_P2P=1
 CFG_DRIVER_INITIAL_RUNNING_MODE=3
 ifeq ($(CONFIG_MTK_WIFI_MCC_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_CHNL_CONFLICT_REVISE=0
-     $(info DCFG_SUPPORT_CHNL_CONFLICT_REVISE=0)
 else
     ccflags-y += -DCFG_SUPPORT_CHNL_CONFLICT_REVISE=1
 endif
@@ -66,10 +65,8 @@ endif
 
 ifeq ($(CONFIG_MTK_AEE_FEATURE), y)
     ccflags-y += -DCFG_SUPPORT_AEE=1
-    $(info DCFG_SUPPORT_AEE=1)
 else
     ccflags-y += -DCFG_SUPPORT_AEE=0
-    $(info DCFG_SUPPORT_AEE=0)
 endif
 
 ifeq ($(CONFIG_MTK_WPA3_SUPPORT), y)
@@ -110,16 +107,12 @@ endif
 
 ifneq ($(CFG_CFG80211_VERSION),)
 VERSION_STR = $(subst ",,$(subst ., , $(subst -, ,$(subst v,,$(CFG_CFG80211_VERSION)))))
-$(info VERSION_STR=$(VERSION_STR))
 X = $(firstword $(VERSION_STR))
 Y = $(word 2 ,$(VERSION_STR))
 Z = $(word 3 ,$(VERSION_STR))
 VERSION := $(shell echo "$$(( $X * 65536 + $Y * 256 + $Z))" )
 ccflags-y += -DCFG_CFG80211_VERSION=$(VERSION)
-$(info DCFG_CFG80211_VERSION=$(VERSION))
 endif
-
-$(info HIF=$(CONFIG_MTK_COMBO_WIFI_HIF))
 
 ifeq ($(CONFIG_MTK_PASSPOINT_R1_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_PASSPOINT=1

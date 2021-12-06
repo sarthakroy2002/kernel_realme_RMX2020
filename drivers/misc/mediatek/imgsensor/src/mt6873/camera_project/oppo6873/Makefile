@@ -36,5 +36,4 @@ $(foreach drv,$(subst $\",,$(CONFIG_CUSTOM_KERNEL_IMGSENSOR)),$(eval $(call FILT
 obj-y += $(project_drv)
 
 ifneq ($(project_drv),)
-$(info imgsensor drv by project $(project_drv))
 endif
