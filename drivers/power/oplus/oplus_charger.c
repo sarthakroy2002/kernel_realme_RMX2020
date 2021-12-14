@@ -1855,12 +1855,12 @@ static void oplus_chg_show_ui_soc_decimal(struct work_struct *work)
 		chip->ui_soc_decimal = 0;
 	}
 
-	if(chip->calculate_decimal_time<= MAX_UI_DECIMAL_TIME) {
+//	if(chip->calculate_decimal_time<= MAX_UI_DECIMAL_TIME) {
 		chip->calculate_decimal_time++;
 	   	schedule_delayed_work(&chip->ui_soc_decimal_work, msecs_to_jiffies(UPDATE_TIME * 1000));
-	} else {
-		oplus_chg_ui_soc_decimal_deinit();
-	}
+//	} else {
+//		oplus_chg_ui_soc_decimal_deinit();
+//	}
 }
 
 static int charging_limit_time_show(struct seq_file *seq_filp, void *v)
