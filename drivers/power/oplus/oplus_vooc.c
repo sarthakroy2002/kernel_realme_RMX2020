@@ -1339,13 +1339,14 @@ void fw_update_thread(struct work_struct *work)
 			chip->vops->fw_check_then_recover(chip);
 			return;
 		}
-		 do {
+/*		 do {
 			ret = request_firmware_select(&fw, chip->fw_path, chip->dev);
 			if (!ret) {
 				break;
 			}
 		} while((ret < 0) && (--retry > 0));
 		chg_debug(" retry times %d, chip->fw_path[%s]\n", 5 - retry, chip->fw_path);
+*/
 		if(!ret) {
 			chip->firmware_data =  fw->data;
 			chip->fw_data_count =  fw->size;
