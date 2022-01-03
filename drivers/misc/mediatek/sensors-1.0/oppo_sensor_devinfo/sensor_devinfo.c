@@ -1157,7 +1157,7 @@ static const struct file_operations Sensor_info_fops = {
     .release = single_release,
 };
 
-static int oplus_sensor_feature_init()
+static int oplus_sensor_feature_init(void)
 {
     struct proc_dir_entry *p_entry;
     static struct proc_dir_entry *oplus_sensor = NULL;
