@@ -84,7 +84,7 @@ static int fp_display_data_report(struct data_unit_t *input_event)
     return virtual_sensor_data_report(event);
 }
 
-static int fp_display_flush_report()
+static int fp_display_flush_report(void)
 {
     return virtual_sensor_flush_report(ID_FP_DISPLAY);
 }
