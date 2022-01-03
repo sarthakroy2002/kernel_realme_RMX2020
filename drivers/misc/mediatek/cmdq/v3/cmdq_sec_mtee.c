@@ -20,8 +20,8 @@ void cmdq_sec_mtee_setup_context(struct cmdq_sec_mtee_context *tee)
 	const char wsm_uuid[32] = "com.mediatek.geniezone.srv.mem";
 
 	memset(tee, 0, sizeof(*tee));
-	strncpy(tee->ta_uuid, ta_uuid, sizeof(ta_uuid));
-	strncpy(tee->wsm_uuid, wsm_uuid, sizeof(wsm_uuid));
+	strncpy(tee->ta_uuid, ta_uuid, sizeof(tee->ta_uuid));
+	strncpy(tee->wsm_uuid, wsm_uuid, sizeof(tee->wsm_uuid));
 }
 
 // TODO
