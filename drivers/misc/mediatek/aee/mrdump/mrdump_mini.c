@@ -505,7 +505,7 @@ static void mrdump_mini_add_tsk_ti(int cpu, struct pt_regs *regs,
 	}
 }
 
-static int mrdump_mini_cpu_regs(int cpu, struct pt_regs *regs,
+static int __init mrdump_mini_cpu_regs(int cpu, struct pt_regs *regs,
 		struct task_struct *tsk, int main)
 {
 	char name[NOTE_NAME_SHORT];
@@ -528,7 +528,7 @@ static int mrdump_mini_cpu_regs(int cpu, struct pt_regs *regs,
 	return 0;
 }
 
-void mrdump_mini_per_cpu_regs(int cpu, struct pt_regs *regs,
+void __init mrdump_mini_per_cpu_regs(int cpu, struct pt_regs *regs,
 		struct task_struct *tsk)
 {
 	mrdump_mini_cpu_regs(cpu, regs, tsk, 0);
@@ -741,7 +741,7 @@ void mrdump_mini_add_extra_misc(void)
 }
 
 static void mrdump_mini_add_loads(void);
-void mrdump_mini_ke_cpu_regs(struct pt_regs *regs)
+void __init mrdump_mini_ke_cpu_regs(struct pt_regs *regs)
 {
 	int cpu;
 	struct pt_regs context;
@@ -966,7 +966,7 @@ static void __init mrdump_mini_elf_header_init(void)
 	fill_elf_header(&mrdump_mini_ehdr->ehdr, MRDUMP_MINI_NR_SECTION);
 }
 
-int mrdump_mini_init(void)
+int __init mrdump_mini_init(void)
 {
 	int i, cpu;
 	unsigned long size, offset;

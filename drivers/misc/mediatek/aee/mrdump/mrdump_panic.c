@@ -122,7 +122,7 @@ int aee_dump_stack_top_binary(char *buf, int buf_len, unsigned long bottom,
 	return top - bottom;
 }
 
-void ipanic_recursive_ke(struct pt_regs *regs, struct pt_regs *excp_regs,
+void __init ipanic_recursive_ke(struct pt_regs *regs, struct pt_regs *excp_regs,
 		int cpu)
 {
 	struct pt_regs saved_regs;
@@ -165,7 +165,7 @@ extern int kernel_panic_happened;
 extern int hwt_happened;
 #endif /* OPLUS_FEATURE_PHOENIX */
 
-int mrdump_common_die(int fiq_step, int reboot_reason, const char *msg,
+int __init mrdump_common_die(int fiq_step, int reboot_reason, const char *msg,
 		      struct pt_regs *regs)
 {
 
@@ -239,7 +239,7 @@ int mrdump_common_die(int fiq_step, int reboot_reason, const char *msg,
 	return NOTIFY_DONE;
 }
 
-int ipanic(struct notifier_block *this, unsigned long event, void *ptr)
+int __init ipanic(struct notifier_block *this, unsigned long event, void *ptr)
 {
 	struct pt_regs saved_regs;
 	int fiq_step = 0;
@@ -253,7 +253,7 @@ int ipanic(struct notifier_block *this, unsigned long event, void *ptr)
 				 "Kernel Panic", &saved_regs);
 }
 
-static int ipanic_die(struct notifier_block *self, unsigned long cmd, void *ptr)
+static int __init ipanic_die(struct notifier_block *self, unsigned long cmd, void *ptr)
 {
 	struct die_args *dargs = (struct die_args *)ptr;
 	int fiq_step = 0;
@@ -266,11 +266,11 @@ static int ipanic_die(struct notifier_block *self, unsigned long cmd, void *ptr)
 				 "Kernel Oops", dargs->regs);
 }
 
-static struct notifier_block panic_blk = {
+static struct notifier_block panic_blk __refdata = {
 	.notifier_call = ipanic,
 };
 
-static struct notifier_block die_blk = {
+static struct notifier_block die_blk __refdata = {
 	.notifier_call = ipanic_die,
 };
 
@@ -504,7 +504,7 @@ asmlinkage void aee_save_excp_regs(struct pt_regs *regs)
 		aee_excp_regs = regs;
 }
 
-asmlinkage void aee_stop_nested_panic(struct pt_regs *regs)
+asmlinkage void __init aee_stop_nested_panic(struct pt_regs *regs)
 {
 	struct thread_info *thread = current_thread_info();
 	int len = 0;

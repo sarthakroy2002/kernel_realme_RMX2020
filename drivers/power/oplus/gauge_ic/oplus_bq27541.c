@@ -3045,7 +3045,7 @@ static int bq28z610_get_2cell_voltage(void)
 #ifdef CONFIG_OPLUS_CHARGER_MTK
 #define AUTH_MESSAGE_LEN		20
 #define AUTH_TAG "ogauge_auth="
-static int get_auth_msg(u8 *source, u8 *rst) {
+static __initdata int get_auth_msg(u8 *source, u8 *rst) {
 	char *str = NULL;
 	int i;
 	str = strstr(boot_command_line, AUTH_TAG);
