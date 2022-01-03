@@ -88,7 +88,7 @@ static int oppo_activity_recognition_data_report(struct data_unit_t *input_event
     return virtual_sensor_data_report(event);
 }
 
-static int oppo_activity_recognition_flush_report()
+static int oppo_activity_recognition_flush_report(void)
 {
     return virtual_sensor_flush_report(ID_OPPO_ACTIVITY_RECOGNITION);
 }
