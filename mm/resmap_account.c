@@ -101,7 +101,7 @@ static struct vm_area_struct *remove_vma(struct vm_area_struct *vma)
 #else
 #define VM_RESERVED_SIZE SZ_128M
 #endif
-static inline unsigned long vm_mmap_pgoff_with_check(struct file *file,
+inline unsigned long vm_mmap_pgoff_with_check(struct file *file,
 		unsigned long addr, unsigned long len, unsigned long prot,
 		unsigned long flags, unsigned long pgoff)
 {
