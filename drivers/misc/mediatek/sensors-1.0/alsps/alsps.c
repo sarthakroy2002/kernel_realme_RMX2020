@@ -87,7 +87,7 @@ int als_flush_report(void)
 	return err;
 }
 
-int rgbw_data_report_t(int *value, int64_t time_stamp)
+int rgbw_data_report_t(int value[4], int64_t time_stamp)
 {
 	int err = 0;
 	struct alsps_context *cxt = alsps_context_obj;
@@ -105,7 +105,7 @@ int rgbw_data_report_t(int *value, int64_t time_stamp)
 	err = sensor_input_event(cxt->als_mdev.minor, &event);
 	return err;
 }
-int rgbw_data_report(int *value)
+int rgbw_data_report(int value[4])
 {
 	return rgbw_data_report_t(value, 0);
 }
