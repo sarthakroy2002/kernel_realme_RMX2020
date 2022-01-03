@@ -960,7 +960,7 @@ static int enable_oplus_sla_module(struct nlmsghdr *nlh)
 	return 0;
 }
 
-static int enable_oplus_limit_speed()
+static int enable_oplus_limit_speed(void)
 {
 	sla_write_lock();
 	rate_limit_info.rate_limit_enable = 1;
@@ -969,7 +969,7 @@ static int enable_oplus_limit_speed()
 	return 0;
 }
 
-static int disable_oplus_limit_speed()
+static int disable_oplus_limit_speed(void)
 {
 	sla_write_lock();
 	rate_limit_info.rate_limit_enable = 0;
