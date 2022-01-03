@@ -1485,7 +1485,7 @@ static int find_lowest_rq(struct task_struct *task);
 
 #if defined (CONFIG_SCHED_WALT) && defined (OPLUS_FEATURE_UIFIRST)
 extern bool is_sf(struct task_struct *p);
-extern sysctl_slide_boost_enabled;
+extern int sysctl_slide_boost_enabled;
 #endif
 
 static int
