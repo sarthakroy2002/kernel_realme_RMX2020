@@ -162,7 +162,7 @@ static int pm_qos_apu_memory_bandwidth_notify(struct notifier_block *b, unsigned
 }
 
 
-static void pm_qos_add_debug_notifiers()
+static void pm_qos_add_debug_notifiers(void)
 {
 	power_debug_info.pm_qos_cpu_dma_latency_nb.notifier_call = pm_qos_cpu_dma_latency_notify;
 	power_debug_info.pm_qos_memory_bandwidth_nb.notifier_call = pm_qos_memory_bandwidth_notify;
@@ -195,7 +195,7 @@ static void pm_qos_add_debug_notifiers()
 	pm_qos_add_notifier(PM_QOS_APU_MEMORY_BANDWIDTH, &power_debug_info.pm_qos_apu_memory_bandwidth_nb);
 }
 
-static void print_heavy_loads_tasks()
+static void print_heavy_loads_tasks(void)
 {
 	int i = 0;
 	for (; i < NUM_PRINT_HEAVY_LOAD_TASK; i++) {
@@ -211,7 +211,7 @@ static int cpustats_saved_comp(const void *a, const void *b)
 	const struct task_stat sb = *(const struct task_stat *)b;
 	return sb.pwr - sa.pwr;
 }
-static void parse_task_stats()
+static void parse_task_stats(void)
 {
 	int i = 0, num = 0;
 
@@ -236,7 +236,7 @@ static void parse_task_stats()
 	sort(cpustats_saved, num, sizeof(struct task_stat), cpustats_saved_comp, NULL);
 }
 
-static void task_power_stats()
+static void task_power_stats(void)
 {
 	int i, j;
 	unsigned long begin = jiffies - CTP_WINDOW_SZ * HZ, end = jiffies;
