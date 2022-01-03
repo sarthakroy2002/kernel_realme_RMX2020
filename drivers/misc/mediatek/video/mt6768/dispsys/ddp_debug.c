@@ -599,7 +599,7 @@ static void process_dbg_opt(const char *opt)
 		static const char temp[] = "set_dsi_cmd:0x%x";
 
 		memset(fmt, 0, sizeof(fmt));
-		strncpy((char *)fmt, (char *)temp, sizeof(temp));
+		strncpy((char *)fmt, (char *)temp, strlen(temp));
 
 		for (i = 0; i < ARRAY_SIZE(para); i++)
 			strncat(fmt, ",0x%hhx", sizeof(fmt) - strlen(fmt) - 1);
