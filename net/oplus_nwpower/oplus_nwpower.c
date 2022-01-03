@@ -173,7 +173,7 @@ static uid_t get_uid_from_sock(const struct sock *sk)
 	return sk_uid;
 }
 
-static void nwpower_unsl_blacklist_reject() {
+static void nwpower_unsl_blacklist_reject(void) {
 	if (record_blacklist_reject_index > 0) {
 		blacklist_reject_uid[0] = record_blacklist_reject_index;
 		nwpower_send_to_user(NW_POWER_REPORT_BLACK_REJECT, (char*)blacklist_reject_uid, sizeof(blacklist_reject_uid));
@@ -641,7 +641,7 @@ static bool tcp_monitor_check_uid_in_whitelist(int uid) {
 	return true;
 }
 
-static void nwpower_unsl_app_wakeup()
+static void nwpower_unsl_app_wakeup(void)
 {
 	nwpower_send_to_user(NW_POWER_REPORT_APP_WAKEUP, (char*)app_wakeup_monitor_list.set, sizeof(app_wakeup_monitor_list.set));
 	app_wakeup_monitor_list.count = 0;
@@ -815,7 +815,7 @@ static void reset_count(u64 qrtr[][4], struct tcp_hook_struct *ptcp_in, struct t
 	}
 }
 
-static void nwpower_hook_on() {
+static void nwpower_hook_on(void) {
 	atomic_set(&qrtr_wakeup_hook_boot, 1);
 	atomic_set(&ipa_wakeup_hook_boot, 1);
 	atomic_set(&tcpsynretrans_hook_boot, 1);
@@ -836,7 +836,7 @@ static void nwpower_hook_off(bool unsl) {
 	}
 }
 
-static void nwpower_unsl_mdaci() {
+static void nwpower_unsl_mdaci(void) {
 	print_qrtr_wakeup(true, mdaci_service_wakeup_times, oplus_mdaci_nw_wakeup, true);
 	print_ipa_wakeup(true, &mdaci_tcp_input_list, &mdaci_tcp_output_list,
 					&mdaci_tcp_input_retrans_list, &mdaci_tcp_output_retrans_list, oplus_mdaci_nw_wakeup, true);
