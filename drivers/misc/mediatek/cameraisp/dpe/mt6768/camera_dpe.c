@@ -4783,7 +4783,7 @@ if (bResulst == MTRUE) {
 	}
 
 	spin_unlock(&(DPEInfo.SpinLockIrq[DPE_IRQ_TYPE_INT_DPE_ST]));
-	if (bResulst == MFALSE)
+	if (bResulst == MFALSE) {
 		ConfigDVEFrameByReqIdx(g_DVE_RequestRing.HWProcessIdx);
 
 		LOG_INF("DVE:bFound:%d, DveWriteIdx:%d, WriteIdx:%d\n",
@@ -4793,7 +4793,7 @@ if (bResulst == MTRUE) {
 		gDveCnt,
 		g_DVE_RequestRing.DVEReq_Struct[DveWriteIdx].RequestState,
 		g_DVE_RequestRing.HWProcessIdx);
-
+	}
 	if (bResulst == MTRUE)
 		wake_up_interruptible(&DPEInfo.WaitQueueHead);
 
@@ -4828,10 +4828,10 @@ if (bResulst == MTRUE) {
 	gWfmeCnt--;
 	if (gWfmeCnt > 0) {
 		WmfeWriteIdx = g_WMFE_ReqRing.WriteIdx - gWfmeCnt;
-	if (WmfeWriteIdx < 0)
+	if (WmfeWriteIdx < 0) {
 		WmfeWriteIdx = WmfeWriteIdx +
 		_SUPPORT_MAX_DPE_REQUEST_RING_SIZE_;
-
+	}
 	if (g_WMFE_ReqRing.WMFEReq_Struct[WmfeWriteIdx].RequestState ==
 		DPE_REQUEST_STATE_PENDING) {
 		g_WMFE_ReqRing.WMFEReq_Struct[WmfeWriteIdx].RequestState =
