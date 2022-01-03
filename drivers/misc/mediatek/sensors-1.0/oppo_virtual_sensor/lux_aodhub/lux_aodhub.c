@@ -82,7 +82,7 @@ static int lux_aod_data_report(struct data_unit_t *input_event)
     return virtual_sensor_data_report(event);
 }
 
-static int lux_aod_flush_report()
+static int lux_aod_flush_report(void)
 {
     return virtual_sensor_flush_report(ID_LUX_AOD);
 }
