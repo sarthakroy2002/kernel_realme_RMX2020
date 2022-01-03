@@ -90,7 +90,7 @@ static int camera_protect_data_report(struct data_unit_t *input_event)
     return virtual_sensor_data_report(event);
 }
 
-static int camera_protect_flush_report()
+static int camera_protect_flush_report(void)
 {
     return virtual_sensor_flush_report(ID_CAMERA_PROTECT);
 }
