@@ -25,6 +25,10 @@ make -j$(nproc --all) O=out \
                       CROSS_COMPILE="${PWD}/los-4.9-64/bin/aarch64-linux-gnu-" \
                       CROSS_COMPILE_ARM32="${PWD}/los-4.9-32/bin/arm-linux-gnueabihf-" \
                       LD=ld.lld \
+                      AS=llvm-as \
+		              AR=llvm-ar \
+			          NM=llvm-nm \
+			          OBJCOPY=llvm-objcopy \
                       CONFIG_NO_ERROR_ON_MISMATCH=y
 }
 
