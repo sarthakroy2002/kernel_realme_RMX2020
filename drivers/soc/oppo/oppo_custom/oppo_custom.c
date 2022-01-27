@@ -67,7 +67,7 @@ static int oppocustom_read(struct oppocustom_data *data)
 		pfile = filp_open(OPPOCUSTOM_FILE, O_RDWR|O_TRUNC, 0);
 	}
 	if(IS_ERR(pfile)){
-		printk("error occured while opening file %s %p\n",OPPOCUSTOM_FILE,pfile);
+		pr_debug("error occured while opening file %s %p\n",OPPOCUSTOM_FILE,pfile);
 		set_fs(fs);
 		rc = (int)IS_ERR(pfile);
 		return rc;
@@ -85,7 +85,7 @@ static int oppocustom_read(struct oppocustom_data *data)
 
 	if(D_OPPO_CUST_PART_MAGIC_NUM != pConfigInf->nMagicNum1)
 	{
-		printk("oppocustom_read OPPO_CUSTOM partition is illegal nMagicNum1:0x%x!\n", pConfigInf->nMagicNum1);
+		pr_debug("oppocustom_read OPPO_CUSTOM partition is illegal nMagicNum1:0x%x!\n", pConfigInf->nMagicNum1);
 #if 0	//lfc del for new cdt
 		rc = -2;
 		return rc;
@@ -93,7 +93,7 @@ static int oppocustom_read(struct oppocustom_data *data)
 	}
 	if(D_OPPO_CUST_PART_CONFIG_MAGIC_NUM != pConfigInf->nMagicNum2)
 	{
-		printk("oppocustom_read OPPO_CUSTOM partition with error config magic number nMagicNum2:0x%x!\n", pConfigInf->nMagicNum1);
+		pr_debug("oppocustom_read OPPO_CUSTOM partition with error config magic number nMagicNum2:0x%x!\n", pConfigInf->nMagicNum1);
 #if 0	//lfc del for new cdt
 		rc = -3;
 		return rc;
@@ -112,7 +112,7 @@ static int oppocustom_write(struct oppocustom_data *data)
 
 	if(D_OPPO_CUST_PART_MAGIC_NUM != pConfigInf->nMagicNum1)
 	{
-		printk("oppocustom_write magic num is illegal nMagicNum1:0x%x!\n", pConfigInf->nMagicNum1);
+		pr_debug("oppocustom_write magic num is illegal nMagicNum1:0x%x!\n", pConfigInf->nMagicNum1);
 #if 0	//lfc del for new cdt
 		rc = -2;
 		return rc;
@@ -120,7 +120,7 @@ static int oppocustom_write(struct oppocustom_data *data)
 	}
 	if(D_OPPO_CUST_PART_CONFIG_MAGIC_NUM != pConfigInf->nMagicNum2)
 	{
-		printk("oppocustom_write magic num is illegal nMagicNum2:0x%x!\n", pConfigInf->nMagicNum2);
+		pr_debug("oppocustom_write magic num is illegal nMagicNum2:0x%x!\n", pConfigInf->nMagicNum2);
 #if 0	//lfc del for new cdt
 		rc = -3;
 		return rc;
@@ -134,7 +134,7 @@ static int oppocustom_write(struct oppocustom_data *data)
 		pfile = filp_open(OPPOCUSTOM_FILE, O_RDWR, 0);
 	}
 	if(IS_ERR(pfile)){
-		printk("error occured while opening file %s\n",OPPOCUSTOM_FILE);
+		pr_debug("error occured while opening file %s\n",OPPOCUSTOM_FILE);
 		set_fs(fs);
 		return rc;
 	}
@@ -159,21 +159,21 @@ static void oppo_custome_sync_work(struct work_struct *work)
 	struct oppocustom_data *data =
 		container_of(dwork, struct oppocustom_data, sync_work);
 
-	printk("oppo_custome_sync_work is called\n");
+	pr_debug("oppo_custome_sync_work is called\n");
 	if(!data->inited){
 		if(data->tryTime > 100){
-			printk("oppo_custome_sync_work:timeout tryTime = %d\n",data->tryTime);
+			pr_debug("oppo_custome_sync_work:timeout tryTime = %d\n",data->tryTime);
 			return;
 		}
 		if(sys_access(OPPOCUSTOM_FILE, 0) != 0){
-			printk("oppo_custome_sync_work: file %s is no exit",OPPOCUSTOM_FILE);
+			pr_debug("oppo_custome_sync_work: file %s is no exit",OPPOCUSTOM_FILE);
 
 			data->tryTime++;
 			schedule_delayed_work(&data->sync_work, msecs_to_jiffies(OPPOCUSTOM_SYNC_TIME));
 			return;
 		}
 		rc = oppocustom_read(data);
-		printk("oppo_custome_sync_work:rc = %d\n",rc);
+		pr_debug("oppo_custome_sync_work:rc = %d\n",rc);
 		if(rc == 0){
 			data->inited = 1;
 		}else {
@@ -187,7 +187,7 @@ static void oppo_custome_sync_work(struct work_struct *work)
 		oppocustom_write(data); //sync back
 		data->change_flag -= change_flag_old;
 		if(data->change_flag < 0){
-			printk("oppo_custome_sync_work erro data->change_flag can not < 0 \n");
+			pr_debug("oppo_custome_sync_work erro data->change_flag can not < 0 \n");
 		}
 	}
 	if(data->change_flag > 0)
@@ -200,7 +200,7 @@ static int oppocustom_sync_init(void)
 	struct oppocustom_data *data = NULL;
 
 	if(gdata){
-		printk("%s:just can be call one time\n",__func__);
+		pr_debug("%s:just can be call one time\n",__func__);
 		return 0;
 	}
 
@@ -208,7 +208,7 @@ static int oppocustom_sync_init(void)
 	if(data == NULL)
 	{
 		rc = -ENOMEM;
-		printk("%s:kzalloc fail %d\n",__func__,rc);
+		pr_debug("%s:kzalloc fail %d\n",__func__,rc);
 		return rc;
 	}
 	//mutex_init(&data->wr_lock);
@@ -390,7 +390,7 @@ static ssize_t rpmb_key_provisioned_read_proc(struct file *file, char __user *bu
 		return -ENOENT;
 	}
 
-	printk("rpmb key provisioned magic 0x%x\n", gdata->ConfigInf.rpmb_key_provisioned);
+	pr_debug("rpmb key provisioned magic 0x%x\n", gdata->ConfigInf.rpmb_key_provisioned);
 	
 	len = sprintf(page,"%d",gdata->ConfigInf.rpmb_key_provisioned == RPMB_KEY_PROVISIONED);
 
@@ -478,7 +478,7 @@ static ssize_t nUsbAutoSwitch_write_proc(struct file *file, const char __user *b
 		} else {
 			gdata->ConfigInf.nUsbAutoSwitch = input;
 		}
-		printk("%d oppocustom_write nUsbAutoSwitch = 0x%x \n", __LINE__, gdata->ConfigInf.nUsbAutoSwitch);
+		pr_debug("%d oppocustom_write nUsbAutoSwitch = 0x%x \n", __LINE__, gdata->ConfigInf.nUsbAutoSwitch);
 
 		gdata->change_flag++;
 		if(gdata->change_flag == 1){
@@ -646,7 +646,7 @@ static int __init oppocustom_init(void)
 	}
 
 	if(gdata->proc_oppoCustom){
-		printk("proc_oppoCustom has alread inited\n");
+		pr_debug("proc_oppoCustom has alread inited\n");
 		return 0;
 	}
 
