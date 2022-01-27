@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 4.14.261 Kernel Configuration
+# Linux/arm64 4.14.262 Kernel Configuration
 #
 CONFIG_ARM64=y
 CONFIG_64BIT=y
@@ -697,8 +697,6 @@ CONFIG_NET_EGRESS=y
 #
 # Networking options
 #
-CONFIG_WIREGUARD=y
-# CONFIG_WIREGUARD_DEBUG is not set
 CONFIG_PACKET=y
 # CONFIG_PACKET_DIAG is not set
 CONFIG_UNIX=y
@@ -716,6 +714,8 @@ CONFIG_XFRM_IPCOMP=y
 CONFIG_NET_KEY=y
 # CONFIG_NET_KEY_MIGRATE is not set
 CONFIG_INET=y
+CONFIG_WIREGUARD=y
+# CONFIG_WIREGUARD_DEBUG is not set
 CONFIG_IP_MULTICAST=y
 CONFIG_IP_ADVANCED_ROUTER=y
 # CONFIG_IP_FIB_TRIE_STATS is not set
@@ -2464,7 +2464,6 @@ CONFIG_SERIAL_CORE_CONSOLE=y
 # CONFIG_VIRTIO_CONSOLE is not set
 # CONFIG_IPMI_HANDLER is not set
 # CONFIG_HW_RANDOM is not set
-CONFIG_SRANDOM=y
 
 #
 # PCMCIA character devices
@@ -2475,6 +2474,7 @@ CONFIG_SRANDOM=y
 CONFIG_RPMB=y
 # CONFIG_RPMB_INTF_DEV is not set
 # CONFIG_RPMB_SIM is not set
+CONFIG_SRANDOM=y
 
 #
 # I2C support
@@ -3576,7 +3576,6 @@ CONFIG_USB_TRANCEVIBRATOR=y
 # CONFIG_USB_HSIC_USB3503 is not set
 # CONFIG_USB_HSIC_USB4604 is not set
 # CONFIG_USB_LINK_LAYER_TEST is not set
-# CONFIG_USB_CHAOSKEY is not set
 
 #
 # USB Physical Layer drivers
