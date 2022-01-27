@@ -34,7 +34,7 @@ bool is_support_chip(chip_type chip)
 
 	if (!support_nfc)
 	{
-		pr_err("%s, nfc not supported, or oppo_nfc has not started", __func__);
+		pr_debug("%s, nfc not supported, or oppo_nfc has not started", __func__);
 		return false;
 	}
 
