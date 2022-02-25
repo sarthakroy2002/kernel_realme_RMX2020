@@ -1771,8 +1771,8 @@ static bool bq27541_sha1_hmac_authenticate(void)
         memset(Message, 0, RANDMESGNUMBYTES);
         //memset(Ws, 0, 80);
         //memset(Random, 0, 5);
-        memset(Digest_32, 0, 5);
-        memset(H, 0, 5);
+        memset(Digest_32, 0, 5 * sizeof(uint32));
+        memset(H, 0, 5 * sizeof(uint32));
         i = j = ret = len = 0;
         memset(authen_cmd_buf, 0, 1);
         memset(checksum_buf, 0, 1);
