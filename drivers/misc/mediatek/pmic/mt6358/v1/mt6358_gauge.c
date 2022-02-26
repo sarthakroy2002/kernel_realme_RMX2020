@@ -1028,10 +1028,13 @@ static int fgauge_read_current(
 	dvalue = (unsigned int) Temp_Value;
 
 	if (*fg_is_charging == true)
+	{
 		bm_trace("[%s]curr(charging) = %d mA\r\n",
 		__func__,
 			 dvalue);
+	}
 	else
+	{
 		bm_trace("[%s]curr(discharging) = %d mA\r\n",
 		__func__,
 			 dvalue);
@@ -1062,7 +1065,7 @@ static int fgauge_read_current(
 			 dvalue, gauge_dev->fg_cust_data->car_tune_value);
 
 		*data = dvalue;
-
+	}
 	return 0;
 }
 
