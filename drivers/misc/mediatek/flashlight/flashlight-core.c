@@ -2188,10 +2188,12 @@ void FlashRegulatorCtrl(int Stage)
     } else if (Stage == 1) {
         if (regVCAMIO != NULL && g_VCAMIOEn == 0) {
             if (regulator_set_voltage(regVCAMIO, 1800000, 1800000))
+			{
                 pr_debug("regulator_set_voltage fail\n");
 
                 if (regulator_enable(regVCAMIO))
                     pr_debug("regulator_enable fail\n");
+			}
 
             g_VCAMIOEn = 1;
             pr_debug("Flash VCAMIO Power on\n");
