@@ -382,7 +382,7 @@ EXPORT_SYMBOL(mt65xx_leds_brightness_set);
 int backlight_brightness_set(int level)
 {
 	struct cust_mt65xx_led *cust_led_list = mt_get_cust_led_list();
-	pr_err("%s level=%d\n",__func__,level);
+	pr_debug("%s level=%d\n",__func__,level);
 	#ifndef VENDOR_EDIT
 	/*
 	Yongpeng.Yi@PSW.MultiMedia.Display.LCD.Machine, 2017/12/08,
