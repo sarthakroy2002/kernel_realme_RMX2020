@@ -3407,7 +3407,8 @@ static inline void dev_put(struct net_device *dev)
     struct stack_trace trace;
     unsigned int cpu, idx;
     #endif
-    this_cpu_dec(*dev->pcpu_refcnt);
+	if (dev)
+		this_cpu_dec(*dev->pcpu_refcnt);
     #ifdef REFCNT_DEBUG
     if (!strncmp(dev->name, "wlan0", 5)) {
         #ifdef REFCNT_MEMORY_DEBUG
@@ -3450,7 +3451,8 @@ static inline void dev_hold(struct net_device *dev)
     unsigned int cpu, idx;
     #endif
 
-    this_cpu_inc(*dev->pcpu_refcnt);
+	if (dev)
+		this_cpu_inc(*dev->pcpu_refcnt);
 
     #ifdef REFCNT_DEBUG
     if (!strncmp(dev->name, "wlan0", 5)) {
