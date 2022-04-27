@@ -4747,7 +4747,6 @@ int __handle_speculative_fault(struct mm_struct *mm, unsigned long address,
 
 	task_enter_user_fault();
 	ret = handle_pte_fault(&vmf);
-	/* NOTE: vmf.pte should be unmapped after handle_pte_fault */
 	task_exit_user_fault();
 
 	put_vma(vma);
