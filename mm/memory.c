@@ -3186,12 +3186,13 @@ int do_swap_page(struct vm_fault *vmf)
 	struct mem_cgroup *memcg;
 	struct vma_swap_readahead swap_ra;
 	swp_entry_t entry;
+	struct swap_info_struct *si;
+        bool skip_swapcache = false;
 	pte_t pte;
 	int locked;
 	int exclusive = 0;
 	int ret;
 	bool vma_readahead = swap_use_vma_readahead();
-	bool vma_readmore = vma_readahead || !!page_cluster;
 
 	if (vma_readahead) {
 		page = swap_readahead_detect(vmf, &swap_ra);
@@ -3234,11 +3235,20 @@ int do_swap_page(struct vm_fault *vmf)
 		goto out;
 	}
 	delayacct_set_flag(DELAYACCT_PF_SWAPIN);
-	if (!page) {
-		page = lookup_swap_cache(entry, vma_readahead ? vma : NULL,
-					 vmf->address);
-		swapcache = page;
-	}
+	/*
+         * lookup_swap_cache below can fail and before the SWP_SYNCHRONOUS_IO
+         * check is made, another process can populate the swapcache, delete
+         * the swap entry and decrement the swap count. So decide on taking
+         * the SWP_SYNCHRONOUS_IO path before the lookup. In the event of the
+         * race described, the victim process will find a swap_count > 1
+         * and can then take the readahead path instead of SWP_SYNCHRONOUS_IO.
+         */
+        si = swp_swap_info(entry);
+        if (si->flags & SWP_SYNCHRONOUS_IO && swp_swapcount(entry) == 1)
+                skip_swapcache = true;
+
+	page = lookup_swap_cache(entry, vma, vmf->address);
+        swapcache = page;
 
 	if (!page) {
 		if (skip_swapcache) {

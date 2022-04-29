@@ -1511,7 +1511,14 @@ static void memcg_oom_recover(struct mem_cgroup *memcg)
 		__wake_up(&memcg_oom_waitq, TASK_NORMAL, 0, memcg);
 }
 
-static void mem_cgroup_oom(struct mem_cgroup *memcg, gfp_t mask, int order)
+enum oom_status {
+        OOM_SUCCESS,
+        OOM_FAILED,
+        OOM_ASYNC,
+        OOM_SKIPPED
+};
+
+static enum oom_status mem_cgroup_oom(struct mem_cgroup *memcg, gfp_t mask, int order)
 {
 	if (!task_in_user_fault())
 		return OOM_SKIPPED;
@@ -1533,10 +1540,22 @@ static void mem_cgroup_oom(struct mem_cgroup *memcg, gfp_t mask, int order)
 	 * fault when the stack is unwound, the locks are released,
 	 * and when we know whether the fault was overall successful.
 	 */
-	css_get(&memcg->css);
-	current->memcg_in_oom = memcg;
-	current->memcg_oom_gfp_mask = mask;
-	current->memcg_oom_order = order;
+	if (memcg->oom_kill_disable) {
+		if (!current->in_user_fault)
+			return OOM_SKIPPED;
+		css_get(&memcg->css);
+		current->memcg_in_oom = memcg;
+		current->memcg_oom_gfp_mask = mask;
+		current->memcg_oom_order = order;
+		return OOM_ASYNC;
+	}
+
+	if (mem_cgroup_out_of_memory(memcg, mask, order))
+			return OOM_SUCCESS;
+
+	WARN(1,"Memory cgroup charge failed because of no reclaimable memory! "
+                "This looks like a misconfiguration or a kernel bug.");
+        return OOM_FAILED;
 }
 
 /**
