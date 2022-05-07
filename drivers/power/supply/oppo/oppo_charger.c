@@ -123,7 +123,7 @@ extern int ap_temp_debug;
 #define charger_xlog_printk(num, fmt, ...) \
         do { \
                 if (enable_charger_log >= (int)num) { \
-                        pr_debug(KERN_NOTICE pr_fmt("[OPPO_CHG][%s]"fmt), __func__, ##__VA_ARGS__); \
+                        pr_debug(KERN_DEBUG pr_fmt("[OPPO_CHG][%s]"fmt), __func__, ##__VA_ARGS__); \
                 } \
         } while (0)
 
@@ -509,32 +509,32 @@ int oppo_battery_set_property(struct power_supply *psy,
 #ifdef CONFIG_OPPO_SHORT_C_BATT_CHECK
 #ifdef CONFIG_OPPO_SHORT_USERSPACE
 		case POWER_SUPPLY_PROP_SHORT_C_LIMIT_CHG:
-				printk(KERN_ERR "[OPPO_CHG] [short_c_bat] set limit chg[%d]\n", !!val->intval);
+				pr_err(KERN_ERR "[OPPO_CHG] [short_c_bat] set limit chg[%d]\n", !!val->intval);
 				chip->short_c_batt.limit_chg = !!val->intval;
 				if (!!val->intval == 0)//for userspace logic
 					chip->short_c_batt.is_switch_on = 0;
 				break;
 
 		case POWER_SUPPLY_PROP_SHORT_C_LIMIT_RECHG:
-				printk(KERN_ERR "[OPPO_CHG] [short_c_bat] set limit rechg[%d]\n", !!val->intval);
+				pr_err(KERN_ERR "[OPPO_CHG] [short_c_bat] set limit rechg[%d]\n", !!val->intval);
 				chip->short_c_batt.limit_rechg = !!val->intval;
 				break;
 #else
 		case POWER_SUPPLY_PROP_SHORT_C_BATT_UPDATE_CHANGE:
-				printk(KERN_ERR "[OPPO_CHG] [short_c_batt]: set update change[%d]\n", val->intval);
+				pr_err(KERN_ERR "[OPPO_CHG] [short_c_batt]: set update change[%d]\n", val->intval);
 				oppo_short_c_batt_update_change(chip, val->intval);
 				chip->short_c_batt.update_change = val->intval;
 			break;
 
 		case POWER_SUPPLY_PROP_SHORT_C_BATT_IN_IDLE:
-				printk(KERN_ERR "[OPPO_CHG] [short_c_batt]: set in idle[%d]\n", !!val->intval);
+				pr_err(KERN_ERR "[OPPO_CHG] [short_c_batt]: set in idle[%d]\n", !!val->intval);
 				chip->short_c_batt.in_idle = !!val->intval;
 			break;
 #endif /*CONFIG_OPPO_SHORT_USERSPACE*/
 #endif /* CONFIG_OPPO_SHORT_C_BATT_CHECK */
 #ifdef CONFIG_OPPO_SHORT_HW_CHECK
         case POWER_SUPPLY_PROP_SHORT_C_HW_FEATURE:
-            printk(KERN_ERR "[OPPO_CHG] [short_c_hw_check]: set is_feature_hw_on [%d]\n", val->intval);
+            pr_err(KERN_ERR "[OPPO_CHG] [short_c_hw_check]: set is_feature_hw_on [%d]\n", val->intval);
             chip->short_c_batt.is_feature_hw_on = val->intval;
         break;
 #endif /* CONFIG_OPPO_SHORT_C_BATT_CHECK */
@@ -1194,7 +1194,7 @@ static ssize_t charging_limit_time_write(struct file *filp, const char __user *b
 
         if (g_charger_chip) {
                 g_charger_chip->limits.max_chg_time_sec = limit_time;
-                printk(KERN_EMERG"charging_feature:max_chg_time_sec = %d\n", g_charger_chip->limits.max_chg_time_sec);
+                pr_debug(KERN_DEBUG"charging_feature:max_chg_time_sec = %d\n", g_charger_chip->limits.max_chg_time_sec);
         }
 
         return len;
@@ -1233,7 +1233,7 @@ static ssize_t charging_limit_current_write(struct file *filp, const char __user
 		g_charger_chip->limits.input_current_led_ma_high = limit_current;
 		g_charger_chip->limits.input_current_led_ma_warm = limit_current;
 		g_charger_chip->limits.input_current_led_ma_normal = limit_current;
-		printk(KERN_EMERG"charging_feature:limit_current = %d\n",limit_current);
+		pr_debug(KERN_DEBUG"charging_feature:limit_current = %d\n",limit_current);
         }
         return len;
 }
@@ -3756,7 +3756,7 @@ static bool oppo_chg_check_time_is_good(struct oppo_chg_chip *chip)
 #ifdef SELL_MODE
 		/* Qiao.Hu@BSP.BaseDrv.CHG.Basic, 2017/10/26, delete over_time for sell_mode */
 		chip->chging_over_time = false;
-		printk("oppo_chg_check_time_is_good_sell_mode\n");
+		pr_debug("oppo_chg_check_time_is_good_sell_mode\n");
 		return true;
 #endif //SELL_MODE
 
@@ -3765,7 +3765,7 @@ static bool oppo_chg_check_time_is_good(struct oppo_chg_chip *chip)
 	if(get_eng_version() == 1) {
 		/* Qiao.Hu@BSP.BaseDrv.CHG.Basic, 2019/3/8, delete over_time for aging_mode */
 		chip->chging_over_time = false;
-		printk("oppo_chg_check_time_is_good_aging_mode\n");
+		pr_debug("oppo_chg_check_time_is_good_aging_mode\n");
 		return true;
 	}
 //endif

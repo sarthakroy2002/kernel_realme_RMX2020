@@ -2535,7 +2535,7 @@ int lk_vbatt;
 static int oppo_get_lk_vbatt(char *oppo_vbatt_char)
 {
 	sscanf(oppo_vbatt_char, "%d", &lk_vbatt);
-	printk(KERN_ERR "lk_vbatt=%d\n", lk_vbatt);
+	pr_err(KERN_ERR "lk_vbatt=%d\n", lk_vbatt);
 
 	return 1;
 }
@@ -6683,24 +6683,24 @@ static int battery_type_check(void)
 	int channel = BAT_ID;
 	int battery_type = BAT_TYPE__UNKNOWN;
 	if (IMM_IsAdcInitReady() == 0) {
-		printk(KERN_ERR "[battery_type_check]: AUXADC is not ready\n");
+		pr_err(KERN_ERR "[battery_type_check]: AUXADC is not ready\n");
 		return 0;
 	}
 	 i = times;
 	 while (i--) {
 	 	printk("IMM_GetOneChannelValue start\n");
 		ret = IMM_GetOneChannelValue(channel, data, &ret_value);
- 		printk(KERN_ERR "[battery_type_check]: ret = %d,ret_value[%d]\n", ret,ret_value);
+ 		pr_err(KERN_ERR "[battery_type_check]: ret = %d,ret_value[%d]\n", ret,ret_value);
 		if (ret == 0) {
 			value += ret_value;
 		} else {
 			 times = times > 1 ? times - 1 : 1;
-			 printk(KERN_ERR "[battery_type_check]: ret[%d], times[%d]\n", ret, times);
+			 pr_err(KERN_ERR "[battery_type_check]: ret[%d], times[%d]\n", ret, times);
 		 }
 	 }
 	value = value * 1500 / 4096;
 	value = value / times;
-	printk(KERN_ERR "[battery_value= %d\n", value);
+	pr_err(KERN_ERR "[battery_value= %d\n", value);
 	if(is_project(OPPO_17331) || is_project(OPPO_17061) || is_project(OPPO_17175)  || (get_Operator_Version() == OPERATOR_18328_ASIA_SIMPLE_NORMALCHG)){
 		g_fg_battery_id = 1;
 		if(is_project(OPPO_17061)){
@@ -6730,7 +6730,7 @@ static int battery_type_check(void)
 		}
 	}
 
-	printk(KERN_ERR "[battery_type_check]: adc_value[%d], battery_type[%d],g_fg_battery_id[%d]\n", value, battery_type, g_fg_battery_id);
+	pr_err(KERN_ERR "[battery_type_check]: adc_value[%d], battery_type[%d],g_fg_battery_id[%d]\n", value, battery_type, g_fg_battery_id);
 	return battery_type;
 }
 

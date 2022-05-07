@@ -63,7 +63,7 @@ static bool short_d_on = false;
 #define short_debug(fmt,...) \
   do { \
     if (short_d_on == true) { \
-		printk(KERN_CRIT pr_fmt("=====[OPPO_CHG]"fmt),##__VA_ARGS__); \
+		pr_debug(KERN_DEBUG pr_fmt("=====[OPPO_CHG]"fmt),##__VA_ARGS__); \
     } \
   } while (0)
 
