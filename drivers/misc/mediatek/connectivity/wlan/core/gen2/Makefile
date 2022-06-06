@@ -336,15 +336,7 @@ endif
 # ---------------------------------------------------
 # WLAN Parse BUILD VARINAT
 # ---------------------------------------------------
-ifeq ($(TARGET_BUILD_VARIANT), eng)
-    ccflags-y += -DWLAN_ENG_LOAD
-endif
-ifeq ($(TARGET_BUILD_VARIANT), userdebug)
-    ccflags-y += -DWLAN_USERDEBUG_LOAD
-endif
-ifeq ($(TARGET_BUILD_VARIANT), user)
-    ccflags-y += -DWLAN_USER_LOAD
-endif
+ccflags-y += -DWLAN_USER_LOAD
 # ---------------------------------------------------
 
 $(MODULE_NAME)-objs  += $(COMMON_OBJS)

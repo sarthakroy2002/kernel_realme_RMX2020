@@ -5,10 +5,6 @@
 #    $(error CONFIG_MTK_COMBO_CHIP not defined)
 #endif
 
-ifeq ($(TARGET_BUILD_VARIANT),$(filter $(TARGET_BUILD_VARIANT),userdebug user))
-    ldflags-y += -s
-endif
-
 # Force build fail on modpost warning
 KBUILD_MODPOST_FAIL_ON_WARNINGS := y
 ###############################################################################
@@ -73,24 +69,12 @@ ccflags-y += -I$(src)/platform/include
 ccflags-y += -I$(src)/platform/$(MTK_PLATFORM)/include
 
 
-ifneq ($(TARGET_BUILD_VARIANT), user)
-    ccflags-y += -D CONNINFRA_DBG_SUPPORT=1
-else
-    ccflags-y += -D CONNINFRA_DBG_SUPPORT=0
-endif
+ccflags-y += -D CONNINFRA_DBG_SUPPORT=0
 
 # STEP: (Support Connac)
 # MTK eng/userdebug/user load: Support
 # Customer eng/userdebug load: Support
 # Customer user load: Not support
-
-ifeq ($(wildcard vendor/mediatek/proprietary/external/aee_config_internal/init.aee.mtk.system.rc),)
-	ccflags-y += -D CFG_WMT_STEP
-else
-	ifneq ($(TARGET_BUILD_VARIANT),user)
-		ccflags-y += -D CFG_WMT_STEP
-	endif
-endif
 
 #ifeq ($(findstring evb, $(MTK_PROJECT)), evb)
 #ccflags-y += -D CFG_WMT_EVB
@@ -120,23 +104,3 @@ $(MODULE_NAME)-objs += platform/$(MTK_PLATFORM)/$(MTK_PLATFORM)_pmic.o
 $(MODULE_NAME)-objs += platform/$(MTK_PLATFORM)/$(MTK_PLATFORM)_emi.o
 $(MODULE_NAME)-objs += platform/$(MTK_PLATFORM)/$(MTK_PLATFORM)_consys_reg.o
 $(MODULE_NAME)-objs += platform/$(MTK_PLATFORM)/$(MTK_PLATFORM)_pos.o
-
-###############################################################################
-# test
-###############################################################################
-#ifeq ($(TARGET_BUILD_VARIANT),eng)
-ifneq ($(TARGET_BUILD_VARIANT), user)
-ccflags-y += -I$(src)/test/include
-endif
-
-#ifeq ($(TARGET_BUILD_VARIANT),eng)
-ifneq ($(TARGET_BUILD_VARIANT), user)
-$(MODULE_NAME)-objs += test/conninfra_core_test.o
-$(MODULE_NAME)-objs += test/conf_test.o
-$(MODULE_NAME)-objs += test/cal_test.o
-$(MODULE_NAME)-objs += test/msg_evt_test.o
-$(MODULE_NAME)-objs += test/chip_rst_test.o
-$(MODULE_NAME)-objs += test/conninfra_test.o
-$(MODULE_NAME)-objs += test/mailbox_test.o
-endif
-
