@@ -99,12 +99,6 @@ struct nf_conn {
 	s64 oppo_game_last_timestamp;
 	//#endif /* VENDOR_EDIT */
 
-	#ifdef VENDOR_EDIT
-	//Yuan.Huang@PSW.CN.WiFi.Network.internet.1461349, 2018/06/18,
-	//Add for WeChat lucky money recognition
-	u32 oppo_app_uid;
-	#endif /* VENDOR_EDIT */
-
 	/* If we were expected by an expectation, this will be it */
 	struct nf_conn *master;
 
