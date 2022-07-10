@@ -57,7 +57,7 @@ static inline bool is_heavy_ux_task(struct task_struct *task)
 {
 	return task->static_ux == 2;
 }
-static inline is_animator_ux_task(struct task_struct *task)
+static inline int is_animator_ux_task(struct task_struct *task)
 {
 	return task->static_ux == 1;
 }
