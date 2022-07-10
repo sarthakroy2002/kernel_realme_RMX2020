@@ -22,7 +22,7 @@ static bool support_nfc = false;
 static const char* nfc_feature = "feature";
 static const char* feature_src = "/vendor/etc/nfc/com.oppo.nfc_feature.xml";
 
-bool is_nfc_support()
+bool is_nfc_support(void)
 {
 	return support_nfc;
 }

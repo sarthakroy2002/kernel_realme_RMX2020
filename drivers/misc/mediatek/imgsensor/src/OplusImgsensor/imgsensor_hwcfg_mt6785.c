@@ -542,7 +542,7 @@ struct CAMERA_DEVICE_INFO gImgEepromInfo_19661 = {
     .i4FrontStereoAddr = {0xFFFF, 0xFFFF},
 };
 
-void oplus_imgsensor_hwcfg()
+void oplus_imgsensor_hwcfg(void)
 {
     if (is_project(20682) || is_project(20683)) {
          oplus_gimgsensor_sensor_list = gimgsensor_sensor_list_20682;

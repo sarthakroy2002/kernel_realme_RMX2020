@@ -231,13 +231,13 @@ static int nwpower_set_blacklist_uids(struct nlmsghdr *nlh) {
 	return 0;
 }
 
-extern void oplus_match_modem_wakeup() {
+extern void oplus_match_modem_wakeup(void) {
 	atomic_set(&qrtr_first_msg, 1);
 	oplus_nw_wakeup[OPLUS_NW_MPSS]++;
 	oplus_mdaci_nw_wakeup[OPLUS_NW_MPSS]++;
 }
 
-extern void oplus_match_wlan_wakeup() {
+extern void oplus_match_wlan_wakeup(void) {
 	oplus_nw_wakeup[OPLUS_NW_WIFI]++;
 	oplus_mdaci_nw_wakeup[OPLUS_NW_WIFI]++;
 }
@@ -422,7 +422,7 @@ extern void oplus_match_ipa_tcp_wakeup(int type, struct sock *sk) {
 	}
 }
 
-extern void oplus_ipa_schedule_work() {
+extern void oplus_ipa_schedule_work(void) {
 	if (atomic_read(&ipa_wakeup_hook_boot) == 1 && atomic_read(&tcp_is_input) == 1 && !tcp_input_sch_work) {
 		schedule_work(&tcp_input_hook_work);
 		tcp_input_sch_work = true;
