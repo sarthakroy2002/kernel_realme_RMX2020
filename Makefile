@@ -782,6 +782,7 @@ KBUILD_CFLAGS	+= $(call cc-disable-warning, unused-but-set-variable)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, tautological-compare)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, stringop-overread)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, array-compare)
+KBUILD_CFLAGS	+= $(call cc-disable-warning, fortify-source)
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS   += -Os
