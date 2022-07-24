@@ -20,6 +20,11 @@
 #include "mtk_charger_intf.h"
 #include "mtk_dual_switch_charging.h"
 
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/19, add for pd dual charger*/
+#define CUSTOM_PD_MAX_INPUT_CURRENT 2000 //2A
+#endif /*ODM_WT_EDIT*/
+
 static int _uA_to_mA(int uA)
 {
 	if (uA == -1)
@@ -214,6 +219,11 @@ dual_swchg_select_charging_current_limit(struct charger_manager *info)
 		int vbus = 0, cur = 0, idx = 0;
 
 		ret = mtk_pdc_get_setting(info, &vbus, &cur, &idx);
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/19, add for pd dual charger*/
+		if(cur > CUSTOM_PD_MAX_INPUT_CURRENT)
+			cur = CUSTOM_PD_MAX_INPUT_CURRENT;
+#endif /*ODM_WT_EDIT*/
 		if (ret != -1 && idx != -1) {
 			pdata->input_current_limit = cur * 1000;
 			pdata->charging_current_limit =
@@ -351,7 +361,9 @@ dual_swchg_select_charging_current_limit(struct charger_manager *info)
 	 * current setting, disable the charger by setting its current
 	 * setting to 0.
 	 */
-
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/10, Add the disable temperature protect*/
+#ifndef CONFIG_MTK_DISABLE_TEMP_PROTECT
 	if (pdata->thermal_charging_current_limit != -1) {
 		if (pdata->thermal_charging_current_limit <
 		    pdata->charging_current_limit)
@@ -402,7 +414,8 @@ dual_swchg_select_charging_current_limit(struct charger_manager *info)
 		    pdata2->thermal_input_current_limit < aicr2_min)
 			pdata2->input_current_limit = 0;
 	}
-
+#endif /*CONFIG_MTK_DISABLE_TEMP_PROTECT*/
+#endif /*ODM_WT_EDIT*/
 	if (mtk_pe40_get_is_connect(info)) {
 		if (info->pe4.pe4_input_current_limit != -1 &&
 		    info->pe4.pe4_input_current_limit <

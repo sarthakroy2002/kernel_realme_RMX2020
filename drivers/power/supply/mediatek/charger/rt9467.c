@@ -39,6 +39,11 @@
 #include "rt9467.h"
 #define I2C_ACCESS_MAX_RETRY	5
 #define RT9467_DRV_VERSION	"1.0.18_MTK"
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/10, add temporary for Mnoet X*/
+#undef CONFIG_TCPC_CLASS
+#endif
+
 
 /* ======================= */
 /* RT9467 Parameter        */

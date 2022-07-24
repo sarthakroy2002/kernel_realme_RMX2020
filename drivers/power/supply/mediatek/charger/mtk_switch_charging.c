@@ -273,7 +273,9 @@ static void swchg_select_charging_current_limit(struct charger_manager *info)
 			}
 		}
 	}
-
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/10, Add the disable temperature protect*/
+#ifndef CONFIG_MTK_DISABLE_TEMP_PROTECT
 	if (pdata->thermal_charging_current_limit != -1) {
 		if (pdata->thermal_charging_current_limit <
 		    pdata->charging_current_limit)
@@ -287,7 +289,8 @@ static void swchg_select_charging_current_limit(struct charger_manager *info)
 			pdata->input_current_limit =
 					pdata->thermal_input_current_limit;
 	}
-
+#endif /*CONFIG_MTK_DISABLE_TEMP_PROTECT*/
+#endif /*ODM_WT_EDIT*/
 	if (mtk_pe40_get_is_connect(info)) {
 		if (info->pe4.pe4_input_current_limit != -1 &&
 		    info->pe4.pe4_input_current_limit <

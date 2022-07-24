@@ -97,11 +97,36 @@
 #define Set_BAT_DISABLE_NAFG _IOW('k', 14, int)
 #define Set_CARTUNE_TO_KERNEL _IOW('k', 15, int)
 /* add for meta tool----------------------------------------- */
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/20, Add charger code*/
+#if defined(CONFIG_MEDIATEK_MT6577_AUXADC)
+#include <linux/iio/consumer.h>
+#endif
+#endif	/*ODM_WT_EDIT*/
 
 static struct class *adc_cali_class;
 static int adc_cali_major;
 static dev_t adc_cali_devno;
 static struct cdev *adc_cali_cdev;
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/20, Add charger code*/
+struct iio_channel *usb_chan1; //usb_temp_auxadc_channel 1
+struct iio_channel *usb_chan2; //usb_temp_auxadc_channel 2
+#endif	/*ODM_WT_EDIT*/
+
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/09, add custom battery node*/
+extern char* battery_type;
+extern int g_resistance_id;
+
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/12, add charge monitor thread*/
+static atomic_t bat_thread_wakeup;
+static DECLARE_WAIT_QUEUE_HEAD(bat_thread_wq);
+extern int battery_id_vol;
+static int battery_id_type = 1;
+#endif	/*ODM_WT_EDIT*/
+
+
 
 static int adc_cali_slop[14] = {
 	1000, 1000, 1000, 1000, 1000, 1000,
@@ -128,6 +153,101 @@ static enum power_supply_property battery_props[] = {
 	POWER_SUPPLY_PROP_CHARGE_COUNTER,
 	POWER_SUPPLY_PROP_TEMP,
 };
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/9/25, add usb en node*/
+static struct pinctrl *pinctrl_usb_burn_en;
+static struct pinctrl_state *pinctrl_usb_burn_en_high;
+static struct pinctrl_state *pinctrl_usb_burn_en_low;
+
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/9/25, add usb port temp node*/
+#define USB_PORT_PULL_UP_R 390000  //390K
+#define USB_PORT_PULL_UP_VOLT 1800 //1.8V
+#define USB_NTC_TABLE_SIZE 74
+
+struct USB_PORT_TEMPERATURE {
+	signed int Temp;
+	signed int TemperatureR;
+};
+
+struct USB_PORT_TEMPERATURE Usb_Port_Temperature_Table[USB_NTC_TABLE_SIZE] = {
+/* NCP15WF104F03RC(100K) */
+	{-40, 4397119},
+	{-35, 3088599},
+	{-30, 2197225},
+	{-25, 1581881},
+	{-20, 1151037},
+	{-15, 846579},
+	{-10, 628988},
+	{-5, 471632},
+	{0, 357012},
+	{5, 272500},
+	{10, 209710},
+	{15, 162651},
+	{20, 127080},
+	{25, 100000},		/* 100K */
+	{30, 79222},
+	{35, 63167},
+	{40, 50677},
+	{41, 48528},
+	{42, 46482},
+	{43, 44533},
+	{44, 42675},
+	{45, 40904},
+	{46, 39213},
+	{47, 37601},
+	{48, 36063},
+	{49, 34595},
+	{50, 33195},
+	{51, 31859},
+	{52, 30584},
+	{53, 29366},
+	{54, 28203},
+	{55, 27091},
+	{56, 26028},
+	{57, 25013},
+	{58, 24042},
+	{59, 23113},
+	{60, 22224},
+	{61, 21374},
+	{62, 20560},
+	{63, 19782},
+	{64, 19036},
+	{65, 18322},
+	{66, 17640},
+	{67, 16986},
+	{68, 16360},
+	{69, 15759},
+	{70, 15184},
+	{71, 14631},
+	{72, 14100},
+	{73, 13591},
+	{74, 13103},
+	{75, 12635},
+	{76, 12187},
+	{77, 11756},
+	{78, 11343},
+	{79, 10946},
+	{80, 10565},
+	{81, 10199},
+	{82,  9847},
+	{83,  9509},
+	{84,  9184},
+	{85,  8872},
+	{86,  8572},
+	{87,  8283},
+	{88,  8005},
+	{89,  7738},
+	{90,  7481},
+	{95, 6337},
+	{100, 5384},
+	{105, 4594},
+	{110, 3934},
+	{115, 3380},
+	{120, 2916},
+	{125, 2522}
+};
+#endif	/*ODM_WT_EDIT*/
+
 
 /* weak function */
 int __attribute__ ((weak))
@@ -410,7 +530,12 @@ static int battery_get_property(struct power_supply *psy,
 		if (b_ischarging == false)
 			fgcurrent = 0 - fgcurrent;
 
+#ifndef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/9/25, modify current node unit*/
 		val->intval = fgcurrent * 100;
+#else /*ODM_WT_EDIT*/
+		val->intval = 0 - fgcurrent / 10;
+#endif /*ODM_WT_EDIT*/
 		break;
 	case POWER_SUPPLY_PROP_CURRENT_AVG:
 		val->intval = battery_get_bat_avg_current() * 100;
@@ -426,7 +551,12 @@ static int battery_get_property(struct power_supply *psy,
 			* 1000 / 100;
 		break;
 	case POWER_SUPPLY_PROP_VOLTAGE_NOW:
+#ifndef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/11/1, modify voltage node unit*/
 		val->intval = data->BAT_batt_vol * 1000;
+#else	/*ODM_WT_EDIT*/
+		val->intval = data->BAT_batt_vol;
+#endif /*ODM_WT_EDIT*/
 		break;
 	case POWER_SUPPLY_PROP_TEMP:
 		val->intval = gm.tbat_precise;
@@ -1594,9 +1724,17 @@ int force_get_tbat_internal(bool update)
 	} else {
 		bat_temperature_val = pre_bat_temperature_val;
 	}
-
+#ifndef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/20, Add charger code*/
 	gm.tbat_precise = bat_temperature_val;
-
+#else
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/10, Add the disable temperature protect*/
+#ifdef CONFIG_MTK_DISABLE_TEMP_PROTECT
+	gm.tbat_precise = 250;
+#else
+	gm.tbat_precise = bat_temperature_val;
+#endif /* CONFIG_MTK_DISABLE_TEMP_PROTECT */
+#endif /* ODM_WT_EDIT */
 	return bat_temperature_val / 10;
 }
 
@@ -1661,6 +1799,14 @@ int force_get_tbat(bool update)
 	gm.ntc_disable_nafg = false;
 	bm_debug("[%s] t:%d precise:%d\n", __func__,
 		bat_temperature_val, gm.tbat_precise);
+
+	#ifdef ODM_WT_EDIT
+	/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/10, Add the disable temperature protect*/
+	#ifdef CONFIG_MTK_DISABLE_TEMP_PROTECT
+	bm_debug("CONFIG_MTK_DISABLE_TEMP_PROTECT the real temperature =%d\n",bat_temperature_val);
+	return 25;
+	#endif /* CONFIG_MTK_DISABLE_TEMP_PROTECT */
+	#endif /* ODM_WT_EDIT */
 
 	return bat_temperature_val;
 #endif
@@ -3543,7 +3689,219 @@ static ssize_t store_Power_Off_Voltage(
 static DEVICE_ATTR(
 	Power_Off_Voltage, 0664,
 	show_Power_Off_Voltage, store_Power_Off_Voltage);
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/9/25, add usb port temp node*/
+int usb_port_volt_to_temp(int volt)
+{
+	int i = 0;
+	int usb_r = 0;
+	int RES1 = 0, RES2 = 0;
+	int Usb_temp_Value = -2000, TMP1 = 0, TMP2 = 0;
+	
+	usb_r = volt * USB_PORT_PULL_UP_R / (USB_PORT_PULL_UP_VOLT - volt);
+	bm_err("[UsbTemp] NTC_R = %d\n",usb_r);
 
+	if (usb_r >= Usb_Port_Temperature_Table[0].TemperatureR) {
+		Usb_temp_Value = -400;
+	} else if (usb_r <= Usb_Port_Temperature_Table[USB_NTC_TABLE_SIZE - 1].TemperatureR) {
+		Usb_temp_Value = 600;
+	} else {
+		RES1 = Usb_Port_Temperature_Table[0].TemperatureR;
+		TMP1 = Usb_Port_Temperature_Table[0].Temp;
+
+		for (i = 0; i < USB_NTC_TABLE_SIZE; i++) {
+			if (usb_r >= Usb_Port_Temperature_Table[i].TemperatureR) {
+				RES2 = Usb_Port_Temperature_Table[i].TemperatureR;
+				TMP2 = Usb_Port_Temperature_Table[i].Temp;
+				break;
+			}
+			{	/* hidden else */
+				RES1 = Usb_Port_Temperature_Table[i].TemperatureR;
+				TMP1 = Usb_Port_Temperature_Table[i].Temp;
+			}
+		}
+
+		Usb_temp_Value = (((usb_r - RES2) * TMP1) +
+			((RES1 - usb_r) * TMP2)) * 10 / (RES1 - RES2);
+	}
+	bm_trace(
+		"[%s] %d %d %d %d %d %d\n",
+		__func__,
+		RES1, RES2, usb_r, TMP1,
+		TMP2, Usb_temp_Value);
+
+	return Usb_temp_Value;
+}
+		
+		
+static ssize_t show_usb_port_temp1(
+	struct device *dev, struct device_attribute *attr, char *buf)
+{
+	int adc_volt = 0;
+	int temp = -1;
+	
+	if(usb_chan1 != NULL){
+		iio_read_channel_processed(usb_chan1, &adc_volt);
+		adc_volt = (adc_volt * 1500) >> 12;
+		temp = usb_port_volt_to_temp(adc_volt);	
+		
+		return sprintf(buf, "%d\n", temp);
+	}
+	return sprintf(buf, "get temp error:%d\n", temp);
+}
+
+
+static DEVICE_ATTR(
+	usb_temp1, 0444,
+	show_usb_port_temp1, NULL);
+	
+
+
+static ssize_t show_usb_port_temp2(
+	struct device *dev, struct device_attribute *attr, char *buf)
+{
+	int adc_volt = 0;
+	int temp = -1;
+		
+	if(usb_chan1 != NULL){	
+		iio_read_channel_processed(usb_chan2, &adc_volt);
+		adc_volt = (adc_volt * 1500) >> 12;
+		temp = usb_port_volt_to_temp(adc_volt);
+	
+		return sprintf(buf, "%d\n", temp);
+	}
+	return sprintf(buf, "get temp error:%d\n", temp);
+}
+
+
+static DEVICE_ATTR(
+	usb_temp2, 0444,
+	show_usb_port_temp2, NULL);
+
+static ssize_t show_burn_usb_en(
+struct device *dev, struct device_attribute *attr, char *buf)
+{
+	int ret_value = -1;
+
+	return sprintf(buf, "no support read ops ret:%d\n", ret_value);
+}
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/9/25, add usb en node*/
+static ssize_t store_burn_usb_en(
+	struct device *dev, struct device_attribute *attr,
+				       const char *buf, size_t size)
+{	
+	int burn_usb_en = -1;
+
+	if(NULL == pinctrl_usb_burn_en)
+		return -1;
+	
+	bm_err("[burn_usb_en] enter\n");
+	if (kstrtoint(buf, 10, &burn_usb_en) == 0) {
+		if(1 == burn_usb_en)
+			pinctrl_select_state(pinctrl_usb_burn_en, pinctrl_usb_burn_en_high);
+		else if(0 == burn_usb_en)
+			pinctrl_select_state(pinctrl_usb_burn_en, pinctrl_usb_burn_en_low);
+	
+	}
+	return size;
+}
+
+static DEVICE_ATTR(
+	burn_usb_en, 0664,
+	show_burn_usb_en, store_burn_usb_en);
+#endif /*ODM_WT_EDIT*/
+
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG.Basic 2019/10/07, add custom battery node*/
+static ssize_t show_voltage_now(struct device *dev,struct device_attribute *attr, char *buf)
+{
+	int voltage_now;
+	voltage_now = battery_get_bat_voltage();
+	return sprintf(buf, "%d\n", voltage_now);
+}
+
+static ssize_t store_voltage_now(struct device *dev,struct device_attribute *attr, const char *buf, size_t size)
+{
+	return -1;
+}
+
+static DEVICE_ATTR(voltage_now, 0664, show_voltage_now, store_voltage_now);
+
+
+static ssize_t show_adapter_fw_updata(struct device *dev,struct device_attribute *attr, char *buf)
+{
+	return -1;
+}
+
+static ssize_t store_adapter_fw_updata(struct device *dev,struct device_attribute *attr, const char *buf, size_t size)
+{
+	return -1;
+}
+static DEVICE_ATTR(adapter_fw_updata, 0664, show_adapter_fw_updata, store_adapter_fw_updata);
+static DEVICE_ATTR(batt_cc, 0664, show_adapter_fw_updata, store_adapter_fw_updata);
+
+static ssize_t show_batt_fcc(struct device *dev,struct device_attribute *attr, char *buf)
+{
+	int batt_fcc = 5000;
+	return sprintf(buf, "%d\n", batt_fcc);
+}
+
+static ssize_t store_batt_fcc(struct device *dev,struct device_attribute *attr, const char *buf, size_t size)
+{
+	return -1;
+}
+static DEVICE_ATTR(batt_fcc, 0664, show_batt_fcc, store_batt_fcc);
+
+static ssize_t show_batt_rm(struct device *dev,struct device_attribute *attr, char *buf)
+{
+	int batt_soc;
+	int batt_rm;
+	batt_soc = battery_get_soc();
+	batt_rm = (100-batt_soc)*4100;
+	return sprintf(buf, "%d\n", batt_rm);
+}
+
+static ssize_t store_batt_rm(struct device *dev,struct device_attribute *attr, const char *buf, size_t size)
+{
+	return -1;
+}
+static DEVICE_ATTR(batt_rm, 0664, show_batt_rm, store_batt_rm);
+
+static ssize_t show_batt_soh(struct device *dev,struct device_attribute *attr, char *buf)
+{
+	return -1;
+}
+
+static ssize_t store_batt_soh(struct device *dev,struct device_attribute *attr, const char *buf, size_t size)
+{
+	return -1;
+}
+static DEVICE_ATTR(batt_soh, 0664, show_batt_soh, store_batt_soh);
+static DEVICE_ATTR(chargerid_volt, 0664, show_batt_soh, store_batt_soh);
+static DEVICE_ATTR(voocchg_ing, 0664, show_batt_soh, store_batt_soh);
+
+static ssize_t show_battery_type(struct device *dev,struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%s\n", battery_type);
+}
+
+static ssize_t store_battery_type(struct device *dev,struct device_attribute *attr, const char *buf, size_t size)
+{
+	return -1;
+}
+static DEVICE_ATTR(battery_type, 0664, show_battery_type, store_battery_type);
+
+static ssize_t show_resistance_id(struct device *dev,struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n", g_resistance_id);
+}
+
+static ssize_t store_resistance_id(struct device *dev,struct device_attribute *attr, const char *buf, size_t size)
+{
+	return -1;
+}
+static DEVICE_ATTR(resistance_id, 0664, show_resistance_id, store_resistance_id);
+#endif /* ODM_WT_EDIT */
 
 static int battery_callback(
 	struct notifier_block *nb, unsigned long event, void *v)
@@ -3961,6 +4319,89 @@ static const struct file_operations adc_cali_fops = {
 	.release = adc_cali_release,
 };
 
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/12, add charge monitor thread*/
+void bat_check_health(int tmp,int bat_vol)
+{
+	battery_main.BAT_HEALTH = POWER_SUPPLY_HEALTH_GOOD;
+	if(tmp < -19)
+		battery_main.BAT_HEALTH = POWER_SUPPLY_HEALTH_DEAD;
+	else if(tmp >= -19 && tmp < -3)
+		battery_main.BAT_HEALTH = POWER_SUPPLY_HEALTH_COLD;
+	else if(tmp > 53)
+		battery_main.BAT_HEALTH = POWER_SUPPLY_HEALTH_OVERHEAT;
+	if(bat_vol > 4500)
+		battery_main.BAT_HEALTH = POWER_SUPPLY_HEALTH_OVERVOLTAGE;
+}
+
+void bat_check_status(void)
+{
+	printk("[bat_check_status] BAT_STATUS = %d\n",battery_main.BAT_STATUS);
+}
+
+void bat_check_battery_id(void)
+{
+
+	fgauge_get_profile_id();
+	printk("[bat_check_battery_id]id_volt = %d\n", battery_id_vol);
+	if((battery_id_vol > 200000 && battery_id_vol < 660000) || (battery_id_vol > 750000 && battery_id_vol < 1000000)) {
+		battery_id_type = 1;
+		}
+	else {
+		battery_id_type = 0;
+		printk("[bat_check_battery_id] dead battery  stop charging\n");
+	}
+
+}
+
+
+
+void oppo_wake_bat_thread(void)
+{
+	atomic_inc(&bat_thread_wakeup);
+	wake_up(&bat_thread_wq);
+}
+
+int bat_check_thread(void *x)
+{
+	int ret;
+	int tmp;
+	int bat_vol;
+	int battery_current;
+	int chr_det;
+	int chr_volt;
+	ktime_t ktime = ktime_set(3, 0);
+	while(1) {
+		tmp = force_get_tbat(true);
+		bat_vol = battery_get_bat_voltage();
+		battery_current = battery_get_bat_current();
+		chr_det = upmu_get_rgs_chrdet();
+		chr_volt = battery_get_vbus();
+		bat_check_health(tmp,bat_vol);
+		bat_check_status();
+		bat_check_battery_id();
+
+			battery_update(&battery_main);
+		ret = wait_event_hrtimeout(
+			bat_thread_wq, atomic_read(&bat_thread_wakeup), ktime);
+		if (ret == -ETIME);
+		else
+			atomic_dec(&bat_thread_wakeup);
+
+		ktime = ktime_set(5, 0);
+	}
+}
+static ssize_t show_authenticate(struct device *dev,struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n", battery_id_type);
+}
+
+static ssize_t store_authenticate(struct device *dev,struct device_attribute *attr, const char *buf, size_t size)
+{
+	return -1;
+}
+static DEVICE_ATTR(authenticate, 0664, show_authenticate, store_authenticate);
+#endif /*ODM_WT_EDIT*/
 
 /*************************************/
 static struct wakeup_source battery_lock;
@@ -4017,6 +4458,24 @@ static int __init battery_probe(struct platform_device *dev)
 	}
 	bm_err("[BAT_probe] power_supply_register Battery Success !!\n");
 #endif
+
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/07, add custom battery node*/
+	if (strcmp(battery_main.psy->desc->name, "battery") == 0) {
+		ret_device_file = device_create_file(&battery_main.psy->dev, &dev_attr_voltage_now);
+		ret_device_file = device_create_file(&battery_main.psy->dev, &dev_attr_adapter_fw_updata);
+		ret_device_file = device_create_file(&battery_main.psy->dev, &dev_attr_batt_cc);
+		ret_device_file = device_create_file(&battery_main.psy->dev, &dev_attr_batt_fcc);
+		ret_device_file = device_create_file(&battery_main.psy->dev, &dev_attr_batt_rm);
+		ret_device_file = device_create_file(&battery_main.psy->dev, &dev_attr_batt_soh);
+		ret_device_file = device_create_file(&battery_main.psy->dev, &dev_attr_chargerid_volt);
+		ret_device_file = device_create_file(&battery_main.psy->dev, &dev_attr_voocchg_ing);
+		ret_device_file = device_create_file(&battery_main.psy->dev, &dev_attr_battery_type);
+		ret_device_file = device_create_file(&battery_main.psy->dev, &dev_attr_resistance_id);
+		ret_device_file = device_create_file(&battery_main.psy->dev, &dev_attr_authenticate);
+	}
+#endif /*ODM_WT_EDIT*/
+
 	ret = device_create_file(&(dev->dev), &dev_attr_Battery_Temperature);
 	ret = device_create_file(&(dev->dev), &dev_attr_UI_SOC);
 
@@ -4047,6 +4506,37 @@ static int __init battery_probe(struct platform_device *dev)
 		&dev_attr_reset_battery_cycle);
 	ret_device_file = device_create_file(&(dev->dev),
 		&dev_attr_reset_aging_factor);
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/9/25, add usb port temp node*/	
+	usb_chan1 = iio_channel_get(&dev->dev, "usbtemp-ch3");
+	if(!IS_ERR(usb_chan1)){
+		ret_device_file = device_create_file(&(dev->dev),
+			&dev_attr_usb_temp1);
+	}else{
+		pr_err("get usb temp adc channel fail,ret = %d",PTR_ERR(usb_chan1));
+		usb_chan1 = NULL;
+	}
+		
+	usb_chan2 = iio_channel_get(&dev->dev, "usbtemp-ch4");
+	if(!IS_ERR(usb_chan2)){
+		ret_device_file = device_create_file(&(dev->dev), 
+			&dev_attr_usb_temp2);
+	}else{
+		pr_err("get usb temp adc channel fail,ret = %d",PTR_ERR(usb_chan2));
+		usb_chan2 = NULL;
+	}
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/9/25, add usb en node*/		
+	pinctrl_usb_burn_en = devm_pinctrl_get(&dev->dev);
+	if(!IS_ERR(pinctrl_usb_burn_en)){
+		pinctrl_usb_burn_en_high= pinctrl_lookup_state(pinctrl_usb_burn_en, "usb_burn_en_out1_gpio");
+		pinctrl_usb_burn_en_low = pinctrl_lookup_state(pinctrl_usb_burn_en, "usb_burn_en_out0_gpio");
+		ret_device_file = device_create_file(&(dev->dev), 
+			&dev_attr_burn_usb_en);
+	}else{
+		pr_err("get pinctrl fail,ret = %d",PTR_ERR(pinctrl_usb_burn_en));	
+		pinctrl_usb_burn_en = NULL;
+	}
+#endif	/*ODM_WT_EDIT*/
 
 	if (of_scan_flat_dt(fb_early_init_dt_get_chosen, NULL) > 0)
 		fg_swocv_v =
@@ -4125,7 +4615,10 @@ static int __init battery_probe(struct platform_device *dev)
 	}
 
 	battery_debug_init();
-
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/12, add charge monitor thread*/
+	kthread_run(bat_check_thread, NULL, "bat_check_thread");
+#endif /*ODM_WT_EDIT*/	
 	__pm_relax(&battery_lock);
 
 	if (IS_ENABLED(CONFIG_POWER_EXT) || gm.disable_mtkbattery ||

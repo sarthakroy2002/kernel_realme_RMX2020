@@ -35,6 +35,10 @@ struct mtk_pe20 {
 
 	int vbat_orig; /* Measured VBAT before cable impedance measurement */
 	int aicr_cable_imp; /* AICR to set after cable impedance measurement */
+#ifdef ODM_WT_EDIT
+	//Junbo.Guo@ODM_WT.BSP.CHG, 2019/12/23, Modify for PE reset
+	bool ta_reset_ok;
+#endif
 };
 
 #ifdef CONFIG_MTK_PUMP_EXPRESS_PLUS_20_SUPPORT

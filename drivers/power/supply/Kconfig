@@ -609,8 +609,115 @@ config CHARGER_RT9455
 	select REGMAP_I2C
 	help
 	  Say Y to enable support for Richtek RT9455 battery charger.
-
+#ifdef ODM_WT_EDIT
+#/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/10, Add the disable temperature protect*/
+config MTK_DISABLE_TEMP_PROTECT
+        bool "control of TEMP protect"
+        default n
+        help
+          Say Y here to enable a function which disabled TEMP protect...
+          WARNNING:Only SCM could open it.
+#endif /* ODM_WT_EDIT*/
 source "drivers/power/supply/mediatek/battery/Kconfig"
 source "drivers/power/supply/mediatek/charger/Kconfig"
 
 endif # POWER_SUPPLY
+#ifdef VENDOR_EDIT
+# ChaoYing.Chen@EXP.BSP.CHG.basic, 2017/05/16, Add for charge driver
+config OPPO_CHARGER_MTK
+	bool "OPPO charger on MTK"
+	help
+	  Say Y here to declare charging system is on MTK
+
+config OPPO_CHARGER
+	bool "OPPO_CHARGER"
+	default n
+	help
+	  Set yes to support OPPO_CHARGER features
+	  smart battery.
+	  Set No to disable OPPO_CHARGER features
+	  smart battery.
+
+config OPPO_CHARGER_MTK6763
+	bool "OPPO_CHARGER_MTK6763"
+	default n
+	help
+	  Set yes to support OPPO_CHARGER_MTK6763 features
+	  smart battery.
+	  Set No to disable OPPO_CHARGER_MTK6763 features
+	  smart battery.
+config OPPO_CHARGER_MTK6771
+	bool "OPPO_CHARGER_MTK6763"
+	default n
+	help
+	  Set yes to support OPPO_CHARGER_MTK6771 features
+	  smart battery.
+	  Set No to disable OPPO_CHARGER_MTK6771 features
+	  smart battery.
+
+config OPPO_CHECK_CHARGERID_VOLT
+	bool "OPPO_CHECK_CHARGERID_VOLT"
+	default n
+	help
+	  Set yes to support OPPO_CHECK_CHARGERID_VOLT features
+	  smart battery.
+	  Set No to disable OPPO_CHECK_CHARGERID_VOLT features
+	  smart battery.
+config MTK_HAFG_30
+	bool "OPPO_CHECK_CHARGERID_VOLT"
+	default n
+	help
+	  Set yes to support CHARGERID features
+	  smart battery.
+	  Set No to disable CHARGERID features
+	  smart battery.
+config OPPO_4400MV_BATTERY_SUPPORT
+	bool "OPPO_CHECK_CHARGERID_VOLT"
+	default n
+	help
+	  Set yes to support BATTERYID features
+	  smart battery.
+	  Set No to disable BATTERYID features
+	  smart battery.
+config MTK_ADDITIONAL_BATTERY_TABLE
+	bool "OPPO_CHARGER_ZCV"
+	default n
+	help
+	  Set yes to support BATTERY_ZCV features
+	  smart battery.
+	  Set No to disable BATTERY_ZCV features
+	  smart battery.
+#endif /* VENDOR_EDIT */
+#ifdef VENDOR_EDIT /* Jianchao.Shi@BSP.CHG.Basic, 2018/01/12, sjc Add for charging */
+config OPPO_CALL_MODE_SUPPORT
+	bool "OPPO call mode support"
+	help
+	  Say Y to enable support for the oppo call mode.
+
+config OPPO_SHIP_MODE_SUPPORT
+	bool "OPPO ship mode support"
+	help
+	  Say Y to include support
+
+config OPPO_SHORT_HW_CHECK
+	bool "OPPO batt HW SHORT "
+	help
+	  Say Y to include support
+
+config OPPO_SHORT_IC_CHECK
+	bool "OPPO batt short "
+	help
+	  Say Y here to declare charging system is on MTK
+
+config OPPO_FAST2NORMAL_CHG
+	bool "OPPO FAST2NORMAL CHG STATUS"
+	help
+	  Say Y to include support
+
+config OPPO_CHARGER_MT6370_TYPEC
+	bool "OPPO CHARGER MT6370 TYPEC"
+	help
+	  Say Y to include support
+
+source "drivers/power/supply/oppo/Kconfig"
+#endif

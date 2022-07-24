@@ -552,6 +552,50 @@ reset:
 	return 0;
 }
 
+#ifdef ODM_WT_EDIT
+//Junbo.Guo@ODM_WT.BSP.CHG, 2019/12/9, Modify for PD
+int oppo_pdc_setup(struct charger_manager *info,int vbus)
+{
+	struct adapter_power_cap *cap;
+	struct mtk_pdc *pd = &info->pdc;
+	int idx = 0;
+	int ret = 0;
+	bool is_support_vbus = false;
+
+	if (!mtk_is_pdc_ready(info)){
+		chr_err("mtk_is_pdc_ready is fail\n");
+		return -1;
+	}
+	
+	adapter_dev_get_cap(info->pd_adapter, MTK_PD, &pd->cap);
+	cap = &pd->cap;
+	if (cap->nr == 0)
+		return -1;
+
+	for (idx = 0; idx < cap->nr; idx++) {
+		if(cap->max_mv[idx] == cap->min_mv[idx]){
+			if(cap->max_mv[idx] == vbus){
+				is_support_vbus = true;
+				break;
+			}
+		}
+	}
+
+	if(is_support_vbus){
+	  ret = adapter_dev_set_cap(info->pd_adapter, MTK_PD,
+			pd->cap.max_mv[idx], pd->cap.ma[idx]);
+	  	chr_err("[%s]max_mv:%d ma:%d \n",
+		__func__,pd->cap.max_mv[idx],pd->cap.ma[idx]);
+	}else{
+		chr_err("[%s] set %d no support\n",__func__,vbus);
+		return -1;
+	}
+
+	return 0;
+	
+}
+#endif
+
 void mtk_pdc_init_table(struct charger_manager *info)
 {
 	struct mtk_pdc *pd = &info->pdc;

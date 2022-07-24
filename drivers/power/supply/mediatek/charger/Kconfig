@@ -161,3 +161,10 @@ config CHARGER_BQ25601
 	  It depends on config MTK_SMART_BATTERY
 	  and config MTK_SWCHR_SUPPORT
 	  Set to Yes if BQ25601 is used.
+
+config WT_DUAL_CHARGER_SUPPORT
+	bool "WT_DUAL_CHARGER_SUPPORT"
+	default n
+	depends on MTK_CHARGER
+	help
+	  This is to enable WT_DUAL_CHARGER_SUPPORT

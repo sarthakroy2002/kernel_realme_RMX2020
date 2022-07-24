@@ -47,11 +47,16 @@
 /* ============================================================ */
 #define BAT_VOLTAGE_LOW_BOUND 3400
 #define BAT_VOLTAGE_HIGH_BOUND 3450
-#define LOW_TMP_BAT_VOLTAGE_LOW_BOUND 3350
+#define LOW_TMP_BAT_VOLTAGE_LOW_BOUND 3200
+#ifndef VENDOR_EDIT
+/* Yichun.Chen  PSW.BSP.CHG  2019-04-13  for bug 1947891 */
 #define SHUTDOWN_TIME 40
+#else
+#define SHUTDOWN_TIME 60
+#endif
 #define AVGVBAT_ARRAY_SIZE 30
 #define INIT_VOLTAGE 3450
-#define BATTERY_SHUTDOWN_TEMPERATURE 60
+#define BATTERY_SHUTDOWN_TEMPERATURE 90
 
 /* ============================================================ */
 /* typedef and Struct*/
@@ -226,8 +231,15 @@ enum Fg_kernel_cmds {
 	FG_KERNEL_CMD_BUILD_SEL_BATTEMP,
 	FG_KERNEL_CMD_UPDATE_AVG_BATTEMP,
 	FG_KERNEL_CMD_SAVE_DEBUG_PARAM,
+#ifdef VENDOR_EDIT
+/* Yichun.Chen  PSW.BSP.CHG  2019-07-23  for aging issue */
 	FG_KERNEL_CMD_REQ_CHANGE_AGING_DATA,
 	FG_KERNEL_CMD_AG_LOG_TEST,
+#ifndef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/20, Add charger code*/
+	FG_KERNEL_CMD_AGLOG_LATCH_DONE,
+#endif /*ODM_WT_EDIT*/
+#endif
 
 	FG_KERNEL_CMD_FROM_USER_NUMBER
 
@@ -322,7 +334,15 @@ enum daemon_cmd_int_data {
 	FG_SET_OCV_mah = FG_SET_ANCHOR + 12,
 	FG_SET_OCV_Vtemp = FG_SET_ANCHOR + 13,
 	FG_SET_OCV_SOC = FG_SET_ANCHOR + 14,
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/20, Add charger code*/
 	FG_SET_CON0_SOFF_VALID = FG_SET_ANCHOR + 15,
+#else
+#ifdef VENDOR_EDIT
+/* Yichun.Chen  PSW.BSP.CHG  2019-07-29  for aging issue */
+	FG_SET_AG_ERR = FG_SET_ANCHOR + 15,
+#endif
+#endif /*ODM_WT_EDIT*/
 	FG_SET_DATA_MAX,
 };
 
@@ -761,6 +781,13 @@ struct mtk_battery {
 	unsigned int proc_subcmd;
 	unsigned int proc_subcmd_para1;
 	char proc_log[4096];
+#ifndef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/20, Add charger code*/
+#ifdef VENDOR_EDIT
+/* Yichun.Chen  PSW.BSP.CHG  2019-07-29  for aging issue */
+	char ag_log[2000];
+#endif
+#endif
 
 /*battery interrupt*/
 	int fg_bat_int1_gap;
@@ -797,7 +824,13 @@ struct mtk_battery {
 
 	bool is_reset_aging_factor;
 	int aging_factor;
-
+#ifndef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/20, Add charger code*/
+#ifdef VENDOR_EDIT
+/* Yichun.Chen  PSW.BSP.CHG  2019-07-29  for aging issue */
+	int ag_detect_err;
+#endif
+#endif
 	struct timespec uisoc_oldtime;
 
 	signed int ptim_lk_v;

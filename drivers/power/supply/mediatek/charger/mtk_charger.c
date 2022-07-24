@@ -78,6 +78,15 @@ static struct charger_manager *pinfo;
 static struct list_head consumer_head = LIST_HEAD_INIT(consumer_head);
 static DEFINE_MUTEX(consumer_mutex);
 
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/9/25, add bat_id_volt node*/
+extern int battery_id_vol;
+static bool charging_enable = true;
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/28, add for batt_param_noplug proc*/
+static int noplug_temperature = 0;
+static int noplug_batt_volt_max = 0;
+static int noplug_batt_volt_min = 0;
+#endif /*ODM_WT_EDIT*/
 
 bool is_power_path_supported(void)
 {
@@ -1129,6 +1138,203 @@ int charger_manager_notifier(struct charger_manager *info, int event)
 	return srcu_notifier_call_chain(&info->evt_nh, event, NULL);
 }
 
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/9/25, add bat_id_volt node*/
+static ssize_t show_bat_id_volt(struct device *dev,struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n",battery_id_vol);
+}
+
+static DEVICE_ATTR(bat_id_volt, 0444, show_bat_id_volt, NULL);
+#endif /*ODM_WT_EDIT*/
+
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/07, add custom battery node*/
+static ssize_t show_StopCharging_Test(struct device *dev,struct device_attribute *attr, char *buf)
+{
+	charging_enable = false;
+	_charger_manager_enable_charging(pinfo->chg1_consumer,
+						0, charging_enable);
+	printk("StopCharging_Test\n");
+	return sprintf(buf, "chr=%d\n", charging_enable);
+}
+
+static ssize_t store_StopCharging_Test(struct device *dev,struct device_attribute *attr, const char *buf, size_t size)
+{
+    return -1;
+}
+static DEVICE_ATTR(StopCharging_Test, 0664, show_StopCharging_Test, store_StopCharging_Test);
+
+static ssize_t show_StartCharging_Test(struct device *dev,struct device_attribute *attr, char *buf)
+{
+	charging_enable = true;
+	_charger_manager_enable_charging(pinfo->chg1_consumer,
+						0, charging_enable);
+	printk("StartCharging_Test\n");
+	return sprintf(buf, "chr=%d\n", charging_enable);
+}
+static ssize_t store_StartCharging_Test(struct device *dev,struct device_attribute *attr, const char *buf, size_t size)
+{
+    return -1;
+}
+static DEVICE_ATTR(StartCharging_Test, 0664, show_StartCharging_Test, store_StartCharging_Test);
+
+static ssize_t show_battery_charging_enable(struct device *dev,struct device_attribute *attr, char *buf)
+{
+	printk("show charging enable  %d\n",charging_enable);
+	return sprintf(buf, "%d\n", charging_enable);
+}
+static ssize_t store_battery_charging_enable(struct device *dev,struct device_attribute *attr, const char *buf, size_t size)
+{
+	signed int temp;
+
+	if (kstrtoint(buf, 10, &temp) == 0) {
+		if(temp == 0) { //stop charging
+			charging_enable = false;
+			_charger_manager_enable_charging(pinfo->chg1_consumer,	0, false);
+			printk("battery_charging_disable\n");
+		} else {//start charging
+			charging_enable = true;
+			_charger_manager_enable_charging(pinfo->chg1_consumer, 0, true);
+			printk("battery_charging_enable\n");
+		}
+	}
+	return size;
+}
+static DEVICE_ATTR(battery_charging_enable, 0664, show_battery_charging_enable, store_battery_charging_enable);
+static DEVICE_ATTR(mmi_charging_enable, 0664, show_battery_charging_enable, store_battery_charging_enable);
+
+static ssize_t show_call_mode(struct device *dev,struct device_attribute *attr, char *buf)
+{
+	printk("show call_mode  %d\n",pinfo->charging_call_mode);
+	return sprintf(buf, "%d\n", pinfo->charging_call_mode);
+}
+static ssize_t store_call_mode(struct device *dev,struct device_attribute *attr, const char *buf, size_t size)
+{
+	signed int temp;
+
+	if (kstrtoint(buf, 10, &temp) == 0) {
+		if(temp == 0) {
+			pinfo->charging_call_mode = false;
+		} else if (temp == 1) {
+			pinfo->charging_call_mode = true;
+		}
+	}
+	return size;
+}
+static DEVICE_ATTR(call_mode, 0664, show_call_mode, store_call_mode);
+
+static ssize_t show_charge_timeout(struct device *dev,struct device_attribute *attr, char *buf)
+{
+	printk("show call_mode  %d\n",pinfo->charge_timeout);
+	return sprintf(buf, "%d\n", pinfo->charge_timeout);
+}
+static ssize_t store_charge_timeout(struct device *dev,struct device_attribute *attr, const char *buf, size_t size)
+{
+	signed int temp;
+
+	if (kstrtoint(buf, 10, &temp) == 0) {
+		if(temp == 0) {
+			pinfo->safety_timeout = false;
+			pinfo->charge_timeout = false;
+		} else if (temp == 1) {
+			pinfo->safety_timeout = true;
+			pinfo->charge_timeout = true;
+			charger_dev_notify(pinfo->chg1_dev,
+					CHARGER_DEV_NOTIFY_SAFETY_TIMEOUT);
+		}
+	}
+	return size;
+}
+static DEVICE_ATTR(charge_timeout, 0664, show_charge_timeout, store_charge_timeout);
+
+static ssize_t show_charge_type(struct device *dev,struct device_attribute *attr, char *buf)
+{
+	enum charger_type chr_type;
+	int type;
+	chr_type = mt_get_charger_type();
+	if(chr_type == STANDARD_HOST || chr_type == CHARGING_HOST)
+		type = 4;
+	else
+		type = 5;
+	return sprintf(buf, "%d\n", type);
+}
+
+static ssize_t store_charge_type(struct device *dev,struct device_attribute *attr, const char *buf, size_t size)
+{
+	return -1;
+}
+
+static DEVICE_ATTR(charge_type, 0664, show_charge_type, store_charge_type);
+
+static ssize_t show_fastcharger(struct device *dev,struct device_attribute *attr, char *buf)
+{
+	return 0;
+}
+
+static ssize_t store_fastcharger(struct device *dev,struct device_attribute *attr, const char *buf, size_t size)
+{
+	return -1;
+}
+static DEVICE_ATTR(fastcharger, 0664, show_fastcharger, store_fastcharger);
+
+static ssize_t show_charge_now(struct device *dev,struct device_attribute *attr, char *buf)
+{
+	int charge_now;
+	charge_now = battery_get_vbus();
+	return sprintf(buf, "%d\n",charge_now);
+}
+
+static ssize_t store_charge_now(struct device *dev,struct device_attribute *attr, const char *buf, size_t size)
+{
+	return -1;
+}
+static DEVICE_ATTR(charge_now, 0664, show_charge_now, store_charge_now);
+
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/28, add for batt_param_noplug proc*/
+static ssize_t proc_batt_param_noplug_write(struct file *filp, const char __user *buf, size_t len, loff_t *data)
+{
+	return len;
+}
+
+static ssize_t proc_batt_param_noplug_read(struct file *filp, char __user *buff, size_t count, loff_t *off)
+{
+	char page[256] = {0};
+	char read_data[128] = {0};
+	int len = 0;
+	
+	sprintf(read_data, "%d %d %d", noplug_temperature,
+			noplug_batt_volt_max, noplug_batt_volt_min);
+	len = sprintf(page, "%s", read_data);
+	if (len > *off) {
+		len -= *off;
+	} else {
+		len = 0;
+	}
+	if (copy_to_user(buff, page, (len < count ? len : count))) {
+				return -EFAULT;
+	}
+	*off += len < count ? len : count;
+	return (len < count ? len : count);
+}
+
+static const struct file_operations batt_param_noplug_proc_fops = {
+		.write = proc_batt_param_noplug_write,
+		.read = proc_batt_param_noplug_read,
+};
+
+static int init_proc_batt_param_noplug(void)
+{
+	struct proc_dir_entry *p = NULL;
+	
+	p = proc_create("batt_param_noplug", 0664, NULL, &batt_param_noplug_proc_fops);
+	if(!p) {
+		chr_err("creat batt_param_noplug proc fail\n");
+	}
+	return 0;
+}
+#endif /*ODM_WT_EDIT*/
+
 int charger_psy_event(struct notifier_block *nb, unsigned long event, void *v)
 {
 	struct charger_manager *info =
@@ -1137,6 +1343,11 @@ int charger_psy_event(struct notifier_block *nb, unsigned long event, void *v)
 	union power_supply_propval val;
 	int ret;
 	int tmp = 0;
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/9/25, add bat_id_volt node*/	
+	int ret_device_file=0;
+	static int node_flag = 0;
+#endif /*ODM_WT_EDIT*/	
 
 	if (strcmp(psy->desc->name, "battery") == 0) {
 		ret = power_supply_get_property(psy,
@@ -1152,6 +1363,22 @@ int charger_psy_event(struct notifier_block *nb, unsigned long event, void *v)
 					mt_get_charger_type());
 			}
 		}
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/9/25, add bat_id_volt node*/		
+		if(node_flag == 0){
+			ret_device_file = device_create_file(&psy->dev, &dev_attr_bat_id_volt);
+			ret_device_file = device_create_file(&psy->dev, &dev_attr_StopCharging_Test);//stop charging
+			ret_device_file = device_create_file(&psy->dev, &dev_attr_StartCharging_Test);
+			ret_device_file = device_create_file(&psy->dev, &dev_attr_battery_charging_enable);
+			ret_device_file = device_create_file(&psy->dev, &dev_attr_mmi_charging_enable);
+			ret_device_file = device_create_file(&psy->dev, &dev_attr_call_mode);
+			ret_device_file = device_create_file(&psy->dev, &dev_attr_charge_timeout);
+			ret_device_file = device_create_file(&psy->dev, &dev_attr_charge_type);
+			ret_device_file = device_create_file(&psy->dev, &dev_attr_charge_now);
+			ret_device_file = device_create_file(&psy->dev, &dev_attr_fastcharger);
+			node_flag = 1;
+		}
+#endif /*ODM_WT_EDIT*/		
 	}
 
 	return NOTIFY_DONE;
@@ -1194,7 +1421,12 @@ static int mtk_charger_plug_in(struct charger_manager *info,
 	info->enable_dynamic_cv = true;
 	info->safety_timeout = false;
 	info->vbusov_stat = false;
-
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/28, add for batt_param_noplug*/
+	noplug_temperature = battery_get_bat_temperature() * 10;
+	noplug_batt_volt_max = battery_get_bat_voltage() - 10;
+	noplug_batt_volt_min = battery_get_bat_voltage() - 10;
+#endif /*ODM_WT_EDIT*/
 	chr_err("mtk_is_charger_on plug in, type:%d\n", chr_type);
 	if (info->plug_in != NULL)
 		info->plug_in(info);
@@ -2462,6 +2694,13 @@ static int mtk_charger_parse_dt(struct charger_manager *info,
 			DEFAULT_BC12_CHARGER);
 		info->data.bc12_charger = DEFAULT_BC12_CHARGER;
 	}
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/10, Add the disable temperature protect*/
+#ifdef CONFIG_MTK_DISABLE_TEMP_PROTECT
+	info->enable_sw_jeita = false;
+	info->data.battery_cv = 4100000;
+#endif /* CONFIG_MTK_DISABLE_TEMP_PROTECT */
+#endif /* ODM_WT_EDIT */
 
 	chr_err("algorithm name:%s\n", info->algorithm_name);
 
@@ -3117,6 +3356,10 @@ static int mtk_charger_probe(struct platform_device *pdev)
 #endif
 
 	charger_debug_init();
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/28, add for batt_param_noplug proc*/
+	init_proc_batt_param_noplug();
+#endif /*ODM_WT_EDIT*/
 
 	mutex_lock(&consumer_mutex);
 	list_for_each(pos, phead) {

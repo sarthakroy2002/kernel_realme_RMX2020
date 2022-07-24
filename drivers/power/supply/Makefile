@@ -87,3 +87,6 @@ ifeq ($(CONFIG_MACH_MT8173),y)
 else
 	obj-y += mediatek/
 endif
+#ifdef VENDOR_EDIT /* Jianchao.Shi@BSP.CHG.Basic, 2018/01/12, sjc Add for charging */
+obj-$(CONFIG_OPPO_CHARGER)	+= oppo/
+#endif
