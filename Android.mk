@@ -35,7 +35,10 @@ $(KERNEL_ZIMAGE_OUT): $(TARGET_KERNEL_CONFIG) $(KERNEL_MAKE_DEPENDENCIES)
 	$(hide) $(call fixup-kernel-cmd-file,$(KERNEL_OUT)/arch/$(KERNEL_TARGET_ARCH)/boot/compressed/.piggy.xzkern.cmd)
 	# check the kernel image size
 	python device/mediatek/build/build/tools/check_kernel_size.py $(KERNEL_OUT) $(KERNEL_DIR)
-
+#ifdef VENDOR_EDIT
+#Ke.Li@Rom.Security, KernelHotFix, 2019.10.15 Add for HotFix of kernel
+	$(KERNEL_DIR)/tools/toSDK.sh
+#endif /* VENDOR_EDIT */
 ifeq ($(strip $(MTK_HEADER_SUPPORT)), yes)
 $(BUILT_KERNEL_TARGET): $(KERNEL_ZIMAGE_OUT) $(TARGET_KERNEL_CONFIG) $(LOCAL_PATH)/Android.mk | $(HOST_OUT_EXECUTABLES)/mkimage$(HOST_EXECUTABLE_SUFFIX)
 	$(hide) $(HOST_OUT_EXECUTABLES)/mkimage$(HOST_EXECUTABLE_SUFFIX) $< KERNEL 0xffffffff > $@

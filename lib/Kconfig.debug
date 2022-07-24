@@ -932,7 +932,14 @@ config WQ_WATCHDOG
 	  "workqueue.watchdog_thresh" and its sysfs counterpart.
 
 endmenu # "Debug lockups and hangs"
-
+#ifdef VENDOR_EDIT
+#Wen.Luo@Bsp.Kernel.Stability, 2018/12/05, Add for aging test,
+#aging disable DEATHHEALER to Keep scene, Release load enable DEATHHEALER
+config DEATH_HEALER
+	bool "Enable DeathHealer"
+	depends on DETECT_HUNG_TASK
+	default n
+#endif
 config PANIC_ON_OOPS
 	bool "Panic on Oops"
 	help
