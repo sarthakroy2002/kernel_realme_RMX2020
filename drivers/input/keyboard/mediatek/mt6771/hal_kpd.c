@@ -21,6 +21,11 @@
 #include <hal_kpd.h>
 #include <mt-plat/mtk_boot_common.h>
 
+#ifdef VENDOR_EDIT
+//zhouhengguo@psw.bsp.driver, 2019/11/24, 18161 using pmic hw reset, other using hw gpio
+#include <soc/oppo/oppo_project.h>
+#endif
+
 #ifdef CONFIG_MTK_PMIC_NEW_ARCH /*for pmic not ready*/
 static int kpd_enable_lprst = 1;
 #endif
@@ -55,6 +60,10 @@ void kpd_get_keymap_state(u16 state[])
 void long_press_reboot_function_setting(void)
 {
 #ifdef CONFIG_MTK_PMIC_NEW_ARCH /*for pmic not ready*/
+#ifdef VENDOR_EDIT
+//zhouhengguo@psw.bsp.driver, 2019/11/24, 18161 using pmic hw reset, other using hw gpio
+	if (OPPO_18161 == get_project()) {
+#endif /*VENDOR_EDIT*/
 	if (kpd_enable_lprst && get_boot_mode() == NORMAL_BOOT) {
 		kpd_info("Normal Boot long press reboot selection\n");
 #ifdef CONFIG_KPD_PMIC_LPRST_TD
@@ -101,6 +110,10 @@ void long_press_reboot_function_setting(void)
 		pmic_set_register_value(PMIC_RG_HOMEKEY_RST_EN, 0x00);
 #endif
 	}
+#ifdef VENDOR_EDIT
+//zhouhengguo@psw.bsp.driver, 2019/11/24, 18161 using pmic hw reset, other using hw gpio
+	}
+#endif /*VENDOR_EDIT*/
 #endif
 }
 
@@ -113,6 +126,8 @@ bool __attribute__ ((weak)) ConditionEnterSuspend(void)
 /********************************************************************/
 void kpd_wakeup_src_setting(int enable)
 {
+#ifndef VENDOR_EDIT
+/* Bin.Li@EXP.BSP.bootloader.bootflow, 2017/05/15, Remove for keypad volume up and volume down */
 	int is_fm_radio_playing = 0;
 
 	/* If FM is playing, keep keypad as wakeup source */
@@ -130,6 +145,16 @@ void kpd_wakeup_src_setting(int enable)
 			enable_kpd(0);
 		}
 	}
+#else
+	if (enable == 1) {
+		kpd_print("enable kpd work!\n");
+		enable_kpd(1);
+	} else {
+		kpd_print("disable kpd work!\n");
+		enable_kpd(0);
+	}
+#endif	/* VENDOR_EDIT */
+
 }
 
 /********************************************************************/

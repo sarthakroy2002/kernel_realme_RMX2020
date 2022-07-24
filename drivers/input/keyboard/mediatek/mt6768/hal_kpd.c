@@ -21,6 +21,13 @@
 #include <hal_kpd.h>
 #include <mt-plat/mtk_boot_common.h>
 
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/12/03, add for key function*/
+#include <soc/oppo/oppo_project.h>
+extern unsigned int is_project(OPPO_PROJECT project);
+extern unsigned int get_PCB_Version(void);
+#endif /*ODM_WT_EDIT*/
+
 #ifdef CONFIG_MTK_PMIC_NEW_ARCH /*for pmic not ready*/
 static int kpd_enable_lprst = 1;
 #endif
@@ -102,6 +109,16 @@ void long_press_reboot_function_setting(void)
 #endif
 	}
 #endif
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/12/03, add for key function*/
+		if((is_project(19741) && get_PCB_Version() <= 0x02) ||
+				(is_project(19747) && (get_PCB_Version() == 0x01||get_PCB_Version() == 0x02))){  
+			//19747:TO EVT 19741:TO EVT DVT
+			kpd_info("set one key LPRST\n");
+			pmic_set_register_value(PMIC_RG_PWRKEY_RST_EN, 0x01);
+			pmic_set_register_value(PMIC_RG_HOMEKEY_RST_EN, 0x00);
+		}
+#endif /*ODM_WT_EDIT*/
 }
 
 /* FM@suspend */
