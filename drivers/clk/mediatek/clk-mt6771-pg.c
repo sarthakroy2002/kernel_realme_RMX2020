@@ -28,6 +28,11 @@
 
 #include <dt-bindings/clock/mt6771-clk.h>
 
+//#ifdef VENDOR_EDIT
+//zhouhengguo@BSP.Stabliity, 2019.10.14, add for aging version
+#include <soc/oppo/oppo_project.h>
+//#endif
+
 /*#define TOPAXI_PROTECT_LOCK*/
 
 #if !defined(MT_CCF_DEBUG) || !defined(MT_CCF_BRINGUP)
@@ -4491,8 +4496,23 @@ void subsys_if_on(void)
 			dump_cg_state(vdec_clks[i]);
 		ret++;
 	}
+
+#ifndef VENDOR_EDIT
+/* Fuchun.Liao@BSP.CHG.Basic 2018/02/26 modify for crash issue */
 	if (ret > 0)
 		BUG_ON(1);
+#else /* VENDOR_EDIT */
+//zhouhengguo@BSP.Stabliity, 2019.10.14, add for release version
+	if(get_eng_version() == 0) {
+		if (ret > 0)
+			WARN_ON(1);
+	} else {
+		if (ret > 0)
+			BUG_ON(1);
+	}
+//end for release
+#endif /* VENDOR_EDIT */
+
 #if 0
 	for (i = 0; i < num; i++)
 		dump_cg_state(clks[i]);
