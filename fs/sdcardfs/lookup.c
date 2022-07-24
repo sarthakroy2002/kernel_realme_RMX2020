@@ -370,6 +370,7 @@ put_name:
 	 * to use its own hash
 	 */
 	lower_dentry = d_hash_and_lookup(lower_dir_dentry, &dname);
+
 	if (IS_ERR(lower_dentry))
 		return lower_dentry;
 
