@@ -273,7 +273,12 @@ static ssize_t print_cpus_isolated(struct device *dev,
 {
 	int n = 0, len = PAGE_SIZE-2;
 
+#ifdef VENDOR_EDIT
+/* Hui.Fan@SWDP.BSP.OPPOFeature.Hypnus, 2017-03-13, fix print error */
+	n = scnprintf(buf, len, "%*pbl\n", cpumask_pr_args(cpu_isolated_mask));
+#else
 	n = scnprintf(buf, len, "%*pbl\n", cpumask_pr_args(cpu_isolated_map));
+#endif /* VENDOR_EDIT */
 
 	return n;
 }
