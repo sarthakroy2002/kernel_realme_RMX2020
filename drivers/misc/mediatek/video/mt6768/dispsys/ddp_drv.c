@@ -409,16 +409,13 @@ static inline unsigned int gic_irq(struct irq_data *d)
 static inline unsigned int virq_to_hwirq(unsigned int virq)
 {
 	struct irq_desc *desc;
-	unsigned int hwirq = 0;
+	unsigned int hwirq;
 
 	desc = irq_to_desc(virq);
 
-	if (!desc) {
-		WARN_ON(1);
-		return 0;
-	}
+	WARN_ON(!desc);
 
-		hwirq = gic_irq(&desc->irq_data);
+	hwirq = gic_irq(&desc->irq_data);
 
 	return hwirq;
 }

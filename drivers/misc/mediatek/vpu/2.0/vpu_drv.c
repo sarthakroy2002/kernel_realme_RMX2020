@@ -1165,8 +1165,7 @@ static long vpu_ioctl(struct file *flip, unsigned int cmd, unsigned long arg)
 					"CLOSE_DEV_NOTICE", ret);
 			goto out;
 		}
-
-		mutex_lock(&debug_list_mutex);
+        mutex_lock(&debug_list_mutex);
 		list_for_each(head, &device_debug_list)
 		{
 			dbg_info = vlist_node_of(head,
@@ -1198,9 +1197,9 @@ static long vpu_ioctl(struct file *flip, unsigned int cmd, unsigned long arg)
 			list_del_init(vlist_link(dbg_info,
 						struct vpu_dev_debug_info));
 			vpu_free_debug_info(dbg_info);
-			mutex_unlock(&debug_list_mutex);
+            mutex_unlock(&debug_list_mutex);
 		} else {
-			mutex_unlock(&debug_list_mutex);
+		    mutex_unlock(&debug_list_mutex);
 			LOG_ERR("[%s] want to close wrong fd(%d)\n",
 				"VPU_IOCTL_CLOSE_DEV_NOTICE", dev_fd);
 			ret = -ESPIPE;

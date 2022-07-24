@@ -81,6 +81,12 @@
 /* 0:MTKFB_AOD_DOZE, 1:MTKFB_AOD_DOZE_SUSPEND */
 #define MTKFB_SET_AOD_POWER_MODE MTK_IOW(28, unsigned int)
 
+#ifdef ODM_WT_EDIT
+//Hao.liang@ODM_WT.MM.Display.Lcd, 2019/10/11 Add cabc read & write interface,
+#define SYSFS_SET_LCM_CABC_MODE MTK_IOW(29, unsigned int)
+#define SYSFS_GET_LCM_CABC_MODE MTK_IOW(30, unsigned int)
+#endif
+
 /*error handling*/
 #define MTKFB_META_RESTORE_SCREEN MTK_IOW(101, unsigned long)
 #define MTKFB_ERROR_INDEX_UPDATE_TIMEOUT MTK_IO(103)
@@ -400,6 +406,12 @@ struct mtkfb_device {
 };
 
 #endif				/* __KERNEL__ */
+
+#ifdef VENDOR_EDIT
+//jie.cheng@Swdp.shanghai, 2017/06/05, Add notifier for fb info
+extern int mtkfb_register_client(struct notifier_block *nb);
+extern int mtkfb_unregister_client(struct notifier_block *nb);
+#endif
 
 extern long hdmi_handle_cmd(unsigned int cmd, unsigned long arg);
 

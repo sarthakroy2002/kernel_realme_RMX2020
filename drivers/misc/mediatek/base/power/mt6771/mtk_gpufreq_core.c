@@ -102,6 +102,9 @@ static void __mt_gpufreq_batt_percent_protect(unsigned int limited_index);
 static void __mt_gpufreq_low_batt_protect(unsigned int limited_index);
 static void __mt_update_gpufreqs_power_table(void);
 static void __mt_gpufreq_update_max_limited_idx(void);
+#ifdef VENDOR_EDIT
+static void __mt_gpufreq_update_min_limited_idx(void);
+#endif
 static unsigned int __mt_gpufreq_calculate_dds(unsigned int freq_khz,
 		enum g_post_divider_power_enum post_divider_power);
 static void __mt_gpufreq_setup_opp_power_table(int num);
@@ -232,6 +235,9 @@ static unsigned int g_fixed_vsram_volt_threshold;
 static unsigned int g_fixed_freq;
 static unsigned int g_fixed_volt;
 static unsigned int g_max_limited_idx;
+#ifdef VENDOR_EDIT
+static unsigned int g_min_limited_idx = INT_MAX;
+#endif
 static unsigned int g_pbm_limited_power;
 static unsigned int g_thermal_protect_power;
 static unsigned int g_vgpu_sfchg_rrate;
@@ -266,6 +272,9 @@ static DEFINE_MUTEX(mt_gpufreq_lock);
 static DEFINE_MUTEX(mt_gpufreq_power_lock);
 static unsigned int g_limited_idx_array[NUMBER_OF_LIMITED_IDX] = { 0 };
 static bool g_limited_ignore_array[NUMBER_OF_LIMITED_IDX] = { false };
+#ifdef VENDOR_EDIT
+static unsigned int g_limited_min_idx_array[NR_IDX_POWER_MIN_LIMITED] = { INT_MAX };
+#endif
 static void __iomem *g_apmixed_base;
 static void __iomem *g_efuse_base;
 static void *g_MFG_base;
@@ -276,6 +285,43 @@ static void *g_DBGAPB_base;
 static void *g_TOPCKGEN_base;
 static void *g_EMI_APB_BASE;
 phys_addr_t gpu_fdvfs_virt_addr; /* for GED, legacy ?! */
+#ifdef VENDOR_EDIT
+int mt_gpufreq_scene_protect(unsigned int min_freq, unsigned int max_freq)
+{
+	int i = 0;
+	bool min_done = false;
+	bool max_done = false;
+	if (min_freq > max_freq) {
+		gpufreq_pr_err("@%s: GPU DVFS invalid input min_freq:%u max_freq:%u\n",
+			__func__, min_freq, max_freq);
+		return -EINVAL;
+	}
+	mutex_lock(&mt_gpufreq_lock);
+	for (i = 0; i < g_opp_idx_num; i++) {
+		if (g_opp_table[i].gpufreq_khz <= max_freq && !max_done) {
+			g_limited_idx_array[IDX_SCENE_LIMITED] = i;
+			max_done = true;
+		}
+		if (g_opp_table[g_opp_idx_num - 1 - i].gpufreq_khz >= min_freq && !min_done) {
+			g_limited_min_idx_array[IDX_SCENE_MIN_LIMITED] = g_opp_idx_num - 1 - i;
+			min_done = true;
+		}
+	}
+	if (!max_done)
+		g_limited_idx_array[IDX_SCENE_LIMITED] = 0;
+	if (!min_done)
+		g_limited_min_idx_array[IDX_SCENE_MIN_LIMITED] = g_opp_idx_num - 1;
+	if (g_limited_min_idx_array[IDX_SCENE_MIN_LIMITED] <
+		g_limited_idx_array[IDX_SCENE_LIMITED]) {
+		g_limited_idx_array[IDX_SCENE_LIMITED] = g_limited_min_idx_array[IDX_SCENE_MIN_LIMITED];
+	}
+	__mt_gpufreq_update_max_limited_idx();
+	__mt_gpufreq_update_min_limited_idx();
+	mutex_unlock(&mt_gpufreq_lock);
+	return 0;
+}
+EXPORT_SYMBOL(mt_gpufreq_scene_protect);
+#endif /* VENDOR_EDIT */
 GED_LOG_BUF_HANDLE _mtk_gpu_log_hnd;
 static int g_clock_on;
 
@@ -330,6 +376,18 @@ unsigned int mt_gpufreq_target(unsigned int idx, bool is_real_idx)
 					__func__, target_cond_idx);
 		}
 	}
+#ifdef VENDOR_EDIT
+	if (g_min_limited_idx != g_opp_idx_num - 1) {
+		if (target_freq < g_opp_table[g_min_limited_idx].gpufreq_khz) {
+			target_freq = g_opp_table[g_min_limited_idx].gpufreq_khz;
+			target_volt = g_opp_table[g_min_limited_idx].gpufreq_volt;
+			target_idx = g_opp_table[g_min_limited_idx].gpufreq_idx;
+			target_cond_idx = g_min_limited_idx;
+			gpufreq_pr_debug("@%s: OPP freq is limited by Thermal/Power/PBM, g_min_limited_idx = %d\n",
+					__func__, target_cond_idx);
+		}
+	}
+#endif /* VENDOR_EDIT */
 
 	/* If /proc command keep OPP freq */
 	if (g_keep_opp_freq_state) {
@@ -653,6 +711,14 @@ unsigned int mt_gpufreq_get_dvfs_table_num(void)
 {
 	return g_opp_idx_num;
 }
+#ifdef VENDOR_EDIT
+EXPORT_SYMBOL(mt_gpufreq_get_dvfs_table_num);
+struct g_opp_table_info *mt_gpufreq_get_dvfs_table(void)
+{
+	return g_opp_table;
+}
+EXPORT_SYMBOL(mt_gpufreq_get_dvfs_table);
+#endif /* VENDOR_EDIT */
 
 /* API : get frequency via OPP table index */
 unsigned int mt_gpufreq_get_freq_by_idx(unsigned int idx)
@@ -718,6 +784,20 @@ unsigned int mt_gpufreq_get_thermal_limit_index(void)
 	return g_max_limited_idx;
 }
 
+#ifdef VENDOR_EDIT
+unsigned int mt_gpufreq_get_thermal_limit_max_index(void)
+{
+	return mt_gpufreq_get_thermal_limit_index();
+}
+EXPORT_SYMBOL(mt_gpufreq_get_thermal_limit_max_index);
+unsigned int mt_gpufreq_get_thermal_limit_min_index(void)
+{
+	gpufreq_pr_debug("@%s: current GPU Thermal/Power/PBM limit min index is %d\n",
+			__func__, g_min_limited_idx);
+	return g_min_limited_idx;
+}
+EXPORT_SYMBOL(mt_gpufreq_get_thermal_limit_min_index);
+#endif /* VENDOR_EDIT */
 /*
  * API : get current Thermal/Power/PBM limited OPP table frequency
  */
@@ -726,6 +806,15 @@ unsigned int mt_gpufreq_get_thermal_limit_freq(void)
 	return g_opp_table[g_max_limited_idx].gpufreq_khz;
 }
 EXPORT_SYMBOL(mt_gpufreq_get_thermal_limit_freq);
+#ifdef VENDOR_EDIT
+unsigned int mt_gpufreq_get_min_limit_freq(void)
+{
+	gpufreq_pr_debug("@%s: current GPU thermal limit freq is %d MHz\n",
+			__func__, g_opp_table[g_min_limited_idx].gpufreq_khz / 1000);
+	return g_opp_table[g_min_limited_idx].gpufreq_khz;
+}
+EXPORT_SYMBOL(mt_gpufreq_get_min_limit_freq);
+#endif /*VENDOR_EDIT */
 
 /*
  * API : get current OPP table conditional index
@@ -1198,6 +1287,31 @@ static int mt_gpufreq_opp_dump_proc_show(struct seq_file *m, void *v)
 	return 0;
 }
 
+#ifdef VENDOR_EDIT
+//huxiaokai@shanghai. 2019/6/20. Add max/min freq information proc show
+static int mt_max_freq_proc_show(struct seq_file *m, void *v)
+{
+    int max_gpu_freq;
+    int i;
+
+    i = g_max_limited_idx;
+    max_gpu_freq = g_opp_table[i].gpufreq_khz;
+    seq_printf(m, "%d\n", max_gpu_freq);
+    return 0;
+}
+
+static int mt_min_freq_proc_show(struct seq_file *m, void *v)
+{
+    int min_gpu_freq;
+    int i;
+
+    i = g_min_limited_idx;
+    min_gpu_freq = g_opp_table[i].gpufreq_khz;
+    seq_printf(m, "%d\n", min_gpu_freq);
+    return 0;
+}
+#endif /* VENDOR_EDIT */
+
 /*
  * PROCFS : show OPP power table
  */
@@ -1237,6 +1351,9 @@ static int mt_gpufreq_var_dump_proc_show(struct seq_file *m, void *v)
 	seq_printf(m, "g_opp_stress_test_state = %d\n", g_opp_stress_test_state);
 	seq_printf(m, "g_DVFS_off_by_ptpod_idx = %d\n", g_DVFS_off_by_ptpod_idx);
 	seq_printf(m, "g_max_limited_idx = %d\n", g_max_limited_idx);
+#ifdef VENDOR_EDIT
+	seq_printf(m, "g_min_limited_idx = %d\n", g_min_limited_idx);
+#endif
 	seq_printf(m, "g_opp_springboard_idx = %d\n", g_opp_springboard_idx);
 	seq_printf(m, "gpu_loading = %d\n", gpu_loading);
 
@@ -1245,6 +1362,15 @@ static int mt_gpufreq_var_dump_proc_show(struct seq_file *m, void *v)
 
 	return 0;
 }
+
+#ifdef VENDOR_EDIT
+//huxiaokai@shanghai. 2019/6/20, Add GPU cur freq information show.
+static int mt_cur_freq_proc_show(struct seq_file *m, void *v)
+{
+    seq_printf(m, "%d\n", g_cur_opp_freq);
+    return 0;
+}
+#endif /* VENDOR_EDIT */
 
 #ifdef MT_GPUFREQ_OPP_STRESS_TEST
 /*
@@ -1527,6 +1653,13 @@ PROC_FOPS_RO(gpufreq_power_dump);
 PROC_FOPS_RW(gpufreq_opp_freq);
 PROC_FOPS_RO(gpufreq_var_dump);
 PROC_FOPS_RW(gpufreq_fixed_freq_volt);
+#ifdef VENDOR_EDIT
+//huxiaokai@shanghai. add max/min/cur gpufreq information show
+PROC_FOPS_RO(max_freq);
+PROC_FOPS_RO(min_freq);
+PROC_FOPS_RO(cur_freq);
+#endif /* VENDOR_EDIT */
+
 static int __mt_gpufreq_create_procfs(void)
 {
 	struct proc_dir_entry *dir = NULL;
@@ -1545,6 +1678,12 @@ static int __mt_gpufreq_create_procfs(void)
 		PROC_ENTRY(gpufreq_opp_freq),
 		PROC_ENTRY(gpufreq_var_dump),
 		PROC_ENTRY(gpufreq_fixed_freq_volt),
+#ifdef VENDOR_EDIT
+        //huxiaokai@shanghai. hypnus. 2019/6/20. add max/min/cur gpu freq.
+        PROC_ENTRY(max_freq),
+        PROC_ENTRY(min_freq),
+        PROC_ENTRY(cur_freq),
+#endif /* VENDOR_EDIT */
 	};
 
 	dir = proc_mkdir("gpufreq", NULL);
@@ -2243,6 +2382,22 @@ static void __mt_gpufreq_update_max_limited_idx(void)
 
 	gpufreq_pr_debug("@%s: g_max_limited_idx = %d\n", __func__, g_max_limited_idx);
 }
+#ifdef VENDOR_EDIT
+static void __mt_gpufreq_update_min_limited_idx(void)
+{
+	int i = 0;
+	unsigned limited_idx = g_opp_idx_num - 1;
+	for (i = 0; i < NR_IDX_POWER_MIN_LIMITED; i++) {
+		if (g_limited_min_idx_array[i] < limited_idx)
+			limited_idx = g_limited_min_idx_array[i];
+		gpufreq_pr_debug("g_limited_min_idx_array[%d] = %d\n",
+			i, g_limited_min_idx_array[i]);
+	}
+	g_min_limited_idx = limited_idx;
+	gpufreq_pr_debug("Final limit frequency lower bound to id = %d, freq = %d\n",
+			g_min_limited_idx, g_opp_table[g_min_limited_idx].gpufreq_khz);
+}
+#endif
 
 #ifdef MT_GPUFREQ_BATT_OC_PROTECT
 /*
@@ -2376,6 +2531,9 @@ static void __mt_gpufreq_setup_opp_table(struct g_opp_table_info *freqs, int num
 
 	g_opp_idx_num = num;
 	g_max_limited_idx = 0;
+#ifdef VENDOR_EDIT
+	g_min_limited_idx = g_opp_idx_num - 1;
+#endif /* VENDOR_EDIT */
 
 	__mt_gpufreq_calculate_springboard_opp_index();
 	__mt_gpufreq_setup_opp_power_table(num);

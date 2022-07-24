@@ -38,12 +38,20 @@ struct REGULATOR_CTRL regulator_control[REGULATOR_TYPE_MAX_NUM] = {
 	{"vcama"},
 	{"vcamd"},
 	{"vcamio"},
+#ifdef ODM_WT_EDIT
+/*xiaojun.Pu@Camera.Driver, 2019/10/18, add AF driver*/
+	{"vcamaf"},
+#endif /* ODM_WT_EDIT */
 };
 
 static const int int_oc_type[REGULATOR_TYPE_MAX_NUM] = {
 	INT_VCAMA1_OC,
 	INT_VCAMD_OC,
 	INT_VCAMIO_OC,
+#ifdef ODM_WT_EDIT
+/*xiaojun.Pu@Camera.Driver, 2019/10/18, add AF driver*/
+	INT_VLDO28_OC,
+#endif /* ODM_WT_EDIT */
 };
 
 
@@ -245,8 +253,12 @@ static enum IMGSENSOR_RETURN regulator_set(
 	int reg_type_offset;
 	atomic_t	*enable_cnt;
 
-
+#ifdef ODM_WT_EDIT
+/*xiaojun.Pu@Camera.Driver, 2019/10/18, add AF driver*/
+	if (pin > IMGSENSOR_HW_PIN_AFVDD   ||
+#else
 	if (pin > IMGSENSOR_HW_PIN_DOVDD   ||
+#endif /* ODM_WT_EDIT */
 		pin < IMGSENSOR_HW_PIN_AVDD    ||
 		pin_state < IMGSENSOR_HW_PIN_STATE_LEVEL_0 ||
 		pin_state >= IMGSENSOR_HW_PIN_STATE_LEVEL_HIGH)

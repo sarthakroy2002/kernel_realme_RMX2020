@@ -17,6 +17,9 @@
 
 static struct pinctrl *this_pctrl; /* static pinctrl instance */
 
+#ifndef VENDOR_EDIT
+/* LiPing-m@PSW.MM.Display.LCD.Machine, 2017/11/03, Add for porting 17331 lcd driver */
+/* LiPing-m@PSW.MM.Display.LCD.Machine, 2017/12/27, Add for porting 17197 lcd driver */
 /* DTS state mapping name */
 static const char *this_state_name[DTS_GPIO_STATE_MAX] = {
 	"mode_te_gpio",
@@ -29,6 +32,34 @@ static const char *this_state_name[DTS_GPIO_STATE_MAX] = {
 	"lcd_bias_enp0_gpio",
 	"lcd_bias_enp1_gpio"
 };
+#else /* VENDOR_EDIT */
+/* DTS state mapping name */
+static const char *this_state_name[DTS_GPIO_STATE_MAX] = {
+	"mode_te_gpio",
+	"mode_te_te",
+	"lcm_rst_out0_gpio",
+	"lcm_rst_out1_gpio",
+	"lcd_bias_enp0_gpio",
+	"lcd_bias_enp1_gpio",
+	"lcd_bias_enn0_gpio",
+	"lcd_bias_enn1_gpio",
+	"lcd_bl_en0_gpio",
+	"lcd_bl_en1_gpio",
+	"lcd_1p8_en0_gpio",
+	"lcd_1p8_en1_gpio",
+	"mode_te1_te",
+	"lcm1_rst_out0_gpio",
+	"lcm1_rst_out1_gpio",
+	"lcd_vci_en0_gpio",
+	"lcd_vci_en1_gpio",
+	"lcd_vpoc_en0_gpio",
+	"lcd_vpoc_en1_gpio",
+	"lcd_mipi_err_en0_gpio",
+	"lcd_mipi_err_en1_gpio",
+	"spi_csn_en0_gpio",
+	"spi_csn_en1_gpio",
+};
+#endif /* VENDOR_EDIT */
 
 /* pinctrl implementation */
 static long _set_state(const char *name)

@@ -391,23 +391,6 @@ static void lr_gpu_change_rsz_info(void)
 {
 }
 
-static void lr_adjust_rsz_scenario(struct disp_layer_info *disp_info)
-{
-	/* only support resize layer on Primary Display */
-	int disp_idx = 0;
-	struct layer_config *lc = NULL;
-
-	/* handle RPO BOTH scenario, 2nd resize layer rollback to GPU */
-	/* Both resize layers rollback to GPU are fine */
-	if (l_rule_info.layer_tb_idx == HRT_TB_TYPE_RPO_BOTH &&
-			disp_info->gles_head[disp_idx] == 1) {
-		lc = &disp_info->input_config[disp_idx][1];
-		lc->layer_caps &= ~DISP_RSZ_LAYER;
-		l_rule_info.disp_path = HRT_PATH_RPO_L0;
-		l_rule_info.layer_tb_idx = HRT_TB_TYPE_RPO_L0;
-	}
-}
-
 static void layering_rule_senario_decision(struct disp_layer_info *disp_info)
 {
 	mmprofile_log_ex(ddp_mmp_get_events()->hrt, MMPROFILE_FLAG_START,
@@ -665,20 +648,15 @@ int set_emi_bound_tb(int idx, int num, int *val)
 
 void layering_rule_init(void)
 {
-	int opt = 0;
-
 	l_rule_info.primary_fps = 60;
 	/* initialize max HRT level */
 	layering_rule_set_max_hrt_level();
 	register_layering_rule_ops(&l_rule_ops, &l_rule_info);
 
-	opt = disp_helper_get_option(DISP_OPT_RPO);
-	if (opt != -1)
-		set_layering_opt(LYE_OPT_RPO, opt);
-
-	opt = disp_helper_get_option(DISP_OPT_OVL_EXT_LAYER);
-	if (opt != -1)
-		set_layering_opt(LYE_OPT_EXT_LAYER, opt);
+	set_layering_opt(LYE_OPT_RPO,
+		disp_helper_get_option(DISP_OPT_RPO));
+	set_layering_opt(LYE_OPT_EXT_LAYER,
+		disp_helper_get_option(DISP_OPT_OVL_EXT_LAYER));
 }
 
 int layering_rule_get_mm_freq_table(enum HRT_OPP_LEVEL opp_level)
@@ -847,5 +825,4 @@ static struct layering_rule_ops l_rule_ops = {
 	.unset_disp_rsz_attr = lr_unset_disp_rsz_attr,
 	.adaptive_dc_enabled = _adaptive_dc_enabled,
 	.adjust_hrt_level = post_hw_limitation,
-	.adjust_hrt_scen = lr_adjust_rsz_scenario,
 };

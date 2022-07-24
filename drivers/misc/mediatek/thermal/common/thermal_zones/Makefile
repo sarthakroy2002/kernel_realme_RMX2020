@@ -356,7 +356,8 @@ endif
 endif
 
 ifneq (,$(filter $(CONFIG_MTK_PLATFORM), "mt6768"))
-obj-$(CONFIG_THERMAL) += mtk_ts_battery.o
+#Shouli.Wang@ODM_WT.BSP.CHG 2019/12/19, remove mtk battery thermal
+#obj-$(CONFIG_THERMAL) += mtk_ts_battery.o
 
 obj-$(CONFIG_THERMAL) += mtk_ts_bts.o
 obj-$(CONFIG_THERMAL) += mtk_ts_btsmdpa.o

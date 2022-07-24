@@ -1758,7 +1758,12 @@ static int mt_usb_probe(struct platform_device *pdev)
 #endif
 
 #ifndef FPGA_PLATFORM
+#ifdef ODM_WT_EDIT
+//HaiBo.Dong@ODM_WT.BSP.Kernel.Boot, 2019/12/02, Add for force on USB function in recovery mode
+	if (get_boot_mode() == META_BOOT || get_boot_mode() == RECOVERY_BOOT) {
+#else
 	if (get_boot_mode() == META_BOOT) {
+#endif /*ODM_WT_EDIT*/
 		DBG(0, "in special mode %d\n", get_boot_mode());
 		musb_force_on = 1;
 	}

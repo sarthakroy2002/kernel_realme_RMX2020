@@ -17,6 +17,12 @@
 #include <linux/list.h>
 #include "flashlight.h"
 
+#ifdef ODM_WT_EDIT
+/* oppo flashlight test node */
+/* Xingyu.Liu@Camera.Driver, 2019/10/10, add for [wingtech ATO factory app camera] */
+#define OPPO_FLASHLIGHT_TEST 1
+#endif
+
 /* protocol version */
 #define FLASHLIGHT_PROTOCOL_VERSION 2
 

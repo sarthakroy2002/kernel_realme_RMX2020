@@ -39,6 +39,14 @@ struct IMGSENSOR {
 		enum IMGSENSOR_SENSOR_IDX sensor_idx,
 		enum ISP_DRIVING_CURRENT_ENUM drive_current);
 };
+#ifdef ODM_WT_EDIT
+/*xiaojun.Pu@Camera.Driver, 2019/10/16, add for [add hardware_info for factory]*/
+struct match_hardwareinfo{
+	char *psensor_name;
+	char *hardwareinfo_set_name;
+	char *sensor_id;
+};
+#endif /* ODM_WT_EDIT */
 
 MINT32
 imgsensor_sensor_open(struct IMGSENSOR_SENSOR *psensor);

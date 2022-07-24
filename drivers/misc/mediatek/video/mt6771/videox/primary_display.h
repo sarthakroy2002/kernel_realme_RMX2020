@@ -239,6 +239,10 @@ struct display_primary_path_context {
 	unsigned long framebuffer_mva;
 	unsigned long framebuffer_va;
 	unsigned long framebuffer_pa;
+#ifdef VENDOR_EDIT
+	/* jie.cheng@swdp.shanghai,2017/06/02,add frame cnt variable to summarize all frame updates on MTK platform */
+	unsigned long frame_cnt;
+#endif
 	struct mutex lock;
 	struct mutex capture_lock;
 	struct mutex switch_dst_lock;
@@ -265,6 +269,13 @@ struct display_primary_path_context {
 	cmdqBackupSlotHandle dither_status_info;
 	cmdqBackupSlotHandle dsi_vfp_line;
 	cmdqBackupSlotHandle night_light_params;
+	#ifdef VENDOR_EDIT
+	/*
+	* Ling.Guo@PSW.MM.Display.LCD.Stability, 2019/01/21,
+	* add for fingerprint notify frigger
+	*/
+	cmdqBackupSlotHandle fpd_fence;
+	#endif
 
 	int is_primary_sec;
 	int scen;
@@ -272,6 +283,10 @@ struct display_primary_path_context {
 	int request_fps;
 #endif
 	enum mtkfb_power_mode pm;
+	#ifdef VENDOR_EDIT
+	/* YongPeng.Yi@PSW.MM.Display.LCD.Stability, 2018/10/09, add for AOD feature */
+	enum mtkfb_power_mode prev_pm;
+	#endif /*VENDOR_EDIT*/
 	enum lcm_power_state lcm_ps;
 };
 
@@ -400,6 +415,10 @@ int primary_display_pause(PRIMARY_DISPLAY_CALLBACK callback,
 			  unsigned int user_data);
 int primary_display_switch_dst_mode(int mode);
 int primary_display_get_lcm_index(void);
+#ifdef VENDOR_EDIT
+/* Xinqin.Yang@Cam.Tuning.Display, 2018/11/17, add for multi-lcms */
+int _ioctl_get_lcm_module_info(unsigned long arg);
+#endif /* VENDOR_EDIT */
 int primary_display_force_set_fps(unsigned int keep, unsigned int skip);
 int primary_display_set_fps(int fps);
 int primary_display_get_lcm_max_refresh_rate(void);
@@ -425,6 +444,24 @@ int do_primary_display_switch_mode(int sess_mode, unsigned int session,
 int primary_display_check_test(void);
 void _primary_path_switch_dst_lock(void);
 void _primary_path_switch_dst_unlock(void);
+
+#ifdef VENDOR_EDIT
+/*
+* Yongpeng.Yi@PSW.MM.Display.LCD.Machine, 2018/02/27,
+* add for face fill light node
+*/
+void ffl_set_init(void);
+void ffl_set_enable(unsigned int enable);
+/*
+* Ling.Guo@PSW.MM.Display.LCD.Feature, 2019/06/12,
+* add for get dimming layer hbm state
+*/
+int primary_display_set_lcm_hbm(bool en);
+int primary_display_hbm_wait(bool en);
+int primary_display_setbacklight_nolock(unsigned int level);
+int primary_display_set_aod_mode_nolock(unsigned int mode);
+int notify_display_fpd(bool mode);
+#endif /* VENDOR_EDIT */
 
 /* AOD */
 enum lcm_power_state primary_display_set_power_state(
@@ -487,5 +524,11 @@ int display_freeze_mode(int enable, int need_lock);
 int primary_display_recovery(enum DISP_MODULE_ENUM module);
 int primary_display_wdma_recovery(void);
 void primary_display_set_recovery_module(enum DISP_MODULE_ENUM module);
-
+#ifdef VENDOR_EDIT
+/*
+* Ling.Guo@PSW.MM.Display.LCD.Stability, 2019/01/21,
+* add for fingerprint notify frigger
+*/
+void fpd_notify_check_trig(void);
+#endif
 #endif

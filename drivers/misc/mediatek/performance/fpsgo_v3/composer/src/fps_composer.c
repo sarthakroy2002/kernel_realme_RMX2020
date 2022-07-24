@@ -85,9 +85,13 @@ struct connect_api_info *fpsgo_com_search_and_add_connect_api_info(int pid,
 	fpsgo_lockprove(__func__);
 
 	tgid = fpsgo_get_tgid(pid);
-	buffer_key = (buffer_id & 0xFFFF) | (((unsigned long long)tgid) << 16);
-	FPSGO_COM_TRACE("%s key:%X tgid:%d buffer_id:%llu",
+#ifdef ODM_WT_EDIT
+// Baidabin@ODM_WT.BSP.Kernel.Boot, 2020/01/10, Add for Increase accuracy of buffer_key in composer rb_tree
+	buffer_key = (buffer_id & 0xFFFFFFFFFFFF)
+		| (((unsigned long long)tgid) << 48);
+	FPSGO_COM_TRACE("%s key:%llu tgid:%d buffer_id:%llu",
 		__func__, buffer_key, tgid, buffer_id);
+#endif
 	while (*p) {
 		parent = *p;
 		tmp = rb_entry(parent, struct connect_api_info, rb_node);
@@ -154,9 +158,12 @@ int fpsgo_com_update_render_api_info(struct render_info *f_render)
 
 	f_render->api = connect_api->api;
 	list_add(&(f_render->bufferid_list), &(connect_api->render_list));
-	FPSGO_COM_TRACE("add connect api pid[%d] key[%X] buffer_id[%llu]",
+#ifdef ODM_WT_EDIT
+// Baidabin@ODM_WT.BSP.Kernel.Boot, 2020/01/10, Add for Increase accuracy of buffer_key in composer rb_tree
+	FPSGO_COM_TRACE("add connect api pid[%d] key[%llu] buffer_id[%llu]",
 		connect_api->pid, connect_api->buffer_key,
 		connect_api->buffer_id);
+#endif
 	new_type = fpsgo_com_check_frame_type(f_render->api,
 			f_render->frame_type);
 	f_render->frame_type = new_type;
@@ -557,9 +564,11 @@ void fpsgo_ctrl2comp_connect_api(int pid, int api,
 
 	if (check_render != FPSGO_COM_IS_RENDER)
 		return;
-
-	FPSGO_COM_TRACE("%s pid[%d]", __func__, pid);
-
+#ifdef ODM_WT_EDIT
+// Baidabin@ODM_WT.BSP.Kernel.Boot, 2020/01/10, Add for Increase accuracy of buffer_key in composer rb_tree
+	FPSGO_COM_TRACE("%s pid[%d], identifier:%llu",
+		__func__, pid, identifier);
+#endif
 	fpsgo_render_tree_lock(__func__);
 
 	ret = fpsgo_get_BQid_pair(pid, 0, identifier, &buffer_id, &queue_SF, 0);
@@ -654,9 +663,11 @@ void fpsgo_ctrl2comp_disconnect_api(
 	if (check_render != FPSGO_COM_IS_RENDER)
 		return;
 
-
-	FPSGO_COM_TRACE("%s pid[%d]", __func__, pid);
-
+#ifdef ODM_WT_EDIT
+// Baidabin@ODM_WT.BSP.Kernel.Boot, 2020/01/10, Add for Increase accuracy of buffer_key in composer rb_tree
+	FPSGO_COM_TRACE("%s pid[%d], identifier:%llu",
+		__func__, pid, identifier);
+#endif
 	fpsgo_render_tree_lock(__func__);
 
 	ret = fpsgo_get_BQid_pair(pid, 0, identifier, &buffer_id, &queue_SF, 0);
@@ -751,9 +762,12 @@ static int fspgo_com_connect_api_info_show
 		if (tsk) {
 			get_task_struct(tsk);
 			seq_puts(m, "PID  TGID  NAME    BufferID    API    Key\n");
-			seq_printf(m, "%5d %5d %5s %4llu %5d %5X\n",
+#ifdef ODM_WT_EDIT
+//Baidabin@ODM_WT.BSP.Kernel.Boot, 2020/01/10, Add for Increase accuracy of buffer_key in composer rb_tree
+			seq_printf(m, "%5d %5d %5s %4llu %5d %4llu\n",
 			iter->pid, iter->tgid, tsk->comm,
 			iter->buffer_id, iter->api, iter->buffer_key);
+#endif
 			put_task_struct(tsk);
 		}
 		seq_puts(m, "******render list******\n");

@@ -84,6 +84,12 @@
 #include "ddp_irq.h"
 #include "ddp_rsz.h"
 
+#ifdef VENDOR_EDIT
+/* Yongpeng.Yi@PSW.MultiMedia.Display.LCD.Feature, 2018/09/10, Add for sau and silence close backlight */
+#include <mt-plat/mtk_boot_common.h>
+extern unsigned long silence_mode;
+#endif
+
 #define DDP_OUTPUT_LAYID 4
 
 #if defined MTK_FB_SHARE_WDMA0_SUPPORT
@@ -1535,6 +1541,13 @@ long mtk_disp_mgr_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		{
 			return _ioctl_get_display_caps(arg);
 		}
+	#ifdef ODM_WT_EDIT
+	/* Zhenzhen.Wu@ODM_WT.Tuning.Display.LCD, 2019/12/7, add for multi-lcms */
+	case DISP_IOCTL_GET_LCM_MODULE_INFO:
+		{
+			return _ioctl_get_lcm_module_info(arg);
+		}
+	#endif /* VENDOR_EDIT */
 	case DISP_IOCTL_GET_VSYNC_FPS:
 		{
 			return _ioctl_get_vsync(arg);
@@ -1849,11 +1862,45 @@ static const struct file_operations mtk_disp_mgr_fops = {
 	.read = mtk_disp_mgr_read,
 };
 
+#ifdef ODM_WT_EDIT
+//Hao.Liang@ODM_WT.MM.Display.Lcd, 2019/10/19, Add ffl function
+unsigned int ffl_set_mode = 0;
+unsigned int ffl_backlight_on = 0;
+extern bool ffl_trigger_finish;
+extern void ffl_set_enable(unsigned int enable);
+static ssize_t FFL_SET_show(struct device *dev,
+				struct device_attribute *attr, char *buf)
+{
+	printk("%s ffl_set_mode=%d\n", __func__, ffl_set_mode);
+	return sprintf(buf, "%d\n", ffl_set_mode);
+}
+
+static ssize_t FFL_SET_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t num)
+{
+	int ret;
+
+	ret = kstrtouint(buf, 10, &ffl_set_mode);
+
+	printk("%s ffl_set_mode=%d\n", __func__, ffl_set_mode);
+
+	if (ffl_trigger_finish && (ffl_backlight_on == 1) && (ffl_set_mode == 1)) {
+		ffl_set_enable(1);
+	}
+
+	return num;
+}
+
+static DEVICE_ATTR(FFL_SET, 0644, FFL_SET_show, FFL_SET_store);
+#endif
 static int mtk_disp_mgr_probe(struct platform_device *pdev)
 {
 	struct class_device;
 	struct class_device *class_dev = NULL;
 	int ret;
+#ifdef ODM_WT_EDIT
+	struct device *dev =NULL;
+#endif
 
 	pr_debug("%s called!\n", __func__);
 
@@ -1877,6 +1924,26 @@ static int mtk_disp_mgr_probe(struct platform_device *pdev)
 	    (struct class_device *)device_create(mtk_disp_mgr_class, NULL,
 	    mtk_disp_mgr_devno, NULL,
 						 DISP_SESSION_DEVICE);
+
+#ifdef VENDOR_EDIT
+/* Yongpeng.Yi@PSW.MultiMedia.Display.LCD.Feature, 2018/09/10, Add for sau and silence close backlight */
+	if ((oppo_boot_mode == OPPO_SILENCE_BOOT)
+			||(get_boot_mode() == OPPO_SAU_BOOT))
+	{
+		printk("%s OPPO_SILENCE_BOOT set silence_mode to 1\n", __func__);
+		silence_mode = 1;
+	}
+
+#endif
+
+#ifdef ODM_WT_EDIT
+//Hao.Liang@ODM_WT.MM.Display.Lcd, 2019/10/19, Add ffl function
+	dev =(struct device *) class_dev;
+	ret = device_create_file(dev, &dev_attr_FFL_SET);
+	if (ret < 0) {
+		printk("%s FFL_SET device create file failed!\n", __func__);
+	}
+#endif
 	disp_sync_init();
 
 	external_display_control_init();

@@ -9,6 +9,11 @@ obj-$(CONFIG_MTK_FLASHLIGHT)             += flashlight.o
 obj-$(CONFIG_MTK_FLASHLIGHT_LED191)      += flashlights-led191.o
 obj-$(CONFIG_MTK_FLASHLIGHT_LM3642)      += flashlights-lm3642.o
 obj-$(CONFIG_MTK_FLASHLIGHT_LM3643)      += flashlights-lm3643.o
+#ifdef VENDOR_EDIT
+#Feng.Hu@Camera.Driver 20171121 add for mp3331 flash driver IC
+obj-$(CONFIG_MTK_FLASHLIGHT_MP3331)      += flashlights-mp3331.o
+obj-$(CONFIG_MTK_FLASHLIGHT_AW3642)      += flashlights-aw3642.o
+#endif
 obj-$(CONFIG_MTK_FLASHLIGHT_LM3644)      += flashlights-lm3644.o
 obj-$(CONFIG_MTK_FLASHLIGHT_RT4505)      += flashlights-rt4505.o
 obj-$(CONFIG_MTK_FLASHLIGHT_RT5081)      += flashlights-rt5081.o
@@ -17,6 +22,10 @@ obj-$(CONFIG_MTK_FLASHLIGHT_MT6370)      += flashlights-mt6370.o
 obj-$(CONFIG_MTK_FLASHLIGHT_MT6360)      += flashlights-mt6360.o
 obj-$(CONFIG_MTK_FLASHLIGHT_DUMMY)       += flashlights-dummy.o
 obj-$(CONFIG_MTK_FLASHLIGHT_DUMMY_GPIO)  += flashlights-dummy-gpio.o
+# ifdef ODM_WT_EDIT
+# XingYu.Liu@ODM_WT.CAMERA.Driver.2019/10/16,Add for flashlight bring up
+obj-$(CONFIG_MTK_FLASHLIGHT_MONET)       += flashlights-monet.o
+# endif /* ODM_WT_EDIT */
 
 ccflags-$(CONFIG_MTK_FLASHLIGHT_DEBUG)     := -DDEBUG
 ccflags-$(CONFIG_MTK_FLASHLIGHT_LED191)    += -DCONFIG_MTK_FLASHLIGHT_LED191

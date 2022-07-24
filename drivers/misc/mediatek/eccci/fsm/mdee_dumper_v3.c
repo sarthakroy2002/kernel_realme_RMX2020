@@ -21,12 +21,13 @@
 #include "ccci_config.h"
 #include "ccci_fsm_sys.h"
 
+
 #ifndef DB_OPT_DEFAULT
-#define DB_OPT_DEFAULT    (0)	/* Dummy macro define to avoid build error */
+#define DB_OPT_DEFAULT    (0) /* Dummy macro define to avoid build error */
 #endif
 
 #ifndef DB_OPT_FTRACE
-#define DB_OPT_FTRACE   (0)	/* Dummy macro define to avoid build error */
+#define DB_OPT_FTRACE   (0) /* Dummy macro define to avoid build error */
 #endif
 
 static void ccci_aed_v3(struct ccci_fsm_ee *mdee, unsigned int dump_flag,
@@ -52,7 +53,6 @@ static void ccci_aed_v3(struct ccci_fsm_ee *mdee, unsigned int dump_flag,
 	struct ccci_per_md *per_md_data = ccci_get_per_md_data(mdee->md_id);
 	int md_dbg_dump_flag = per_md_data->md_dbg_dump_flag;
 #endif
-
 	buff = kmalloc(AED_STR_LEN, GFP_ATOMIC);
 	if (buff == NULL) {
 		CCCI_ERROR_LOG(md_id, FSM, "Fail alloc Mem for buff!\n");

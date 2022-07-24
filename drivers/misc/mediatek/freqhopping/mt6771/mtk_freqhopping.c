@@ -777,12 +777,14 @@ unsigned int target_dds)
 	default:
 		break;
 	}
-
+	#ifndef VENDOR_EDIT
+	//Deliang.Peng@PSW.MM.Display.GPU.Log.1124284, 2017/10/04,
+	// Delete for too many logs
 	FH_MSG("%s, [Pll_ID]:%d [current dds(CON1)]:0x%x, [target dds]:%d",
 	       __func__, pll_id,
 	       (fh_read32(g_reg_pll_con1[pll_id]) & MASK22b),
 	       target_dds);
-
+	#endif /*VENDOR_EDIT*/
 	spin_lock_irqsave(&g_fh_lock, flags);
 
 	if (g_fh_pll[pll_id].fh_status == FH_FH_ENABLE_SSC) {

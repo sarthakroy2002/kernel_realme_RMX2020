@@ -2445,13 +2445,25 @@ static PVRSRV_ERROR RGXDevInitCompatCheck(PVRSRV_DEVICE_NODE *psDeviceNode)
 {
 	PVRSRV_ERROR		eError;
 	PVRSRV_RGXDEV_INFO 	*psDevInfo = psDeviceNode->pvDevice;
+	RGXFWIF_INIT		*psRGXFWInit = NULL;
 #if !defined(NO_HARDWARE)
 	IMG_UINT32			ui32RegValue;
 	IMG_UINT8			ui8FwOsCount;
 
+	/* Retrieve the FW information */
+	eError = DevmemAcquireCpuVirtAddr(psDevInfo->psRGXFWIfInitMemDesc,
+			(void **)&psRGXFWInit);
+	if (eError != PVRSRV_OK)
+	{
+		PVR_DPF((PVR_DBG_ERROR,
+				 "%s: Failed to acquire kernel fw compatibility check info (%u)",
+				__func__, eError));
+		return eError;
+	}
+
 	LOOP_UNTIL_TIMEOUT(MAX_HW_TIME_US)
 	{
-		if (*((volatile IMG_BOOL *)&psDevInfo->psRGXFWIfInit->sRGXCompChecks.bUpdated))
+		if (*((volatile IMG_BOOL *)&psRGXFWInit->sRGXCompChecks.bUpdated))
 		{
 			/* No need to wait if the FW has already updated the values */
 			break;
@@ -2478,12 +2490,12 @@ static PVRSRV_ERROR RGXDevInitCompatCheck(PVRSRV_DEVICE_NODE *psDeviceNode)
 			eError = PVRSRV_ERROR_META_THREAD0_NOT_ENABLED;
 			PVR_DPF((PVR_DBG_ERROR,
 					 "%s: RGX META is not running. Is the GPU correctly powered up? %d (%u)",
-					__func__, psDevInfo->psRGXFWIfInit->sRGXCompChecks.bUpdated, eError));
+					__func__, psRGXFWInit->sRGXCompChecks.bUpdated, eError));
 			goto chk_exit;
 		}
 	}
 
-	if (!*((volatile IMG_BOOL *)&psDevInfo->psRGXFWIfInit->sRGXCompChecks.bUpdated))
+	if (!*((volatile IMG_BOOL *)&psRGXFWInit->sRGXCompChecks.bUpdated))
 	{
 		eError = PVRSRV_ERROR_TIMEOUT;
 		PVR_DPF((PVR_DBG_ERROR, "%s: GPU Firmware not responding: failed to supply compatibility info (%u)",
@@ -2491,7 +2503,7 @@ static PVRSRV_ERROR RGXDevInitCompatCheck(PVRSRV_DEVICE_NODE *psDeviceNode)
 		goto chk_exit;
 	}
 
-	ui8FwOsCount = psDevInfo->psRGXFWIfInit->sRGXCompChecks.sInitOptions.ui8OsCountSupport;
+	ui8FwOsCount = psRGXFWInit->sRGXCompChecks.sInitOptions.ui8OsCountSupport;
 	if ((PVRSRV_VZ_MODE_IS(DRIVER_MODE_NATIVE) && (ui8FwOsCount > 1)) ||
 		(PVRSRV_VZ_MODE_IS(DRIVER_MODE_HOST) && (ui8FwOsCount != RGXFW_NUM_OS)))
 	{
@@ -2500,19 +2512,19 @@ static PVRSRV_ERROR RGXDevInitCompatCheck(PVRSRV_DEVICE_NODE *psDeviceNode)
 	}
 #endif /* defined(NO_HARDWARE) */
 
-	eError = RGXDevInitCompatCheck_KMBuildOptions_FWAgainstDriver(psDevInfo->psRGXFWIfInit);
+	eError = RGXDevInitCompatCheck_KMBuildOptions_FWAgainstDriver(psRGXFWInit);
 	if (eError != PVRSRV_OK)
 	{
 		goto chk_exit;
 	}
 
-	eError = RGXDevInitCompatCheck_DDKVersion_FWAgainstDriver(psDevInfo, psDevInfo->psRGXFWIfInit);
+	eError = RGXDevInitCompatCheck_DDKVersion_FWAgainstDriver(psDevInfo, psRGXFWInit);
 	if (eError != PVRSRV_OK)
 	{
 		goto chk_exit;
 	}
 
-	eError = RGXDevInitCompatCheck_DDKBuild_FWAgainstDriver(psDevInfo, psDevInfo->psRGXFWIfInit);
+	eError = RGXDevInitCompatCheck_DDKBuild_FWAgainstDriver(psDevInfo, psRGXFWInit);
 	if (eError != PVRSRV_OK)
 	{
 		goto chk_exit;
@@ -2520,25 +2532,25 @@ static PVRSRV_ERROR RGXDevInitCompatCheck(PVRSRV_DEVICE_NODE *psDeviceNode)
 
 	if (!PVRSRV_VZ_MODE_IS(DRIVER_MODE_GUEST))
 	{
-		eError = RGXDevInitCompatCheck_BVNC_FWAgainstDriver(psDevInfo, psDevInfo->psRGXFWIfInit);
+		eError = RGXDevInitCompatCheck_BVNC_FWAgainstDriver(psDevInfo, psRGXFWInit);
 		if (eError != PVRSRV_OK)
 		{
 			goto chk_exit;
 		}
 
-		eError = RGXDevInitCompatCheck_BVNC_HWAgainstDriver(psDevInfo, psDevInfo->psRGXFWIfInit);
+		eError = RGXDevInitCompatCheck_BVNC_HWAgainstDriver(psDevInfo, psRGXFWInit);
 		if (eError != PVRSRV_OK)
 		{
 			goto chk_exit;
 		}
 	}
-	eError = RGXDevInitCompatCheck_FWProcessorVersion_AgainstDriver(psDevInfo, psDevInfo->psRGXFWIfInit);
+	eError = RGXDevInitCompatCheck_FWProcessorVersion_AgainstDriver(psDevInfo, psRGXFWInit);
 	if (eError != PVRSRV_OK)
 	{
 		goto chk_exit;
 	}
 
-	eError = RGXDevInitCompatCheck_StoreBVNCInUMSharedMem(psDevInfo, psDevInfo->psRGXFWIfInit);
+	eError = RGXDevInitCompatCheck_StoreBVNCInUMSharedMem(psDevInfo, psRGXFWInit);
 	if (eError != PVRSRV_OK)
 	{
 		PVR_DPF((PVR_DBG_ERROR,
@@ -2562,7 +2574,9 @@ static PVRSRV_ERROR RGXDevInitCompatCheck(PVRSRV_DEVICE_NODE *psDeviceNode)
 
 	eError = PVRSRV_OK;
 	chk_exit:
-
+#if !defined(NO_HARDWARE)
+	DevmemReleaseCpuVirtAddr(psDevInfo->psRGXFWIfInitMemDesc);
+#endif
 	return eError;
 }
 

@@ -63,9 +63,12 @@ static enum IMGSENSOR_RETURN gpio_release(void *pinstance)
 			mutex_lock(&pinctrl_mutex);
 			if (lookup_names != NULL &&
 				pgpio->ppinctrl_state_cam[j][i] != NULL &&
-				  !IS_ERR(pgpio->ppinctrl_state_cam[j][i]) &&
+				  !IS_ERR(pgpio->ppinctrl_state_cam[j][i]) ) {
+				/*HuangMiao@ODM_WT.Camera.Driver, 2019/11/12, ADD DEPTH STATE judgement */
+				if (pgpio->ppinctrl_state_cam[j][i] !=
+				pgpio->ppinctrl_state_cam[3][3])     //depth rst low
 				pinctrl_select_state(pgpio->ppinctrl,
-					pgpio->ppinctrl_state_cam[j][i])) {
+				pgpio->ppinctrl_state_cam[j][i]);
 				pr_info(
 				    "%s : pinctrl err, PinIdx %d name %s\n",
 				    __func__,

@@ -646,6 +646,8 @@ static int _DebugVersionSeqShow(struct seq_file *psSeqFile, void *pvData)
 		PVRSRV_DEVICE_NODE *psDevNode = (PVRSRV_DEVICE_NODE *)pvData;
 #if defined(SUPPORT_RGX)
 		PVRSRV_RGXDEV_INFO *psDevInfo = psDevNode->pvDevice;
+		RGXFWIF_INIT *psRGXFWInit;
+		PVRSRV_ERROR eError;
 #endif
 		IMG_BOOL bFwVersionInfoPrinted = IMG_FALSE;
 
@@ -671,13 +673,12 @@ static int _DebugVersionSeqShow(struct seq_file *psSeqFile, void *pvData)
 		/* print device's firmware version info */
 		if (psDevInfo->psRGXFWIfInitMemDesc != NULL)
 		{
-			/* psDevInfo->psRGXFWIfInitMemDesc should be permanently mapped */
-			if (psDevInfo->psRGXFWIfInit != NULL)
+			eError = DevmemAcquireCpuVirtAddr(psDevInfo->psRGXFWIfInitMemDesc, (void**)&psRGXFWInit);
+			if (eError == PVRSRV_OK)
 			{
-				if (psDevInfo->psRGXFWIfInit->sRGXCompChecks.bUpdated)
+				if (psRGXFWInit->sRGXCompChecks.bUpdated)
 				{
-					const RGXFWIF_COMPCHECKS *psRGXCompChecks =
-					        &psDevInfo->psRGXFWIfInit->sRGXCompChecks;
+					const RGXFWIF_COMPCHECKS *psRGXCompChecks = &psRGXFWInit->sRGXCompChecks;
 
 					seq_printf(psSeqFile, SEQ_PRINT_VERSION_FMTSPEC,
 							   "Firmware",
@@ -690,6 +691,7 @@ static int _DebugVersionSeqShow(struct seq_file *psSeqFile, void *pvData)
 							   PVR_BUILD_DIR);
 					bFwVersionInfoPrinted = IMG_TRUE;
 				}
+				DevmemReleaseCpuVirtAddr(psDevInfo->psRGXFWIfInitMemDesc);
 			}
 			else
 			{

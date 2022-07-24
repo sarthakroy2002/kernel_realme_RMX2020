@@ -17,6 +17,10 @@
 #include "kd_camera_typedef.h"
 #include "imgsensor_sensor.h"
 
+#ifndef VENDOR_EDIT
+#define VENDOR_EDIT
+#endif
+
 struct IMGSENSOR_INIT_FUNC_LIST {
 	MUINT32   id;
 	MUINT8    name[32];
@@ -176,6 +180,13 @@ UINT32 T4KA7_MIPI_RAW_SensorInit(struct SENSOR_FUNCTION_STRUCT **pfFunc);
 /*Others*/
 UINT32 ISX012_MIPI_YUV_SensorInit(struct SENSOR_FUNCTION_STRUCT **pfFunc);
 UINT32 T8EV5_YUV_SensorInit(struct SENSOR_FUNCTION_STRUCT **pfFunc);
+#ifdef VENDOR_EDIT
+UINT32 IMX398_MIPI_RAW_SensorInit(struct SENSOR_FUNCTION_STRUCT **pfFunc);
+UINT32 GC2375H_MIPI_RAW_SensorInit(struct SENSOR_FUNCTION_STRUCT **pfFunc);
+UINT32 S5K3P9SP_MIPI_RAW_SensorInit(struct SENSOR_FUNCTION_STRUCT **pfFunc);
+UINT32 S5KGM1SP_MIPI_RAW_SensorInit(struct SENSOR_FUNCTION_STRUCT **pfFunc);
+UINT32 GC5035_MIPI_RAW_SensorInit(struct SENSOR_FUNCTION_STRUCT **pfFunc);
+#endif
 
 extern struct IMGSENSOR_SENSOR_LIST gimgsensor_sensor_list[];
 

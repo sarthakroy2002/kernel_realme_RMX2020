@@ -19,25 +19,49 @@
 /* Basic Type Definitions */
 /* -----------------------*/
 
-
+typedef long LONG;
+typedef unsigned char UBYTE;
+typedef short SHORT;
 
 #define kal_int8 signed char
 #define kal_int16 signed short
 #define kal_int32 signed int
+typedef long long kal_int64;
 #define kal_uint8 unsigned char
 #define kal_uint16 unsigned short
 #define kal_uint32 unsigned int
+typedef unsigned long long kal_uint64;
+typedef char kal_char;
+
+typedef unsigned int *UINT32P;
+typedef volatile unsigned short *UINT16P;
+typedef volatile unsigned char *UINT8P;
+typedef unsigned char *U8P;
 
 
-
+typedef unsigned char U8;
+typedef signed char S8;
+typedef unsigned short U16;
+typedef signed short S16;
+typedef unsigned int U32;
+typedef signed int S32;
+typedef unsigned long long U64;
+typedef signed long long S64;
 
 #define UINT8 unsigned char
 #define UINT16 unsigned short
 #define UINT32 unsigned int
+typedef unsigned short USHORT;
 #define INT8 signed char
+typedef signed short INT16;
 #define INT32 signed int
+typedef unsigned int DWORD;
+typedef void VOID;
 #define BYTE unsigned char
+typedef float FLOAT;
 
+typedef char *LPCSTR;
+typedef short *LPWSTR;
 
 
 /* -----------*/

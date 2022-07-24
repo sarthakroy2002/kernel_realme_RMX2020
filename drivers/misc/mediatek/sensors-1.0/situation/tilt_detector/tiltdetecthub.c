@@ -71,8 +71,11 @@ static int tilt_detect_recv_data(struct data_unit_t *event, void *reserved)
 	if (event->flush_action == FLUSH_ACTION)
 		err = situation_flush_report(ID_TILT_DETECTOR);
 	else if (event->flush_action == DATA_ACTION)
-		err = situation_data_report_t(ID_TILT_DETECTOR,
-			event->tilt_event.state, (int64_t)event->time_stamp);
+#ifdef ODM_WT_EDIT
+// Jixiaopan@ODM_WT.BSP.Sensors.Config, 2019/11/11, Modify for tilt_detect sensors
+		err = situation_data_report(ID_TILT_DETECTOR,
+			!(event->tilt_event.state));
+#endif/*ODM_WT_EDIT*/
 	return err;
 }
 

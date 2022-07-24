@@ -33,6 +33,8 @@ obj-$(CONFIG_MTK_FB) += mtkfb_console.o		\
 			disp_dts_gpio.o		\
 			disp_rect.o		\
 			disp_arr.o		\
+			oppo_display_private_api.o \
+			oppo_mm_kevent_fb.o \
 			disp_partial.o		\
 			layering_rule.o \
 			frame_queue.o

@@ -25,6 +25,10 @@
 #include "ged_log.h"
 #endif
 
+#ifdef VENDOR_EDIT
+/* Ling.Guo@PSW.MM.Display.LCD.Machine, 2018/12/03,add for mm kevent fb. */
+#include <linux/oppo_mm_kevent_fb.h>
+#endif /*VENDOR_EDIT*/
 
 static struct frame_queue_head_t frame_q_head[MAX_SESSION_COUNT];
 DEFINE_MUTEX(frame_q_head_lock);
@@ -105,6 +109,10 @@ static int _do_wait_fence(struct sync_fence **src_fence, int session_id,
 {
 	int ret;
 	struct disp_session_sync_info *session_info;
+	#ifdef VENDOR_EDIT
+	/* Ling.Guo@PSW.MM.Display.LCD.Machine, 2018/12/03,add for mm kevent fb. */
+	unsigned char payload[100] = "";
+	#endif
 
 	session_info = disp_get_session_sync_info_for_debug(session_id);
 
@@ -128,11 +136,23 @@ static int _do_wait_fence(struct sync_fence **src_fence, int session_id,
 				ret, timeline, fence_fd, buf_idx);
 		GEDLOG("== display fence wait timeout for 1000ms. ret%d,layer%d,fd%d,idx%d ==>\n",
 				ret, timeline, fence_fd, buf_idx);
+		#ifdef VENDOR_EDIT
+		/* Ling.Guo@PSW.MM.Display.LCD.Machine, 2018/12/03,add for mm kevent fb. */
+		scnprintf(payload, sizeof(payload), "EventID@@%d$$FENCE@@fence timeout 1000ms ret %d layer %d fd %d idx %d$$ReportLevel@@%d",
+			OPPO_MM_DIRVER_FB_EVENT_ID_MTK_FENCE, ret, timeline, fence_fd, buf_idx,OPPO_MM_DIRVER_FB_EVENT_REPORTLEVEL_HIGH);
+		upload_mm_kevent_fb_data(OPPO_MM_DIRVER_FB_EVENT_MODULE_DISPLAY,payload);
+		#endif
 	} else if (ret != 0) {
 		DISPPR_ERROR("== display fence wait status error. ret%d,layer%d,fd%d,idx%d ==>\n",
 				ret, timeline, fence_fd, buf_idx);
 		GEDLOG("== display fence wait status error. ret%d,layer%d,fd%d,idx%d ==>\n",
 				ret, timeline, fence_fd, buf_idx);
+		#ifdef VENDOR_EDIT
+		/* Ling.Guo@PSW.MM.Display.LCD.Machine, 2018/12/03,add for mm kevent fb. */
+		scnprintf(payload, sizeof(payload), "EventID@@%d$$FENCE@@fence wait error ret %d layer %d fd %d idx %d$$ReportLevel@@%d",
+			OPPO_MM_DIRVER_FB_EVENT_ID_MTK_FENCE, ret, timeline, fence_fd, buf_idx,OPPO_MM_DIRVER_FB_EVENT_REPORTLEVEL_HIGH);
+		upload_mm_kevent_fb_data(OPPO_MM_DIRVER_FB_EVENT_MODULE_DISPLAY,payload);
+		#endif
 	} else {
 		DISPDBG("== display fence wait done! ret%d,layer%d,fd%d,idx%d ==\n",
 			ret, timeline, fence_fd, buf_idx);

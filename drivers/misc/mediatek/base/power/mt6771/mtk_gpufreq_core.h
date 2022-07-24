@@ -392,8 +392,17 @@ enum g_limited_idx_enum {
 	IDX_BATT_PERCENT_LIMITED,
 	IDX_BATT_OC_LIMITED,
 	IDX_PBM_LIMITED,
+#ifdef VENDOR_EDIT
+	IDX_SCENE_LIMITED,
+#endif
 	NUMBER_OF_LIMITED_IDX,
 };
+#ifdef VENDOR_EDIT
+enum {
+	IDX_SCENE_MIN_LIMITED,
+	NR_IDX_POWER_MIN_LIMITED,
+};
+#endif
 enum g_volt_switch_enum {
 	VOLT_FALLING = 0,
 	VOLT_RISING,
@@ -430,4 +439,11 @@ struct g_pmic_info {
 extern bool mtk_get_gpu_loading(unsigned int *pLoading);
 extern unsigned int mt_get_ckgen_freq(unsigned int);
 
+#ifdef VENDOR_EDIT
+extern int mt_gpufreq_scene_protect(unsigned int min_freq, unsigned int max_freq);
+extern unsigned int mt_gpufreq_get_dvfs_table_num(void);
+extern struct g_opp_table_info *mt_gpufreq_get_dvfs_table(void);
+extern unsigned int mt_gpufreq_get_min_limit_freq(void);
+extern u32 kbasep_get_gl_utilization(void);
+#endif /* VENDOR_DEIT */
 #endif /* _MT_GPUFREQ_CORE_H_ */

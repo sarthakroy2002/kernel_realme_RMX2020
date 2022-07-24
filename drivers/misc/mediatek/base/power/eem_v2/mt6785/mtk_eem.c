@@ -210,12 +210,9 @@ static struct pi_efuse_index pi_efuse_idx[] = {
 
 /* Global variable for slow idle*/
 unsigned int ptp_data[3] = {0, 0, 0};
-unsigned int gpu_vb_volt;
-unsigned int gpu_vb_turn_pt;
-unsigned int gpu_opp0_t_volt[4] = {
-	87500, 87500, 83750, 80000
+unsigned int gpu_opp0_t_volt[6] = {
+	105000, 105000, 102500, 100000, 97500, 95000
 };
-
 
 #ifdef CONFIG_OF
 void __iomem *eem_base;
@@ -259,8 +256,6 @@ static int get_devinfo(void)
 	struct rtc_time tm;
 
 	FUNC_ENTER(FUNC_LV_HELP);
-
-	memset(&tm, 0, sizeof(struct rtc_time));
 
 	rtc_dev = rtc_class_open(CONFIG_RTC_HCTOSYS_DEVICE);
 	if (rtc_dev) {
@@ -434,15 +429,11 @@ static int get_devinfo(void)
 	gpu_2line = 0;
 #endif
 
-	efuse_val = (get_devinfo_with_index(DEVINFO_IDX_14)
-		>> 30) & 0x3;
-	if (efuse_val <= 3) {
-		gpu_vb_volt =
-			gpu_opp0_t_volt[efuse_val];
-		eem_debug("gpu_vb_volt:%d, efuse_val:%d\n",
-			gpu_vb_volt, efuse_val);
-	}
-
+#if 0
+	gpu_bin = (get_devinfo_with_index(GPU_BIN_CODE_IDX) >> 9) & 0x7;
+	if (gpu_bin > 5)
+		gpu_bin = 0;
+#endif
 	/* NR_HW_RES_FOR_BANK =  10 for 5 banks efuse */
 	for (i = 1; i < NR_HW_RES_FOR_BANK - 1; i++) {
 		if (val[i] == 0) {
@@ -1353,24 +1344,6 @@ static void eem_save_final_volt_aee(struct eem_det *ndet)
 #endif
 }
 
-static void eem_interpolate_mid_opp(struct eem_det *ndet)
-{
-	int i;
-
-	for (i = 1; i < gpu_vb_turn_pt; i++) {
-		ndet->volt_tbl_pmic[i] =
-		(unsigned int)(interpolate(
-		ndet->freq_tbl[0],
-		ndet->freq_tbl[gpu_vb_turn_pt],
-		ndet->volt_tbl_pmic[0],
-		ndet->volt_tbl_pmic[gpu_vb_turn_pt],
-		ndet->freq_tbl[i]));
-
-		eem_debug("ndet->volt_tbl_pmic[%d]:0x%x\n",
-			i, ndet->volt_tbl_pmic[i]);
-	}
-}
-
 static void get_volt_table_in_thread(struct eem_det *det)
 {
 #if ENABLE_LOO
@@ -1742,18 +1715,7 @@ static void get_volt_table_in_thread(struct eem_det *det)
 				ndet->volt_tbl_orig[i] + ndet->volt_clamp);
 			break;
 		case EEM_CTRL_GPU:
-			if ((i == 0) && (gpu_vb_turn_pt != 0))
-				ndet->volt_tbl_pmic[i] = min(
-				(unsigned int)(clamp(
-				ndet->ops->eem_2_pmic(ndet,
-				(ndet->ops->volt_2_eem(ndet, gpu_vb_volt))),
-				ndet->ops->eem_2_pmic(ndet, ndet->VMIN),
-				ndet->ops->eem_2_pmic(ndet, VMAX_VAL_GPU)) +
-				low_temp_offset),
-				ndet->volt_tbl_orig[i] + ndet->volt_clamp +
-				t_clamp);
-			else
-				ndet->volt_tbl_pmic[i] = min(
+			ndet->volt_tbl_pmic[i] = min(
 			(unsigned int)(clamp(
 			ndet->ops->eem_2_pmic(ndet,
 			(ndet->volt_tbl[i] + ndet->volt_offset +
@@ -1792,7 +1754,6 @@ static void get_volt_table_in_thread(struct eem_det *det)
 		eem_error("low_temp_offset:%d, rm_dvtfix:%d, 'det'->id:%d\n",
 			low_temp_offset, rm_dvtfix_offset, det->ctrl_id);
 #endif
-
 #if ENABLE_LOO
 		if ((i > 0) && (ndet->volt_tbl_pmic[i] >
 			ndet->volt_tbl_pmic[i-1]) &&
@@ -1828,10 +1789,6 @@ static void get_volt_table_in_thread(struct eem_det *det)
 #endif
 
 	}
-
-	if ((ndet->ctrl_id == EEM_CTRL_GPU) &&
-		(gpu_vb_turn_pt != 0))
-		eem_interpolate_mid_opp(ndet);
 
 	eem_save_final_volt_aee(ndet);
 

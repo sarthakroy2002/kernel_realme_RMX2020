@@ -47,15 +47,21 @@ struct alsps_factory_fops {
 	int (*als_enable_calibration)(void);
 	int (*als_clear_cali)(void);
 	int (*als_set_cali)(int32_t offset);
-	int (*als_get_cali)(int32_t *offset);
+#ifdef VENDOR_EDIT
+/*zhq@PSW.BSP.Sensor, 2018/10/28, Add for als ps cail*/
+	int (*als_get_cali)(int32_t offset[6]);
+#endif /* VENDOR_EDIT */
 
 	int (*ps_enable_sensor)(bool enable_disable, int64_t sample_periods_ms);
 	int (*ps_get_data)(int32_t *data);
 	int (*ps_get_raw_data)(int32_t *data);
 	int (*ps_enable_calibration)(void);
 	int (*ps_clear_cali)(void);
-	int (*ps_set_cali)(int32_t offset);
-	int (*ps_get_cali)(int32_t *offset);
+#ifdef VENDOR_EDIT
+/*zhq@PSW.BSP.Sensor, 2018/10/28, Add for als ps cail*/
+	int (*ps_set_cali)(int32_t offset[6]);
+	int (*ps_get_cali)(int32_t offset[6]);
+#endif /* VENDOR_EDIT */
 	int (*ps_set_threshold)(int32_t threshold[2]);
 	int (*ps_get_threshold)(int32_t threshold[2]);
 };

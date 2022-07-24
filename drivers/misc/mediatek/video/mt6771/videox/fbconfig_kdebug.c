@@ -32,6 +32,13 @@
 #include "ddp_dsi.h"
 #include "ddp_irq.h"
 
+#ifdef VENDOR_EDIT
+/*
+* Yongpeng.Yi@PSW.MM.Display.LCD.Stability, 2018/01/16,
+* add for lcd serial number
+*/
+#include <soc/oppo/oppo_project.h>
+#endif /*VENDOR_EDIT*/
 /* #include "disp_drv.h" */
 /* #include "lcd_drv.h" */
 
@@ -153,6 +160,140 @@ int fbconfig_get_esd_check(enum DSI_INDEX dsi_id, uint32_t cmd,
 	return 0;
 }
 
+#ifdef VENDOR_EDIT
+/*
+* Yongpeng.Yi@PSW.MM.Display.LCD.Stability, 2018/01/16,
+* add for lcd serial
+*/
+
+atomic_t LCMREG_byCPU = ATOMIC_INIT(0);
+extern unsigned int DSI_dcs_read_lcm_reg_v3_wrapper_DSI0(unsigned char cmd,
+		unsigned char *buffer, unsigned char buffer_size);
+extern bool flag_lcd_off;
+
+typedef struct panel_serial_info
+{
+	int reg_index;
+	uint64_t year;
+	uint64_t month;
+	uint64_t day;
+	uint64_t hour;
+	uint64_t minute;
+	uint64_t second;
+	uint64_t reserved[2];
+} PANEL_SERIAL_INFO;
+
+int panel_serial_number_read(char cmd, uint64_t *buf, int num)
+{
+	int array[4];
+	int ret = 0;
+	int count = 30;
+	unsigned char read[16];
+	PANEL_SERIAL_INFO panel_serial_info;
+
+	pr_err("lcd is status flag_lcd_off = %d\n", flag_lcd_off);
+
+	if (flag_lcd_off) {
+		pr_err("panel_serial_number_read:lcd is off\n");
+		return 0;
+	}
+
+	/* set max return packet size */
+	/* array[0] = 0x00013700; */
+	while (count > 0) {
+		array[0] = 0x3700 + (num << 16);
+		dsi_set_cmdq(array, 1, 1);
+
+		atomic_set(&LCMREG_byCPU, 1);
+
+		ret = DSI_dcs_read_lcm_reg_v3_wrapper_DSI0(cmd,	read, num);
+		count--;
+		if (ret == 0) {
+			*buf = 0;
+			printk("%s [soso] error can not read the reg 0x%x \n",
+				__func__, cmd);
+			continue;
+		} else {
+			panel_serial_info.reg_index = 11;
+			panel_serial_info.year		= (read[panel_serial_info.reg_index] & 0xF0) >> 0x4;
+			panel_serial_info.month		= read[panel_serial_info.reg_index]		& 0x0F;
+			panel_serial_info.day		= read[panel_serial_info.reg_index + 1]	& 0x1F;
+			panel_serial_info.hour		= read[panel_serial_info.reg_index + 2]	& 0x1F;
+			panel_serial_info.minute	= read[panel_serial_info.reg_index + 3]	& 0x3F;
+			panel_serial_info.second	= read[panel_serial_info.reg_index + 4]	& 0x3F;
+
+			*buf = (panel_serial_info.year		<< 56)\
+				 + (panel_serial_info.month		<< 48)\
+				 + (panel_serial_info.day		<< 40)\
+				 + (panel_serial_info.hour		<< 32)\
+				 + (panel_serial_info.minute	<< 24)\
+				 + (panel_serial_info.second	<< 16);
+
+				/*
+				* Yongpeng.Yi@PSW.MM.Display.LCD.Stability, 2018/11/13,
+				* add for lcd serial del unused params;
+				*/
+				//+ (panel_serial_info.reserved[0] << 8)+ (panel_serial_info.reserved[1]);
+			if (panel_serial_info.year < 6) {
+				continue;
+			} else {
+				printk("%s year:0x%llx, month:0x%llx, day:0x%llx, hour:0x%llx, minute:0x%llx, second:0x%llx!\n",
+					__func__,
+					panel_serial_info.year,
+					panel_serial_info.month,
+					panel_serial_info.day,
+					panel_serial_info.hour,
+					panel_serial_info.minute,
+					panel_serial_info.second);
+				break;
+			}
+		}
+	}
+	printk("%s Get panel serial number[0x%llx] successfully after try = %d!\n",
+			__func__, *buf, (30 - count));
+	atomic_set(&LCMREG_byCPU, 0);
+	return ret;
+}
+
+/*
+* Yongpeng.Yi@PSW.MM.Display.LCD.Machine, 2018/01/26,
+* add lcm id info read
+*/
+int lcm_id_info_read(char cmd, uint32_t *buf, int num)
+{
+	int array[4];
+	int ret = 0;
+	int count = 30;
+	unsigned char read[2];
+
+	if (flag_lcd_off) {
+		pr_err("lcm_id_info_read:lcd is off\n");
+		return 0;
+	}
+
+	while (count > 0) {
+		array[0] = 0x00013700;
+		dsi_set_cmdq(array, 1, 1);
+		atomic_set(&LCMREG_byCPU, 1);
+		ret = DSI_dcs_read_lcm_reg_v3_wrapper_DSI0(cmd,	read, num);
+		count--;
+		if (ret == 0) {
+			continue;
+		} else {
+			break;
+		}
+		atomic_set(&LCMREG_byCPU, 0);
+	}
+	if (ret == 0) {
+		*buf = 0;
+		printk("%s [soso] error can not read the reg 0x%x\n", __func__, cmd);
+	} else {
+		*buf = read[0];
+		printk("%s [0x%x] successfully after try = %d!\n",__func__, *buf , (30 - count));
+	}
+	return ret;
+}
+#endif /*VENDOR_EDIT*/
 /* RECORD_CMD = 0, */
 /* RECORD_MS = 1, */
 /* RECORD_PIN_SET        = 2, */

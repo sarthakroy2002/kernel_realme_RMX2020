@@ -48,6 +48,10 @@
 #if defined(CONFIG_MTK_SMI_EXT)
 #include <smi_public.h>
 #endif
+#ifdef VENDOR_EDIT
+/*Guoqiang.jiang@PSW.MM.Display.LCD.Stability, 2018/05/11, add for mipi clk change*/
+#include <soc/oppo/oppo_project.h>
+#endif /* VENDOR_EDIT */
 /*****************************************************************************/
 enum {
 	PAD_D2P_V = 0,
@@ -179,6 +183,10 @@ struct DSI_CMDQ_REGS *DSI_CMDQ_REG[DSI_INTERFACE_NUM];
 struct DSI_VM_CMDQ_REGS *DSI_VM_CMD_REG[DSI_INTERFACE_NUM];
 
 static int def_data_rate;
+#ifdef VENDOR_EDIT
+/*Guoqiang.jiang@PSW.MM.Display.LCD.Stability, 2018/05/11, add for mipi clk change*/
+static int def_dsi_hbp;
+#endif /* VENDOR_EDIT */
 static int dsi_currect_mode;
 static int dsi_force_config;
 static int dsi0_te_enable = 1;
@@ -985,6 +993,12 @@ void DSI_Config_VDO_Timing(enum DISP_MODULE_ENUM module,
 
 		DSI_OUTREG32(cmdq, &DSI_REG[i]->DSI_HSA_WC,
 			     ALIGN_TO((horizontal_sync_active_byte), 4));
+		#ifdef VENDOR_EDIT
+		/*Guoqiang.jiang@PSW.MM.Display.LCD.Stability, 2018/05/11, add for mipi clk change*/
+		if (def_dsi_hbp)
+			DSI_OUTREG32(cmdq, &DSI_REG[i]->DSI_HBP_WC, def_dsi_hbp);
+		else
+		#endif /* VENDOR_EDIT */
 		DSI_OUTREG32(cmdq, &DSI_REG[i]->DSI_HBP_WC,
 			     ALIGN_TO((horizontal_backporch_byte), 4));
 		DSI_OUTREG32(cmdq, &DSI_REG[i]->DSI_HFP_WC,
@@ -1847,7 +1861,12 @@ static void _dsi_phy_clk_setting_gce(enum DISP_MODULE_ENUM module,
 
 /* DSI_MIPI_clk_change
  */
+#ifdef VENDOR_EDIT
+/*Guoqiang.jiang@PSW.MM.Display.LCD.Stability, 2018/05/11, add for mipi clk change*/
+void DSI_MIPI_clk_change(enum DISP_MODULE_ENUM module, void* cmdq, int clk)
+#else
 void DSI_MIPI_clk_change(enum DISP_MODULE_ENUM module, int clk)
+#endif /* VENDOR_EDIT */
 {
 	unsigned int chg_status = 0;
 	unsigned int pcw_ratio = 0;
@@ -1890,38 +1909,143 @@ void DSI_MIPI_clk_change(enum DISP_MODULE_ENUM module, int clk)
 	}
 
 	tmp = _dsi_get_pcw(clk, pcw_ratio);
+	#ifdef VENDOR_EDIT
+	/*Guoqiang.jiang@PSW.MM.Display.LCD.Stability, 2018/05/11, add for mipi clk change*/
+	DISP_REG_SET(cmdq, DSI_PHY_REG[i]+MIPITX_PLL_CON0, tmp);
+
+	DISP_REG_SET_FIELD(cmdq, FLD_RG_DSI_PLL_POSDIV, DSI_PHY_REG[i]+MIPITX_PLL_CON1, posdiv);
+	#else /* VENDOR_EDIT */
 	MIPITX_OUTREG32(DSI_PHY_REG[i]+MIPITX_PLL_CON0, tmp);
 
-	MIPITX_OUTREGBIT(DSI_PHY_REG[i]+MIPITX_PLL_CON1,
-			FLD_RG_DSI_PLL_POSDIV, posdiv);
+	MIPITX_OUTREGBIT(DSI_PHY_REG[i]+MIPITX_PLL_CON1,FLD_RG_DSI_PLL_POSDIV, posdiv);
+	#endif /* VENDOR_EDIT */
 
 	chg_status = MIPITX_INREGBIT(DSI_PHY_REG[i]+MIPITX_PLL_CON1,
 			FLD_RG_DSI_PLL_SDM_PCW_CHG);
 
+	#ifdef VENDOR_EDIT
+	/*Guoqiang.jiang@PSW.MM.Display.LCD.Stability, 2018/05/11, add for mipi clk change*/
+	if (chg_status)
+		DISP_REG_SET_FIELD(cmdq, FLD_RG_DSI_PLL_SDM_PCW_CHG, DSI_PHY_REG[i]+MIPITX_PLL_CON1, 0);
+	else
+		DISP_REG_SET_FIELD(cmdq, FLD_RG_DSI_PLL_SDM_PCW_CHG, DSI_PHY_REG[i]+MIPITX_PLL_CON1, 1);
+	#else/* VENDOR_EDIT */
 	if (chg_status)
 		MIPITX_OUTREGBIT(DSI_PHY_REG[i]+MIPITX_PLL_CON1,
-			FLD_RG_DSI_PLL_SDM_PCW_CHG, 0);
+				FLD_RG_DSI_PLL_SDM_PCW_CHG, 0);
 	else
 		MIPITX_OUTREGBIT(DSI_PHY_REG[i]+MIPITX_PLL_CON1,
-			FLD_RG_DSI_PLL_SDM_PCW_CHG, 1);
+				FLD_RG_DSI_PLL_SDM_PCW_CHG, 1);
+	#endif /* VENDOR_EDIT */
 }
 
 int mipi_clk_change(int msg, int en)
 {
+	#ifdef VENDOR_EDIT
+	/*Guoqiang.jiang@PSW.MM.Display.LCD.Stability, 2018/05/11, add for mipi clk change*/
+	struct cmdqRecStruct *handle = NULL;
+	DISPMSG("%s,msg=%d,en=%d,get_Operator_Version=%d\n", __func__, msg, en, get_Operator_Version());
+	#else
 	DISPMSG("%s,msg=%d,en=%d\n", __func__, msg, en);
+	#endif /* VENDOR_EDIT */
 
+	#ifdef VENDOR_EDIT
+	/*
+	* LiPing-M@PSW.MM.Display.LCD.Stability, 2018/02/2,
+	* add for bug 1263311 cmdq error when clk change
+	*/
+	_primary_path_lock(__func__);
+	#endif /* VENDOR_EDIT */
 	if (en) {
-		def_data_rate = 1030;
-		DSI_MIPI_clk_change(DISP_MODULE_DSI0, 1030);
+		#ifdef VENDOR_EDIT
+		/*Guoqiang.jiang@PSW.MM.Display.LCD.Stability, 2018/05/11, add for mipi clk change*/
+		/*liping-m@PSW.MM.Display.LCD.Stability, 2018/06/25, add for 18311&18011 mipi clk change 514.5->529m*/
+		/* Yongpeng.Yi@PSW.MM.Display.LCD.Stability, 2018/06/25, add for 18531 mipi clk change 553.5->562m */
+		if (is_project(18531) || is_project(18561) || is_project(18161)) {
+			def_data_rate = 1124; //562M
+			def_dsi_hbp = 0x94; /* adaptive HBP value */
+		} else if (get_Operator_Version() == 25 ) {
+			def_data_rate = 1058;
+			def_dsi_hbp = 0xC0; /* adaptive HBP value */
+		} else if (is_project(18311) || is_project(18011)) {
+			def_data_rate = 1058;
+			def_dsi_hbp = 0x94; /* adaptive HBP value */
+		} else if (is_project(19531) || is_project(19391)) {
+			def_data_rate = 1124;
+		}  else {
+			def_data_rate = 1025;
+			def_dsi_hbp = 0x58; /* adaptive HBP value */
+		}
+		#else
+		def_data_rate = 1025;
+		DSI_MIPI_clk_change(DISP_MODULE_DSI0, 1025);
+		#endif /* VENDOR_EDIT */
 	} else {
 		struct LCM_DSI_PARAMS *dsi_params = &_dsi_context[0].dsi_params;
 		unsigned int data_rate = dsi_params->data_rate != 0 ?
 					dsi_params->data_rate :
 					dsi_params->PLL_CLOCK * 2;
+		#ifdef VENDOR_EDIT
+		/*Guoqiang.jiang@PSW.MM.Display.LCD.Stability, 2018/05/11, add for mipi clk change*/
+		unsigned int dsiTmpBufBpp;
+		unsigned int hbp_wc;
+
+		if (dsi_params->data_format.format == LCM_DSI_FORMAT_RGB565)
+			dsiTmpBufBpp = 2;
+		else
+			dsiTmpBufBpp = 3;
+
+		if (dsi_params->mode == SYNC_EVENT_VDO_MODE || dsi_params->mode == BURST_VDO_MODE ||
+		    dsi_params->switch_mode == SYNC_EVENT_VDO_MODE || dsi_params->switch_mode == BURST_VDO_MODE) {
+			hbp_wc = ((dsi_params->horizontal_backporch +
+						      dsi_params->horizontal_sync_active) * dsiTmpBufBpp - 10);
+		} else {
+			hbp_wc = (dsi_params->horizontal_backporch * dsiTmpBufBpp - 10);
+		}
+		hbp_wc = ALIGN_TO((hbp_wc), 4);
+
+		def_data_rate = data_rate;
+		def_dsi_hbp = hbp_wc; /* origin HBP value */
+		#else /* VENDOR_EDIT */
 		def_data_rate = data_rate;
 
 		DSI_MIPI_clk_change(DISP_MODULE_DSI0, data_rate);
+		#endif /* VENDOR_EDIT */
 	}
+
+	#ifdef VENDOR_EDIT
+	/*Guoqiang.jiang@PSW.MM.Display.LCD.Stability, 2018/05/11, add for mipi clk change*/
+
+	if (_is_power_on_status(DISP_MODULE_DSI0)) {
+		cmdqRecCreate(CMDQ_SCENARIO_PRIMARY_DISP, &handle);
+		cmdqRecReset(handle);
+
+		/* 2.wait mutex0_stream_eof: only used for video mode */
+		if ((DSI_REG[0]->DSI_MODE_CTRL.MODE) != 0) {
+			cmdqRecWaitNoClear(handle, CMDQ_EVENT_MUTEX0_STREAM_EOF);
+		}
+
+		DSI_MIPI_clk_change(DISP_MODULE_DSI0, handle, def_data_rate);
+		if (get_Operator_Version() == 25 || is_project(18311)
+			|| is_project(18011) || is_project(18531)
+			|| is_project(18561) || is_project(18161)) {
+			if ((DSI_REG[0]->DSI_MODE_CTRL.MODE) != 0) {
+				ddp_dsi_porch_setting(DISP_MODULE_DSI0, handle, DSI_HBP, def_dsi_hbp); /* adaptive HBP value */
+			}
+		}
+
+		cmdqRecFlushAsync(handle);
+		cmdqRecDestroy(handle);
+	}
+	#endif /* VENDOR_EDIT */
+
+	#ifdef VENDOR_EDIT
+	/*
+	* LiPing-M@PSW.MM.Display.LCD.Stability, 2018/02/2,
+	* add for bug 1263311 cmdq error when clk change
+	*/
+	_primary_path_unlock(__func__);
+	#endif /* VENDOR_EDIT */
 	return 0;
 }
 
@@ -2792,7 +2916,16 @@ UINT32 DSI_dcs_read_lcm_reg_v3(enum DISP_MODULE_ENUM module,
 		/* 0x1c: dcs long read response */
 		/* 0x21: dcs short read response(1 byte return) */
 		/* 0x22: dcs short read response(2 byte return) */
+#ifndef VENDOR_EDIT
+/*
+* Ling.Guo@PSW.MM.Display.LCD.Stability, 2019/06/24,
+* modify for read continue reg lcd serial num
+*/
 		if (packet_type == 0x1A || packet_type == 0x1C) {
+#else /*VENDOR_EDIT*/
+		if (packet_type == 0x1A || packet_type == 0x1C
+			|| is_project(OPPO_19531) || is_project(OPPO_19391)) {
+#endif /*VENDOR_EDIT*/
 			recv_data_cnt = read_data0.byte1 +
 					read_data0.byte2 * 16;
 			if (recv_data_cnt > 10) {
@@ -3332,10 +3465,21 @@ static void lcm_udelay(UINT32 us)
 
 static void lcm_mdelay(UINT32 ms)
 {
-	if (ms < 10)
+//#ifndef VENDOR_EDIT
+/* LiPing-m@PSW.MM.Display.LCD.Machine, 2018/01/01, Add for reduce display on time */
+//	if (ms < 10)
+//		udelay(ms * 1000);
+//	else
+//		msleep(ms);
+//#else
+	if (ms < 10) {
 		udelay(ms * 1000);
-	else
+	} else if (ms >= 10 && ms < 13) {
+		mdelay(ms);
+	} else {
 		msleep(ms);
+	}
+//#endif /* VENDOR_EDIT */
 }
 
 void DSI_set_cmdq_V11_wrapper_DSI0(void *cmdq, unsigned int *pdata,
@@ -3458,16 +3602,143 @@ unsigned int DSI_dcs_read_lcm_reg_v2_wrapper_DSIDUAL(UINT8 cmd, UINT8 *buffer,
 				       buffer_size);
 }
 
+//#ifndef VENDOR_EDIT
+/* LiPing-m@PSW.MM.Display.LCD.Machine, 2018/04/23, Add for porting 17331 lcd driver */
 /* remove later */
+//long lcd_enp_bias_setting(unsigned int value)
+//{
+//	long ret = 0;
+//
+//	return ret;
+//}
+
+//#else /* VENDOR_EDIT */
 long lcd_enp_bias_setting(unsigned int value)
 {
 	long ret = 0;
-
+	#if !defined(CONFIG_MTK_LEGACY)
+	if (value) {
+		ret = disp_dts_gpio_select_state(DTS_GPIO_STATE_LCD_BIAS_ENP1);
+	} else {
+		ret = disp_dts_gpio_select_state(DTS_GPIO_STATE_LCD_BIAS_ENP0);
+	}
+	#endif
 	return ret;
 }
+EXPORT_SYMBOL(lcd_enp_bias_setting);
 
-int ddp_dsi_set_lcm_utils(enum DISP_MODULE_ENUM module,
-			  struct LCM_DRIVER *lcm_drv)
+long lcd_enn_bias_setting(unsigned int value)
+{
+	long ret = 0;
+#if !defined(CONFIG_MTK_LEGACY)
+	if (value) {
+		ret = disp_dts_gpio_select_state(DTS_GPIO_STATE_LCD_BIAS_ENN1);
+	} else {
+		ret = disp_dts_gpio_select_state(DTS_GPIO_STATE_LCD_BIAS_ENN0);
+	}
+#endif
+	return ret;
+}
+EXPORT_SYMBOL(lcd_enn_bias_setting);
+
+long lcd_bl_en_setting(unsigned int value)
+{
+	long ret = 0;
+#if !defined(CONFIG_MTK_LEGACY)
+	if (value) {
+		ret = disp_dts_gpio_select_state(DTS_GPIO_STATE_LCD_BL_EN1);
+	} else {
+		ret = disp_dts_gpio_select_state(DTS_GPIO_STATE_LCD_BL_EN0);
+	}
+#endif
+	return ret;
+}
+EXPORT_SYMBOL(lcd_bl_en_setting);
+long lcd_rst_setting(unsigned int value)
+{
+	long ret = 0;
+#if !defined(CONFIG_MTK_LEGACY)
+	if (value) {
+		disp_dts_gpio_select_state(DTS_GPIO_STATE_LCM_RST_OUT1);
+	} else {
+		disp_dts_gpio_select_state(DTS_GPIO_STATE_LCM_RST_OUT0);
+	}
+#endif
+	return ret;
+}
+EXPORT_SYMBOL(lcd_rst_setting);
+
+long lcd_1p8_en_setting(unsigned int value)
+{
+	long ret = 0;
+#if !defined(CONFIG_MTK_LEGACY)
+	if (value) {
+		ret = disp_dts_gpio_select_state(DTS_GPIO_STATE_LCD_1P8_EN1);
+	} else {
+		ret = disp_dts_gpio_select_state(DTS_GPIO_STATE_LCD_1P8_EN0);
+	}
+#endif
+	return ret;
+}
+EXPORT_SYMBOL(lcd_1p8_en_setting);
+
+/* ZhongWenjie@PSW.BSP.TP.FUNCTION, 2018/6/7, Add for no-flash TP */
+long spi_csn_en_setting(unsigned int value)
+{
+	long ret = 0;
+#if !defined(CONFIG_MTK_LEGACY)
+	if (value) {
+		ret = disp_dts_gpio_select_state(DTS_GPIO_STATE_SPI_CSN_EN1);
+	} else {
+		ret = disp_dts_gpio_select_state(DTS_GPIO_STATE_SPI_CSN_EN0);
+	}
+#endif
+	return ret;
+}
+EXPORT_SYMBOL(spi_csn_en_setting);
+
+/* LiPing-m@PSW.MM.Display.LCD.Machine, 2017/12/27, Add for 17197 lcd driver */
+long lcd_vci_setting(unsigned int value)
+{
+	long ret = 0;
+#if !defined(CONFIG_MTK_LEGACY)
+	if (value) {
+		ret = disp_dts_gpio_select_state(DTS_GPIO_STATE_LCD_VCI_EN1);
+	} else {
+		ret = disp_dts_gpio_select_state(DTS_GPIO_STATE_LCD_VCI_EN0);
+	}
+#endif
+	return ret;
+}
+EXPORT_SYMBOL(lcd_vci_setting);
+long lcd_vpoc_setting(unsigned int value)
+{
+	long ret = 0;
+#if !defined(CONFIG_MTK_LEGACY)
+	if (value) {
+		ret = disp_dts_gpio_select_state(DTS_GPIO_STATE_LCD_VPOC_EN1);
+	} else {
+		ret = disp_dts_gpio_select_state(DTS_GPIO_STATE_LCD_VPOC_EN0);
+	}
+#endif
+	return ret;
+}
+EXPORT_SYMBOL(lcd_vpoc_setting);
+long lcd_mipi_err_setting(unsigned int value)
+{
+	long ret = 0;
+#if !defined(CONFIG_MTK_LEGACY)
+	if (value)
+		disp_dts_gpio_select_state(DTS_GPIO_STATE_LCD_MIPI_ERR_EN1);
+	else
+		disp_dts_gpio_select_state(DTS_GPIO_STATE_LCD_MIPI_ERR_EN0);
+#endif
+	return ret;
+}
+EXPORT_SYMBOL(lcd_mipi_err_setting);
+//#endif /* VENDOR_EDIT */
+
+int ddp_dsi_set_lcm_utils(enum DISP_MODULE_ENUM module, struct LCM_DRIVER *lcm_drv)
 {
 	struct LCM_UTIL_FUNCS *utils = NULL;
 
@@ -5008,6 +5279,10 @@ int ddp_dsi_build_cmdq(enum DISP_MODULE_ENUM module, void *cmdq_trigger_handle,
 	struct LCM_DSI_PARAMS *dsi_params = NULL;
 	struct DSI_T0_INS t0;
 	struct DSI_RX_DATA_REG read_data0;
+	#ifdef VENDOR_EDIT
+	/*liping-m@PSW.MM.Display.LCD.Stability, 2018/06/26, add for hx83112a lcd esd read reg*/
+	struct DSI_RX_DATA_REG read_data1;
+	#endif /* VENDOR_EDIT */
 	static cmdqBackupSlotHandle hSlot;
 
 	if (module == DISP_MODULE_DSIDUAL)
@@ -5104,6 +5379,11 @@ int ddp_dsi_build_cmdq(enum DISP_MODULE_ENUM module, void *cmdq_trigger_handle,
 			if (hSlot) {
 				DSI_BACKUPREG32(cmdq_trigger_handle, hSlot, i,
 						&DSI_REG[0]->DSI_RX_DATA0);
+				#ifdef VENDOR_EDIT
+				/*liping-m@PSW.MM.Display.LCD.Stability, 2018/06/26, add for hx83112a lcd esd read reg*/
+				DSI_BACKUPREG32(cmdq_trigger_handle, hSlot, i+1,
+						&DSI_REG[0]->DSI_RX_DATA1);
+				#endif /* VENDOR_EDIT */
 			}
 			/* 3.write RX_RACK */
 			DSI_OUTREGBIT(cmdq_trigger_handle, struct DSI_RACK_REG,
@@ -5130,6 +5410,10 @@ int ddp_dsi_build_cmdq(enum DISP_MODULE_ENUM module, void *cmdq_trigger_handle,
 				/* read from slot */
 				cmdqBackupReadSlot(hSlot, i,
 						   (uint32_t *)&read_data0);
+				#ifdef VENDOR_EDIT
+				/*liping-m@PSW.MM.Display.LCD.Stability, 2018/06/26, add for hx83112a lcd esd read reg*/
+				cmdqBackupReadSlot(hSlot, i+1, (uint32_t *)&read_data1);
+				#endif /* VENDOR_EDIT */
 			} else if (i == 0) {
 				/* read from dsi, support only one cmd read */
 				DSI_OUTREG32(NULL, &read_data0, AS_UINT32(
@@ -5138,9 +5422,8 @@ int ddp_dsi_build_cmdq(enum DISP_MODULE_ENUM module, void *cmdq_trigger_handle,
 
 			lcm_esd_tb = &dsi_params->lcm_esd_check_table[i];
 
-			DISPDBG("[DSI]enter cmp read_data0 byte0=0x%x byte1=0x%x byte2=0x%x byte3=0x%x\n",
-				read_data0.byte0, read_data0.byte1,
-				read_data0.byte2, read_data0.byte3);
+			DISPDBG("[DSI]enter cmp read_data0 byte0=0x%x byte1=0x%x byte2=0x%x byte3=0x%x,byte4=0x%x\n",
+				read_data0.byte0, read_data0.byte1, read_data0.byte2, read_data0.byte3,read_data1.byte0);
 			DISPDBG("[DSI]enter cmp check_table cmd=0x%x,count=0x%x,para_list[0]=0x%x,para_list[1]=0x%x\n",
 				lcm_esd_tb->cmd, lcm_esd_tb->count,
 				lcm_esd_tb->para_list[0],
@@ -5157,18 +5440,32 @@ int ddp_dsi_build_cmdq(enum DISP_MODULE_ENUM module, void *cmdq_trigger_handle,
 				AS_UINT32(DISPSYS_DSI0_BASE + 0x88));
 			DISPDBG("[DSI]enter cmp DSI+0x0c=0x%x\n",
 				AS_UINT32(DISPSYS_DSI0_BASE + 0x0c));
-
-			if (read_data0.byte1 ==	lcm_esd_tb->para_list[0]) {
-				/* clear rx data */
-				ret = 0; /* esd pass */
+			#ifdef VENDOR_EDIT
+			/*liping-m@PSW.MM.Display.LCD.Stability, 2018/06/26, add for hx83112a lcd esd read reg*/
+			if (is_project(18311) || is_project(18011)) {
+				if (read_data1.byte0 == lcm_esd_tb->para_list[0]) {
+					ret = 0; /* esd pass */
+				} else {
+					/* esd fail */
+					DDPPR_ERR("[DSI]cmp read_data1.byte0 fail 0x%x != 0x%x\n",
+					read_data1.byte0, lcm_esd_tb->para_list[0]);
+					ret = 1;
+					break;
+				}
 			} else {
-				/* esd fail */
-				DDPPR_ERR("[DSI]cmp fail:read(0x%x)!=expect(0x%x)\n",
-					read_data0.byte1,
-					lcm_esd_tb->para_list[0]);
-				ret = 1;
-				break;
+				if (read_data0.byte1 ==	lcm_esd_tb->para_list[0]) {
+					/* clear rx data */
+					ret = 0; /* esd pass */
+				} else {
+					/* esd fail */
+					DDPPR_ERR("[DSI]cmp fail:read(0x%x)!=expect(0x%x)\n",
+						read_data0.byte1,
+						lcm_esd_tb->para_list[0]);
+					ret = 1;
+					break;
+				}
 			}
+			#endif /* VENDOR_EDIT */
 		}
 	} else if (state == CMDQ_ESD_ALLC_SLOT) {
 		/* create 3 slot */

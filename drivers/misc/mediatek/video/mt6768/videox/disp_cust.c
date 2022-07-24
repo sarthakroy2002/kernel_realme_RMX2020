@@ -18,7 +18,13 @@ void set_lcm(struct LCM_setting_table_V3 *para_tbl,
 			unsigned int size, bool hs)
 {
 	DISPFUNC();
+#ifdef ODM_WT_EDIT
+	if (_is_power_on_status(DISP_MODULE_DSI0))
+		DSI_dcs_set_lcm_reg_v4(DISP_MODULE_DSI0, hs, para_tbl, size, 1);
+	else
+		DISPERR("%s invalid: dsi is power off\n", __func__);
 
+#else
 	_primary_path_switch_dst_lock();
 	primary_display_manual_lock();
 
@@ -31,6 +37,7 @@ void set_lcm(struct LCM_setting_table_V3 *para_tbl,
 
 	primary_display_manual_unlock();
 	_primary_path_switch_dst_unlock();
+#endif
 }
 
 int read_lcm(unsigned char cmd, unsigned char *buf,

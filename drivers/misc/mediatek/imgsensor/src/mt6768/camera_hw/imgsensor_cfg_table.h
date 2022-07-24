@@ -21,7 +21,12 @@
 
 
 #define IMGSENSOR_HW_POWER_INFO_MAX	12
+#ifndef ODM_WT_EDIT
 #define IMGSENSOR_HW_SENSOR_MAX_NUM	8
+#else
+/* Tian.Tian@Camera.Driver, 2019/11/28, Modify for camera power seq is not right */
+#define IMGSENSOR_HW_SENSOR_MAX_NUM	32
+#endif
 
 enum IMGSENSOR_HW_PIN {
 	IMGSENSOR_HW_PIN_NONE = 0,

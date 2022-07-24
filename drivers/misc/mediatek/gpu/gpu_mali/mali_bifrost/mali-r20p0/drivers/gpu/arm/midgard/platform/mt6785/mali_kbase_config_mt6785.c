@@ -38,7 +38,6 @@
 #ifdef CONFIG_MTK_GPU_SWPM_SUPPORT
 #include <mtk_gpu_power_sspm_ipi.h>
 #endif
-#include "mtk_gpu_utility.h"
 
 
 #define MALI_TAG				"[GPU/MALI]"
@@ -164,8 +163,6 @@ static int pm_callback_power_on_nolock(struct kbase_device *kbdev)
 	ged_dvfs_gpu_clock_switch_notify(1);
 #endif
 
-	mtk_notify_gpu_power_change(1);
-
 #ifdef MT_GPUFREQ_SRAM_DEBUG
 	aee_rr_rec_gpu_dvfs_status(
 			0x6 | (aee_rr_curr_gpu_dvfs_status() & 0xF0));
@@ -193,8 +190,6 @@ static void pm_callback_power_off_nolock(struct kbase_device *kbdev)
 #ifdef ENABLE_COMMON_DVFS
 	ged_dvfs_gpu_clock_switch_notify(0);
 #endif
-
-	mtk_notify_gpu_power_change(0);
 
 #ifdef MT_GPUFREQ_SRAM_DEBUG
 	aee_rr_rec_gpu_dvfs_status(

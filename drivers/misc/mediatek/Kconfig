@@ -13,19 +13,6 @@ config MTK_PLATFORM
 config ARCH_MTK_PROJECT
 	string "MTK project name"
 
-config MTK_HAVE_EXTERNAL_VENDOR_PATH
-	bool "Support building external vendor path"
-	help
-	  MediaTek config for supporting customer driver integration.
-	  Y means we can include MTK_EXTERNAL_VENDOR_PATH into kernel build.
-	  Cannot be y for MediaTek internal project.
-	  Only can be y for customer project.
-	  If unsure, set n.
-
-config MTK_EXTERNAL_VENDOR_PATH
-	string "Extra vendor subdirs to built"
-	depends on MTK_HAVE_EXTERNAL_VENDOR_PATH
-
 config FPGA_EARLY_PORTING
 	bool "MTK FPGA EARLY PORTING"
 	help
@@ -53,9 +40,18 @@ config MTK_AB_OTA_UPDATER
 	  Y means this kernel enabled OTA A/B system updates feature.
 	  If you are not sure about this, set n
 
+config TARGET_COPY_OUT_ODM
+	bool "Support ODM partition"
+	default n
+	help
+	  This config decide to enable odm partition
+	  ODM partition is defined in new android version
+	  OTA project will disable it to prevent exception
+	  If you are not sure about this, do not set it to n
+
 config SYSTEM_AS_ROOT
 	bool "Support system-as-root"
-	default y
+	default n
 	help
 	  Y means to enable system-as-root.
 	  This option merges ramdisk into system image
@@ -434,6 +430,7 @@ source "drivers/misc/mediatek/log_store/Kconfig"
 source "drivers/misc/mediatek/mtprintk/Kconfig"
 source "drivers/misc/mediatek/mlog/Kconfig"
 source "drivers/misc/mediatek/mcupm/Kconfig"
+source "drivers/misc/mediatek/smartpa/Kconfig"
 
 endmenu    # Misc
 

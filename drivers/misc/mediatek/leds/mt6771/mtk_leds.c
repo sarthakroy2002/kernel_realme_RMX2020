@@ -49,6 +49,12 @@
 #include <mt-plat/met_drv.h>
 #endif
 
+#ifdef VENDOR_EDIT
+/* LiPing-M@PSW.MultiMedia.Display.LCD.Feature.DD17&DD16, 2017/12/07, Add for sau and silence close backlight */
+#include <mt-plat/mtk_boot_common.h>
+extern unsigned long silence_mode;
+#endif /*VENDOR_EDIT*/
+
 #include "mtk_leds_sw.h"
 #include "mtk_leds_hal.h"
 #include "../mtk_leds_drv.h"
@@ -236,7 +242,7 @@ struct cust_mt65xx_led *get_cust_led_dtsi(void)
 #else
 			pled_dtsi[i].data = (long)mtkfb_set_backlight_level;
 #endif
-			LEDS_DEBUG("kernel:the BL hw mode is LCM.\n");
+			pr_info("kernel:the BL hw mode is LCM.\n");
 			break;
 		case MT65XX_LED_MODE_CUST_BLS_PWM:
 			pled_dtsi[i].data = (long)disp_bls_set_backlight;
@@ -755,6 +761,26 @@ int mt_mt65xx_led_set_cust(struct cust_mt65xx_led *cust, int level)
 #endif
 	static bool button_flag;
 
+    #ifdef VENDOR_EDIT
+	/*
+	* Yongpeng.Yi@PSW.MM.Display.LCD.Feature, 2018/09/10,
+	* add for cmcc test reduce brightness
+	*/
+	#ifdef OPPO_CTTEST_FLAG
+	if (level > 2) {
+		level = (level * 3) / 4;
+	}
+	#endif
+	#endif /*VENDOR_EDIT*/
+
+	#ifdef VENDOR_EDIT
+	/* Yongpeng.Yi@PSW.MultiMedia.Display.LCD.Feature.DD17&DD16, 2018/09/10, Add for sau and silence close backlight */
+	if (silence_mode) {
+		printk("%s silence_mode is %ld, set backlight to 0\n",__func__, silence_mode);
+		level = 0;
+	}
+        #endif /*VENDOR_EDIT*/
+
 	switch (cust->mode) {
 
 	case MT65XX_LED_MODE_PWM:
@@ -818,7 +844,13 @@ int mt_mt65xx_led_set_cust(struct cust_mt65xx_led *cust, int level)
 	case MT65XX_LED_MODE_CUST_LCM:
 		if (strcmp(cust->name, "lcd-backlight") == 0)
 			bl_brightness_hal = level;
-		LEDS_DEBUG("%s backlight control by LCM\n", __func__);
+		#ifndef VENDOR_EDIT
+		/*
+		* Ling.Guo@PSW.MM.Display.LCD.Feature, 2019/02/19,
+		* remove for log print
+		*/
+		LEDS_DEBUG("brightness_set_cust:backlight control by LCM\n");
+		#endif
 		/* warning for this API revork */
 		return ((cust_brightness_set) (cust->data)) (level, bl_div_hal);
 
@@ -875,12 +907,27 @@ void mt_mt65xx_led_set(struct led_classdev *led_cdev, enum led_brightness level)
 		level = (level * CONFIG_LIGHTNESS_MAPPING_VALUE) / 255;
 
 	backlight_debug_log(led_data->level, level);
+
+	#ifndef VENDOR_EDIT
 	disp_pq_notify_backlight_changed((((1 << MT_LED_INTERNAL_LEVEL_BIT_CNT)
-					    - 1) * level + 127) / 255);
+						    - 1) * level + 127) / 255);
+	#endif /*VENDOR_EDIT*/
 #ifdef CONFIG_MTK_AAL_SUPPORT
+	#ifndef VENDOR_EDIT
 	disp_aal_notify_backlight_changed((((1 <<
 					MT_LED_INTERNAL_LEVEL_BIT_CNT)
 					    - 1) * level + 127) / 255);
+	#else/*VENDOR_EDIT*/
+	/*
+	Yongpeng.Yi@PSW.MultiMedia.Display.LCD.Feature, 2018/09/10,
+	modify for silence mode.
+	*/
+	if (silence_mode) {
+		printk("%s silence_mode is %ld, set backlight to 0\n",__func__, silence_mode);
+		level = 0;
+	}
+	disp_aal_notify_backlight_changed(level);
+	#endif/*VENDOR_EDIT*/
 #else
 	if (led_data->cust.mode == MT65XX_LED_MODE_CUST_BLS_PWM)
 		mt_mt65xx_led_set_cust(&led_data->cust,

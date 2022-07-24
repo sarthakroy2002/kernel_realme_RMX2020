@@ -36,7 +36,12 @@
 #define DISABLE_DLPT_FEATURE
 #endif /* defined(CONFIG_FPGA_EARLY_PORTING) || PT_DLPT_BRINGUP */
 
+#ifndef VENDOR_EDIT
+/* Fuchun.Liao@BSP.CHG.Basic 2018/02/09 modify uvlo from 2.6v to 2.75v */
 #define POWER_UVLO_VOLT_LEVEL 2600
+#else
+#define POWER_UVLO_VOLT_LEVEL 2750
+#endif /* VENDOR_EDIT */
 #define IMAX_MAX_VALUE 5500
 
 #define POWER_INT0_VOLT 3400

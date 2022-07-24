@@ -41,6 +41,10 @@
 #define MINT32 signed int
 #endif
 
+#ifndef VENDOR_EDIT
+#define VENDOR_EDIT
+#endif
+
 /************************************************************************
  *
  ************************************************************************/
@@ -87,6 +91,14 @@ enum {
 	IMAGE_HV_MIRROR
 };
 
+#ifdef VENDOR_EDIT
+enum {
+    SECURE_NONE = 0x00,
+    SECURE_STATIC = 0x01,
+    SECURE_DYNAMIC = 0x02,
+};
+#endif
+
 enum MSDK_SCENARIO_ID_ENUM {
 	MSDK_SCENARIO_ID_CAMERA_PREVIEW = 0,
 	MSDK_SCENARIO_ID_CAMERA_CAPTURE_JPEG,
@@ -120,7 +132,7 @@ enum ACDK_CAMERA_OPERATION_MODE_ENUM {
  ************************************************************************/
 
 /*  */
-#define MAX_NUM_OF_SUPPORT_SENSOR 16
+#define MAX_NUM_OF_SUPPORT_SENSOR 18
 /*  */
 #define SENSOR_CLOCK_POLARITY_HIGH    0
 #define SENSOR_CLOCK_POLARITY_LOW 1
@@ -135,6 +147,10 @@ enum ACDK_CAMERA_OPERATION_MODE_ENUM {
 #define SENSOR_SLAVE_SYNC_MODE 2
 
 #define SENSOR_FEATURE_START                     3000
+#ifdef VENDOR_EDIT
+/*Henry.Chang@Camera.Driver add for 18531 ModuleSN*/
+#define IMGSENSOR_MODULE_SN_LENGTH       (16)
+#endif
 enum ACDK_SENSOR_FEATURE_ENUM {
 	SENSOR_FEATURE_BEGIN = SENSOR_FEATURE_START,
 	SENSOR_FEATURE_GET_RESOLUTION,
@@ -270,7 +286,15 @@ enum ACDK_SENSOR_FEATURE_ENUM {
 	SENSOR_FEATURE_GET_PIXEL_CLOCK_FREQ_BY_SCENARIO,
 	SENSOR_FEATURE_GET_PERIOD_BY_SCENARIO,
 	SENSOR_FEATURE_GET_BINNING_TYPE,
-	SENSOR_FEATURE_GET_Y_AVERAGE,
+    #ifdef VENDOR_EDIT
+	/*zhaozhengtao 2016/02/19,modify for different module*/
+	SENSOR_FEATURE_CHECK_MODULE_ID,
+	/*Henry.Chang@camera.driver 20181129, add for sensor Module SET*/
+	SENSOR_FEATURE_GET_MODULE_SN,
+	SENSOR_FEATURE_SET_SENSOR_OTP,
+	/*Henry.Chang@Camera.Driver modify for ModuleInfo 2019/05/30*/
+	SENSOR_FEATURE_GET_MODULE_INFO,
+    #endif
 	SENSOR_FEATURE_MAX
 };
 
@@ -399,6 +423,17 @@ enum SENSOR_DPCM_TYPE_ENUM {
 	COMP8_DI_37 = 0x37,
 	COMP8_DI_2A = 0x2A,
 };
+#ifdef VENDOR_EDIT
+/*Henry.Chang@camera.driver 20181129, add for sensor Module SET*/
+#define OPPO_STEREO_CALI_DATA_LENGTH     (1561)
+typedef struct {
+  MUINT32 uSensorId;
+  MUINT32 uDeviceId;
+  MUINT16 baseAddr;
+  MUINT16 dataLength;
+  MUINT8  uData[OPPO_STEREO_CALI_DATA_LENGTH];
+} ACDK_SENSOR_ENGMODE_STEREO_STRUCT, *PACDK_SENSOR_ENGMODE_STEREO_STRUCT;
+#endif
 
 struct ACDK_SENSOR_RESOLUTION_INFO_STRUCT {
 	MUINT16 SensorPreviewWidth;
@@ -603,9 +638,13 @@ struct ACDK_SENSOR_INFO_STRUCT {
 	MUINT16 SensorVerFOV;
 	MUINT16 SensorOrientation;
 	MUINT32 SensorModuleID;
+	#ifdef VENDOR_EDIT
+    MUINT8 sensorSecureType;
+	#endif
 };
 
 #define ACDK_SENSOR_INFO2_STRUCT struct ACDK_SENSOR_INFO_STRUCT
+#define PACDK_SENSOR_INFO2_STRUCT PACDK_SENSOR_INFO_STRUCT
 
 enum ACDK_CCT_REG_TYPE_ENUM {
 	ACDK_CCT_REG_ISP = 0,
@@ -1223,7 +1262,7 @@ struct MULTI_SENSOR_FUNCTION_STRUCT2 {
 	MUINT32 (*SensorClose)(void);
 };
 
-struct SENSOR_FUNCTION_STRUCT {
+struct SENSOR_FUNCTION_STRUCT{
 	MUINT32 (*SensorOpen)(void);
 	MUINT32 (*SensorGetInfo)(enum MSDK_SCENARIO_ID_ENUM ScenarioId,
 	    MSDK_SENSOR_INFO_STRUCT *pSensorInfo,
@@ -1251,10 +1290,12 @@ struct SENSOR_FUNCTION_STRUCT {
 	void   *psensor_inst; /* IMGSENSOR_SENSOR_INST */
 };
 
+typedef struct SENSOR_FUNCTION_STRUCT* PSENSOR_FUNCTION_STRUCT;
+
 struct ACDK_KD_SENSOR_INIT_FUNCTION_STRUCT {
 	MUINT32 SensorId;
 	MUINT8 drvname[32];
-	MUINT32 (*SensorInit)(struct SENSOR_FUNCTION_STRUCT **pfFunc);
+	MUINT32 (*SensorInit)(PSENSOR_FUNCTION_STRUCT *pfFunc);
 };
 
 /* For sensor synchronize the exposure time / sensor gain and isp gain. */
@@ -1351,7 +1392,7 @@ struct SENSOR_FLASHLIGHT_AE_INFO_STRUCT {
 struct IMGSENSOR_SENSOR_LIST {
 	MUINT32 id;
 	MUINT8 name[32];
-	MUINT32 (*init)(struct SENSOR_FUNCTION_STRUCT **pfFunc);
+	MUINT32 (*init)(PSENSOR_FUNCTION_STRUCT *pfFunc);
 };
 /* multisensor driver */
 

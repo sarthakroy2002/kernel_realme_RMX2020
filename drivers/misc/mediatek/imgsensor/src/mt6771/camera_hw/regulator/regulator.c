@@ -12,6 +12,13 @@
  */
 
 #include "regulator.h"
+#ifndef VENDOR_EDIT
+#define VENDOR_EDIT
+#endif
+
+#ifdef VENDOR_EDIT
+#include<soc/oppo/oppo_project.h>
+#endif
 
 
 static const int regulator_voltage[] = {
@@ -36,6 +43,11 @@ struct REGULATOR_CTRL regulator_control[REGULATOR_TYPE_MAX_NUM] = {
 
 static struct REGULATOR reg_instance;
 
+#ifdef VENDOR_EDIT
+/*Femg.Hu@Camera.Driver 20171120 add for flash&lens to use i2c individual*/
+static struct regulator *gVCamIO;
+static struct regulator *gVCamAF;
+#endif
 static enum IMGSENSOR_RETURN regulator_init(
 	void *pinstance,
 	struct IMGSENSOR_HW_DEVICE_COMMON *pcommon)
@@ -64,7 +76,11 @@ static enum IMGSENSOR_RETURN regulator_init(
 			atomic_set(&preg->enable_cnt[idx][type], 0);
 		}
 	}
-
+	#ifdef VENDOR_EDIT
+	//*Femg.Hu@Camera.Driver 20171120 add for flash&lens to use i2c individual*/
+	gVCamIO = regulator_get(&pcommon->pplatform_device->dev, "vcamio");
+	gVCamAF = regulator_get(&pcommon->pplatform_device->dev, "vldo28");
+	#endif
 	return IMGSENSOR_RETURN_SUCCESS;
 }
 
@@ -199,6 +215,65 @@ static struct IMGSENSOR_HW_DEVICE device = {
 	.dump      = regulator_dump
 };
 
+#ifdef VENDOR_EDIT
+/*Femg.Hu@Camera.Driver 20171120 add for flash&lens to use i2c individual*/
+int kdVIOPowerOn(int On)
+{
+	if (On) {
+		if (regulator_set_voltage(gVCamIO,
+			regulator_voltage[IMGSENSOR_HW_PIN_STATE_LEVEL_1800- IMGSENSOR_HW_PIN_STATE_LEVEL_0],
+			regulator_voltage[IMGSENSOR_HW_PIN_STATE_LEVEL_1800- IMGSENSOR_HW_PIN_STATE_LEVEL_0])) {
+			PK_PR_ERR("[regulator]fail to regulator_set_voltage, powerId:%d\n",
+				regulator_voltage[IMGSENSOR_HW_PIN_STATE_LEVEL_1800 - IMGSENSOR_HW_PIN_STATE_LEVEL_0]);
+		}
+		if (regulator_enable(gVCamIO)) {
+			PK_PR_ERR("[regulator]fail to regulator_enable\n");
+			return IMGSENSOR_RETURN_ERROR;
+		}
+	} else {
+		if (regulator_set_voltage(gVCamIO,
+			regulator_voltage[IMGSENSOR_HW_PIN_STATE_LEVEL_0],
+			regulator_voltage[IMGSENSOR_HW_PIN_STATE_LEVEL_0])) {
+			PK_PR_ERR("[regulator]fail to regulator_set_voltage, powerId:%d\n",
+				regulator_voltage[IMGSENSOR_HW_PIN_STATE_LEVEL_0]);
+		}
+		if (regulator_disable(gVCamIO)) {
+			PK_DBG("[regulator]fail to regulator_disable gVCamIO\n");
+			return IMGSENSOR_RETURN_ERROR;
+		}
+	}
+	return IMGSENSOR_RETURN_SUCCESS;
+}
+
+int kdVAFPowerOn(int On)
+{
+	if (On) {
+		if (regulator_set_voltage(gVCamAF,
+			regulator_voltage[IMGSENSOR_HW_PIN_STATE_LEVEL_2800- IMGSENSOR_HW_PIN_STATE_LEVEL_0],
+			regulator_voltage[IMGSENSOR_HW_PIN_STATE_LEVEL_2800- IMGSENSOR_HW_PIN_STATE_LEVEL_0])) {
+			PK_PR_ERR("[regulator]fail to regulator_set_voltage, powerId:%d\n",
+				regulator_voltage[IMGSENSOR_HW_PIN_STATE_LEVEL_2800 - IMGSENSOR_HW_PIN_STATE_LEVEL_0]);
+		}
+		if (regulator_enable(gVCamAF)) {
+			PK_PR_ERR("[regulator]fail to regulator_enable\n");
+				return IMGSENSOR_RETURN_ERROR;
+		}
+	} else {
+		if (regulator_set_voltage(gVCamAF,
+			regulator_voltage[IMGSENSOR_HW_PIN_STATE_LEVEL_0],
+			regulator_voltage[IMGSENSOR_HW_PIN_STATE_LEVEL_0])) {
+			PK_PR_ERR("[regulator]fail to regulator_set_voltage, powerId:%d\n",
+				regulator_voltage[IMGSENSOR_HW_PIN_STATE_LEVEL_0]);
+		}
+
+		if (regulator_disable(gVCamAF)) {
+			PK_DBG("[regulator]fail to regulator_disable gVCamAF\n");
+			return IMGSENSOR_RETURN_ERROR;
+		}
+	}
+	return IMGSENSOR_RETURN_SUCCESS;
+}
+#endif
 enum IMGSENSOR_RETURN imgsensor_hw_regulator_open(
 	struct IMGSENSOR_HW_DEVICE **pdevice)
 {

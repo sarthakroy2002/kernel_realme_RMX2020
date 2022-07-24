@@ -26,14 +26,12 @@
 #endif
 #include <mtk_spm_irq.h>
 
-#include <mtk_sleep_internal.h>
 #include <mtk_spm_internal.h>
 #include <mtk_spm_suspend_internal.h>
 #include <mtk_spm_resource_req_internal.h>
 #include <mtk_spm_resource_req.h>
 
 #include <mt-plat/mtk_ccci_common.h>
-#include <mtk_idle_module.h>
 
 #ifdef CONFIG_MTK_USB2JTAG_SUPPORT
 #include <mt-plat/mtk_usb2jtag.h>
@@ -307,19 +305,7 @@ int __attribute__((weak)) get_dlpt_imix_spm(void)
 #endif
 #endif
 #endif
-unsigned int spm_go_to_sleep_ex(unsigned int ex_flag)
-{
-	unsigned int bRet = 0;
 
-	if ((ex_flag & SPM_SUSPEND_PLAT_SLP_DP) != 0) {
-		mtk_idle_enter(IDLE_TYPE_DP, smp_processor_id(),
-			MTK_IDLE_OPT_SLEEP_DPIDLE, 0);
-		bRet = get_slp_dp_last_wr();
-	} else
-		bRet = spm_go_to_sleep();
-
-	return bRet;
-}
 unsigned int spm_go_to_sleep(void)
 {
 	u32 sec = 2;

@@ -312,12 +312,13 @@ int vpu_put_request_to_pool(struct vpu_user *user, struct vpu_request *req)
 			if (IS_ERR(handle)) {
 				LOG_WRN("[vpu_drv] %s=0x%p failed and return\n",
 					"import ion handle", handle);
-				for (k = 0; k < cnt; k++) {
-					ion_free(my_ion_client,
-						(struct ion_handle *)
-						(req->buf_ion_infos[k]));
-					LOG_WRN("free cnt[%d] ion handle\n", k);
-				}
+				if (cnt > 0)
+					for (k = 0; k < cnt; k++) {
+						ion_free(my_ion_client,
+							(struct ion_handle *)
+							((uintptr_t)(req->buf_ion_infos[cnt])));
+						LOG_WRN("free cnt[%d] ion handle\n", cnt);
+					}
 				return -EINVAL;
 			} else {
 				if (g_vpu_log_level > Log_STATE_MACHINE)

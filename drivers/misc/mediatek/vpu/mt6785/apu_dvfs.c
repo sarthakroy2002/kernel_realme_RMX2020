@@ -47,7 +47,6 @@
 /*regulator id*/
 static struct regulator *vvpu_reg_id;
 static struct regulator *vcore_reg_id;
-static struct regulator *vsram_reg_id;
 
 
 static bool vvpu_DVFS_is_paused_by_ptpod;
@@ -301,7 +300,6 @@ void apu_get_power_info(void)
 {
 	int vvpu = 0;
 	int vcore = 0;
-	int vsram = 0;
 	int dsp_freq = 0;
 	int dsp1_freq = 0;
 	int dsp2_freq = 0;
@@ -327,24 +325,18 @@ void apu_get_power_info(void)
 
 	if (vcore_reg_id)
 		vcore = regulator_get_voltage(vcore_reg_id);
-
-	if (vsram_reg_id)
-		vsram = regulator_get_voltage(vsram_reg_id);
-
 	LOG_DVFS("dsp_freq = %d\n", dsp_freq);
 	LOG_DVFS("dsp1_freq = %d\n", dsp1_freq);
 	LOG_DVFS("dsp2_freq = %d\n", dsp2_freq);
 	LOG_DVFS("ipuif_freq = %d\n", ipuif_freq);
-
-	LOG_ERR("vvpu=%d, vcore=%d, vsram=%d\n", vvpu, vcore, vsram);
-
+	LOG_DVFS("vvpu=%d, vcore=%d\n", vvpu, vcore);
 	if (vvpu < 700000) {
 		if	((dsp_freq >= 364000) || (ipuif_freq >= 364000)) {
-			LOG_ERR("freq check fail\n");
-			LOG_ERR("dsp_freq = %d\n", dsp_freq);
-			LOG_ERR("dsp1_freq = %d\n", dsp1_freq);
-			LOG_ERR("dsp2_freq = %d\n", dsp2_freq);
-			LOG_ERR("ipuif_freq = %d\n", ipuif_freq);
+			LOG_INF("freq check fail\n");
+			LOG_INF("dsp_freq = %d\n", dsp_freq);
+			LOG_INF("dsp1_freq = %d\n", dsp1_freq);
+			LOG_INF("dsp2_freq = %d\n", dsp2_freq);
+			LOG_INF("ipuif_freq = %d\n", ipuif_freq);
 	LOG_INF("vvpu=%d, vcore=%d\n", vvpu, vcore);
 	aee_kernel_warning("freq check", "%s: failed.", __func__);
 			}
@@ -1047,9 +1039,6 @@ static int apu_dvfs_probe(struct platform_device *pdev)
 		vcore_reg_id = regulator_get(&pdev->dev, "vcore");
 		if (!vcore_reg_id)
 			LOG_ERR("regulator_get vcore_reg_id failed\n");
-		vsram_reg_id = regulator_get(&pdev->dev, "vsram_others");
-		if (!vsram_reg_id)
-			LOG_ERR("regulator_get vsram_reg_id failed\n");
 
 	ready_for_ptpod_check = false;
 	/*--enable regulator--*/
@@ -1080,8 +1069,6 @@ static int apu_dvfs_probe(struct platform_device *pdev)
 
 
 	LOG_DVFS("%s: init done\n", __func__);
-
-	apu_get_power_info();
 
 	return 0;
 }

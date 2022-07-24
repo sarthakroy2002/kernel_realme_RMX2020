@@ -37,6 +37,5 @@ endif
 ccflags-y += \
 	-I$(srctree)/drivers/misc/mediatek/base/power/include \
 	-I$(srctree)/drivers/misc/mediatek/gpu/gpu_bm \
-	-I$(srctree)/drivers/misc/mediatek/gpu/hal \
 	-I$(srctree)/drivers/misc/mediatek/base/power/$(MTK_PLATFORM) \
 	-DMT_GPUFREQ_BRINGUP=$(MT_GPUFREQ_BRINGUP) \

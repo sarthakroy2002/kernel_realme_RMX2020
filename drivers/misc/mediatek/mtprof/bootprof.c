@@ -21,7 +21,6 @@
 #include <linux/printk.h>
 #include <linux/platform_device.h>
 #include <linux/slab.h>
-#include <log_store_kernel.h>
 
 #include "internal.h"
 #include "mtk_sched_mon.h"
@@ -169,12 +168,14 @@ static void bootup_finish(void)
 {
 	initcall_debug = 0;
 #ifdef CONFIG_MTK_PRINTK_UART_CONSOLE
+#if defined(VENDOR_EDIT) && !defined(CONFIG_MTK_ENG_BUILD)
+/*xing.xiong@BSP.Kernel.Debug, 2018/10/26, Add for do not disable uart in engbuild*/
 	mt_disable_uart();
+#endif
 #endif
 #ifdef CONFIG_MTK_SCHED_MON_DEFAULT_ENABLE
 	mt_sched_monitor_switch(1);
 #endif
-	set_logtoomuch_enable(1);
 }
 
 static void mt_bootprof_switch(int on)
@@ -194,7 +195,6 @@ static void mt_bootprof_switch(int on)
 			enabled = 0;
 			timestamp_off = ts;
 			boot_finish = true;
-			log_store_bootup();
 			bootup_finish();
 		}
 	}

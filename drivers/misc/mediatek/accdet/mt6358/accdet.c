@@ -48,7 +48,18 @@
 #include "pmic_auxadc.h"
 #endif /* end of #if PMIC_ACCDET_KERNEL */
 
+#ifdef ODM_WT_EDIT
+//Tongxing.Liu@ODM_WT.BSP.TP.FUNCTION.2019/10/15, add headset mode notify function
+#include <linux/headset_notifier.h>
+#endif
+
 /********************grobal variable definitions******************/
+#ifdef VENDOR_EDIT
+/* Bingyuan.Liu@BSP.TP.FUNCTION, 2019/10/25,
+ * add to enable tp headset mode when plug in  */
+void __attribute__((weak)) switch_headset_state(int headset_state) {return;}
+#endif /* VENDOR_EDIT */
+
 #if PMIC_ACCDET_CTP
 #define CONFIG_ACCDET_EINT_IRQ
 #define CONFIG_ACCDET_SUPPORT_EINT0
@@ -1210,6 +1221,10 @@ static void eint_work_callback(void)
 	if (cur_eint_state == EINT_PIN_PLUG_IN) {
 		pr_info("accdet cur: plug-in, cur_eint_state = %d\n",
 			cur_eint_state);
+#ifdef ODM_WT_EDIT
+//Tongxing.Liu@ODM_WT.BSP.TP.FUNCTION.2019/10/15, add headset notifi tp function
+		headset_notifier_call_chain(1,NULL);
+#endif
 		mutex_lock(&accdet_eint_irq_sync_mutex);
 		eint_accdet_sync_flag = true;
 		mutex_unlock(&accdet_eint_irq_sync_mutex);
@@ -1232,9 +1247,19 @@ static void eint_work_callback(void)
 #else
 		enable_accdet(ACCDET_PWM_EN);
 #endif
+
+#ifdef VENDOR_EDIT
+/* Bingyuan.Liu@BSP.TP.FUNCTION, 2019/10/25,
+ * add to enable tp headset mode when plug in  */
+		switch_headset_state(1);
+#endif /* VENDOR_EDIT */
 	} else {
 		pr_info("accdet cur:plug-out, cur_eint_state = %d\n",
 			cur_eint_state);
+#ifdef ODM_WT_EDIT
+//Tongxing.Liu@ODM_WT.BSP.TP.FUNCTION.2019/10/15, add headset notifi tp function
+		headset_notifier_call_chain(0,NULL);
+#endif
 		mutex_lock(&accdet_eint_irq_sync_mutex);
 		eint_accdet_sync_flag = false;
 		mutex_unlock(&accdet_eint_irq_sync_mutex);
@@ -1245,6 +1270,11 @@ static void eint_work_callback(void)
 			pmic_read(ACCDET_STATE_SWCTRL) & (~ACCDET_PWM_IDLE));
 		disable_accdet();
 		headset_plug_out();
+#ifdef VENDOR_EDIT
+/* Bingyuan.Liu@BSP.TP.FUNCTION, 2019/10/25,
+ * add to enable tp headset mode when plug in  */
+		switch_headset_state(0);
+#endif /* VENDOR_EDIT */
 	}
 
 #ifdef CONFIG_ACCDET_EINT

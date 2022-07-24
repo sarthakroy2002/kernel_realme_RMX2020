@@ -96,6 +96,25 @@ static bool no_update;
 static struct disp_session_input_config session_input;
 long dts_gpio_state;
 
+#ifdef VENDOR_EDIT
+extern bool oppo_display_ffl_support;
+extern bool oppo_display_sau_support;
+#endif /*VENDOR_EDIT*/
+
+#ifdef VENDOR_EDIT
+//jie.cheng@Swdp.shanghai, 2017/06/05, Add notifier for fb info
+static BLOCKING_NOTIFIER_HEAD(mtkfb_notifier_list);
+int mtkfb_register_client(struct notifier_block *nb)
+{
+	    return blocking_notifier_chain_register(&mtkfb_notifier_list, nb);
+}
+EXPORT_SYMBOL(mtkfb_register_client);
+int mtkfb_unregister_client(struct notifier_block *nb)
+{
+	    return blocking_notifier_chain_unregister(&mtkfb_notifier_list, nb);
+}
+EXPORT_SYMBOL(mtkfb_unregister_client);
+#endif /* VENDOR_EDIT */
 
 /* macro definiton */
 #define ALIGN_TO(x, n)  (((x) + ((n) - 1)) & ~((n) - 1))
@@ -308,6 +327,13 @@ static int mtkfb_blank(int blank_mode, struct fb_info *info)
 	return 0;
 }
 
+#ifdef ODM_WT_EDIT
+//Hao.Liang@ODM_WT.MM.Display.Lcd, 2019/10/19, Add ffl function
+unsigned int ffl_backlight_backup;
+extern unsigned int ffl_set_mode;
+extern unsigned int ffl_backlight_on;
+extern bool ffl_trigger_finish;
+#endif
 
 int mtkfb_set_backlight_level(unsigned int level)
 {
@@ -316,10 +342,51 @@ int mtkfb_set_backlight_level(unsigned int level)
 	DISPDBG("mtkfb_set_backlight_level:%d Start\n",
 		level);
 
-	if (aal_is_support)
+	if (aal_is_support){
+#ifdef ODM_WT_EDIT
+//Hao.Liang@ODM_WT.MM.Display.Lcd, 2019/10/19, Add ffl function
+	if (level > 0) {
+		ffl_backlight_on = 1;
+	} else {
+		ffl_backlight_on = 0;
+	}
+	ffl_backlight_backup = level;
+	if (ffl_trigger_finish || (level == 0)) {
+		if ((ffl_set_mode != 1) || (level == 0)) {
+			primary_display_setbacklight_nolock(level);
+		}
+		if ((level > 0) && (ffl_set_mode == 1)) {
+				ffl_set_enable(1);
+		}
+	}
+
+#else
 		primary_display_setbacklight_nolock(level);
-	else
+#endif
+
+	}else{
+#ifdef ODM_WT_EDIT
+//Hao.Liang@ODM_WT.MM.Display.Lcd, 2019/10/19, Add ffl function
+	if (level > 0) {
+		ffl_backlight_on = 1;
+	} else {
+		ffl_backlight_on = 0;
+	}
+	ffl_backlight_backup = level;
+	if (ffl_trigger_finish || (level == 0)) {
+		if ((ffl_set_mode != 1) || (level == 0)) {
 		primary_display_setbacklight(level);
+		}
+		if ((level > 0) && (ffl_set_mode == 1)) {
+				ffl_set_enable(1);
+		}
+	}
+
+#else
+		primary_display_setbacklight(level);
+#endif
+
+}
 	DISPDBG("mtkfb_set_backlight_level End\n");
 	return 0;
 }
@@ -1578,6 +1645,38 @@ static int mtkfb_ioctl(struct fb_info *info, unsigned int cmd,
 
 		return 0;
 	}
+#ifdef ODM_WT_EDIT
+	//Hao.liang@ODM_WT.MM.Display.Lcd, 2019/10/11 Add cabc read & write interface,
+
+	case SYSFS_SET_LCM_CABC_MODE:
+	{
+		int lcm_cabc_enable = 0;
+
+		lcm_cabc_enable = *(int*)arg;
+		if(primary_display_set_cabc(lcm_cabc_enable))
+		{
+			MTKFB_LOG("[MTKFB]: set CABC fail! line:%d\n",
+				__LINE__);
+			r = -EFAULT;
+		}
+		return r;
+	}
+
+	case SYSFS_GET_LCM_CABC_MODE:
+	{
+		int lcm_cabc_status = 0;
+
+		if(primary_display_get_cabc(&lcm_cabc_status)){
+			MTKFB_LOG("[MTKFB]: get CABC fail! line:%d\n",
+				__LINE__);
+			r = -EFAULT;
+		}
+
+		memcpy((void*)arg, (void*)&lcm_cabc_status, sizeof(int));
+
+		return r;
+	}
+#endif
 	default:
 		DISPWARN(
 			"%s Not support, info=0x%p, cmd=0x%08x, arg=0x%08lx\n",
@@ -2542,6 +2641,13 @@ static int mtkfb_probe(struct platform_device *pdev)
 
 	/* pdev = to_platform_device(dev); */
 	/* repo call DTS gpio module, if not necessary, invoke nothing */
+
+#ifdef VENDOR_EDIT
+	/* Hao.Lin@MM.Display.LCD.Machine, 2019/11/07, modify for oppo lcd feature */
+	oppo_display_ffl_support = of_property_read_bool(pdev->dev.of_node, "oppo_display_ffl_support");
+	oppo_display_sau_support = of_property_read_bool(pdev->dev.of_node, "oppo_display_sau_support");
+#endif /*VENDOR_EDIT*/
+
 	dts_gpio_state = disp_dts_gpio_init_repo(pdev);
 	if (dts_gpio_state != 0)
 		DISPMSG("retrieve GPIO DTS failed.");
@@ -2695,6 +2801,16 @@ static int mtkfb_probe(struct platform_device *pdev)
 		register_ccci_sys_call_back(MD_SYS1,
 			MD_DISPLAY_DYNAMIC_MIPI, mipi_clk_change);
 	}
+#ifdef ODM_WT_EDIT
+	//Hao.Liang@ODM_WT.MM.Display.Lcd, 2019/10/29, Add clk_change function
+	if (!strcmp(mtkfb_find_lcm_driver(),
+		"ilt9881h_txd_hdp_dsi_vdo_lcm_drv") ||!strcmp(mtkfb_find_lcm_driver(),
+		"ilt9881h_truly_hdp_dsi_vdo_lcm_drv") ||!strcmp(mtkfb_find_lcm_driver(),
+		"nt36525b_hlt_hdp_dsi_vdo_lcm_drv") ) {
+		register_ccci_sys_call_back(MD_SYS1,
+			MD_DISPLAY_DYNAMIC_MIPI, mipi_clk_change);
+	}
+#endif
 
 	MSG_FUNC_LEAVE();
 	pr_info("disp driver(2) %s end\n", __func__);
@@ -2753,10 +2869,18 @@ static void mtkfb_shutdown(struct platform_device *pdev)
 
 	if (primary_display_is_sleepd()) {
 		MTKFB_LOG("mtkfb has been power off\n");
+#ifdef ODM_WT_EDIT
+//Tongxing.Liu@ODM_WT.MM.Display.Lcd, 2019/11/26, display timing adaptation
+        primary_display_shutdown();
+#endif
 		return;
 	}
 	primary_display_set_power_mode(FB_SUSPEND);
 	primary_display_suspend();
+#ifdef ODM_WT_EDIT
+//Tongxing.Liu@ODM_WT.MM.Display.Lcd, 2019/11/26, display timing adaptation
+    primary_display_shutdown();
+#endif
 	MTKFB_LOG("[FB Driver] leave %s\n", __func__);
 }
 
@@ -2806,6 +2930,11 @@ static void mtkfb_early_suspend(void)
 	if (disp_helper_get_stage() != DISP_HELPER_STAGE_NORMAL)
 		return;
 
+#ifdef VENDOR_EDIT
+	//jie.cheng@Swdp.shanghai, 2017/06/05, Add notifier for fb info
+	blocking_notifier_call_chain(&mtkfb_notifier_list, 0, NULL);
+#endif
+
 	DISPMSG("[FB Driver] enter early_suspend\n");
 
 	ret = primary_display_suspend();
@@ -2827,6 +2956,11 @@ static void mtkfb_late_resume(void)
 
 	if (disp_helper_get_stage() != DISP_HELPER_STAGE_NORMAL)
 		return;
+
+#ifdef VENDOR_EDIT
+	//jie.cheng@Swdp.shanghai, 2017/06/05, Add notifier for fb info
+		blocking_notifier_call_chain(&mtkfb_notifier_list, 1, NULL);
+#endif
 
 	DISPMSG("[FB Driver] enter late_resume\n");
 

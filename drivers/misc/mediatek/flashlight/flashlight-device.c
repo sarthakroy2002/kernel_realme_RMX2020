@@ -67,6 +67,17 @@ const struct flashlight_device_id flashlight_id[] = {
 	{0, 0, 0, "flashlights-mt6370", 0, 0},
 	{0, 1, 0, "flashlights-mt6370", 1, 0},
 };
+#elif defined(mt6768)
+#ifdef ODM_WT_EDIT
+//XingYu.Liu@ODM_WT.CAMERA.Driver.2019/10/16,Add for flashlight bring up
+const struct flashlight_device_id flashlight_id[] = {
+	/* {TYPE, CT, PART, "NAME", CHANNEL, DECOUPLE} */
+	{0, 0, 0, "flashlights_monet", 0, 1},
+	{0, 1, 0, "flashlights-none", -1, 0},
+	{1, 0, 0, "flashlights-none", -1, 0},
+	{1, 1, 0, "flashlights-none", -1, 0},
+};
+#endif /* ODM_WT_EDIT */
 #elif defined(mt6799)
 const struct flashlight_device_id flashlight_id[] = {
 	/* {TYPE, CT, PART, "NAME", CHANNEL, DECOUPLE} */
@@ -81,6 +92,15 @@ const struct flashlight_device_id flashlight_id[] = {
 #else
 const struct flashlight_device_id flashlight_id[] = {
 	/* {TYPE, CT, PART, "NAME", CHANNEL, DECOUPLE} */
+        /*weiriqin@camera.driver on 20190516, debug flashlight use mt6370 pmic first time*/
+        #ifndef CONFIG_MTK_FLASHLIGHT_MT6370
+	#ifdef VENDOR_EDIT
+	/*Feng.Hu@Camera.Driver 20171121 add for lm3642, mp3331*/
+	{0, 0, 0, "flashlights-lm3642", 0, 0},
+	{0, 0, 1, "flashlights-aw3642", 0, 0},
+	{0, 0, 0, "flashlights-mp3331", 0, 0},
+        #endif
+	#endif
 	{0, 0, 0, "flashlights-none", -1, 0},
 	{0, 1, 0, "flashlights-none", -1, 0},
 	{1, 0, 0, "flashlights-none", -1, 0},

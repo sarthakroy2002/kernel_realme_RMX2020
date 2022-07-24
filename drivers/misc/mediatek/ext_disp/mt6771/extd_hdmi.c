@@ -33,8 +33,6 @@
 #include <linux/module.h>
 #include <linux/list.h>
 /*#include <linux/switch.h>*/
-#include <linux/extcon.h>
-
 #include <linux/types.h>
 #include <linux/uaccess.h>
 #include <linux/atomic.h>
@@ -390,8 +388,6 @@ void hdmi_cable_fake_plug_in(void)
 	/* notify_uevent_user(&hdmi_notify_data,
 	 *HDMI_STATE_ACTIVE);
 	 */
-	extcon_set_state_sync(hdmi_extcon,
-				EXTCON_DISP_HDMI, HDMI_STATE_ACTIVE);
 	notify_uevent_user(&hdmi_notify_data,
 				HDMI_STATE_ACTIVE);
 }
@@ -415,8 +411,6 @@ void hdmi_cable_fake_plug_out(void)
 				 *		 HDMI_STATE_NO_DEVICE);
 				 *notify_uevent_user(&hdmires_notify_data, 0);
 				 */
-			extcon_set_state_sync(hdmi_extcon,
-				EXTCON_DISP_HDMI, HDMI_STATE_NO_DEVICE);
 			notify_uevent_user(&hdmi_notify_data,
 					HDMI_STATE_NO_DEVICE);
 			notify_uevent_user(&hdmires_notify_data, 0);
@@ -857,18 +851,13 @@ static void hdmi_state_reset(void)
 	HDMI_FUNC();
 
 	if (hdmi_drv->get_state() == HDMI_STATE_ACTIVE) {
-		if (enable_ut != 1) {
-			extcon_set_state_sync(hdmi_extcon,
-				EXTCON_DISP_HDMI, HDMI_STATE_ACTIVE);
+		if (enable_ut != 1)
 			notify_uevent_user(&hdmi_notify_data,
 					HDMI_STATE_ACTIVE);
-		}
 		/*hdmi_enable_dvfs(true);*/
 		hdmi_reschange = HDMI_VIDEO_RESOLUTION_NUM;
 	} else {
 		if (enable_ut != 1) {
-			extcon_set_state_sync(hdmi_extcon,
-				EXTCON_DISP_HDMI, HDMI_STATE_NO_DEVICE);
 			notify_uevent_user(&hdmi_notify_data,
 					 HDMI_STATE_NO_DEVICE);
 			notify_uevent_user(&hdmires_notify_data, 0);
@@ -963,8 +952,6 @@ void hdmi_power_on(void)
 		if (IS_HDMI_FAKE_PLUG_IN()) {
 			hdmi_resume();
 			msleep(1000);
-			extcon_set_state_sync(hdmi_extcon,
-				EXTCON_DISP_HDMI, HDMI_STATE_ACTIVE);
 			notify_uevent_user(&hdmi_notify_data,
 					HDMI_STATE_ACTIVE);
 			hdmi_reschange = HDMI_VIDEO_RESOLUTION_NUM;
@@ -1201,8 +1188,6 @@ void hdmi_state_callback(enum HDMI_STATE state)
 		 */
 #endif
 		hdmi_suspend();
-		extcon_set_state_sync(hdmi_extcon,
-				EXTCON_DISP_HDMI, HDMI_STATE_NO_DEVICE);
 		notify_uevent_user(&hdmi_notify_data,
 					HDMI_STATE_NO_DEVICE);
 		notify_uevent_user(&hdmires_notify_data, 0);
@@ -1228,8 +1213,6 @@ void hdmi_state_callback(enum HDMI_STATE state)
 
 		if (atomic_read(&p->state) > HDMI_POWER_STATE_OFF) {
 			hdmi_reschange = HDMI_VIDEO_RESOLUTION_NUM;
-			extcon_set_state_sync(hdmi_extcon,
-				EXTCON_DISP_HDMI, HDMI_STATE_ACTIVE);
 			notify_uevent_user(&hdmi_notify_data,
 					HDMI_STATE_ACTIVE);
 			/*hdmi_enable_dvfs(true);*/
@@ -1287,8 +1270,6 @@ int hdmi_enable(int enable)
 		hdmi_power_off();
 		hdmi_drv_deinit();
 		/* when disable hdmi, HPD is disabled */
-		extcon_set_state_sync(hdmi_extcon,
-				EXTCON_DISP_HDMI, HDMI_STATE_NO_DEVICE);
 		notify_uevent_user(&hdmi_notify_data,
 					HDMI_STATE_NO_DEVICE);
 
@@ -1317,8 +1298,6 @@ int hdmi_power_enable(int enable)
 		hdmi_power_on();
 	} else {
 		hdmi_power_off();
-		extcon_set_state_sync(hdmi_extcon,
-				EXTCON_DISP_HDMI, HDMI_STATE_NO_DEVICE);
 		notify_uevent_user(&hdmi_notify_data,
 					HDMI_STATE_NO_DEVICE);
 	}
@@ -1345,8 +1324,6 @@ void hdmi_force_disable(int enable)
 		if (IS_HDMI_FAKE_PLUG_IN() ||
 		    (hdmi_drv->get_state() == HDMI_STATE_ACTIVE)) {
 			hdmi_suspend();
-			extcon_set_state_sync(hdmi_extcon,
-				EXTCON_DISP_HDMI, HDMI_STATE_NO_DEVICE);
 			notify_uevent_user(&hdmi_notify_data,
 					 HDMI_STATE_NO_DEVICE);
 			notify_uevent_user(&hdmires_notify_data, 0);
@@ -1361,8 +1338,6 @@ void hdmi_force_disable(int enable)
 		    (hdmi_drv->get_state() == HDMI_STATE_ACTIVE)) {
 			hdmi_resume();
 			msleep(1000);
-			extcon_set_state_sync(hdmi_extcon,
-				EXTCON_DISP_HDMI, HDMI_STATE_ACTIVE);
 			notify_uevent_user(&hdmi_notify_data,
 					HDMI_STATE_ACTIVE);
 			hdmi_reschange = HDMI_VIDEO_RESOLUTION_NUM;

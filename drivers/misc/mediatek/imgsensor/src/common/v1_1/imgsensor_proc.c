@@ -30,8 +30,7 @@ static int pdaf_type_info_read(struct seq_file *m, void *v)
 	unsigned int len = bufsz;
 	char pdaf_type_info[bufsz];
 
-	struct SENSOR_FUNCTION_STRUCT *psensor_func =
-	    gimgsensor.sensor[IMGSENSOR_SENSOR_IDX_MAIN].pfunc;
+	struct SENSOR_FUNCTION_STRUCT *psensor_func = gimgsensor.sensor[IMGSENSOR_SENSOR_IDX_MAIN].pfunc;
 
 	memset(pdaf_type_info, 0, 512);
 
@@ -60,8 +59,7 @@ static ssize_t proc_SensorType_write(struct file *file,
 	u32 u4CopyBufSize =
 		(count < (sizeof(regBuf) - 1)) ? (count) : (sizeof(regBuf) - 1);
 
-	struct SENSOR_FUNCTION_STRUCT *psensor_func =
-	    gimgsensor.sensor[IMGSENSOR_SENSOR_IDX_MAIN].pfunc;
+	struct SENSOR_FUNCTION_STRUCT *psensor_func = gimgsensor.sensor[IMGSENSOR_SENSOR_IDX_MAIN].pfunc;
 
 	if (copy_from_user(regBuf, buffer, u4CopyBufSize))
 		return -EFAULT;

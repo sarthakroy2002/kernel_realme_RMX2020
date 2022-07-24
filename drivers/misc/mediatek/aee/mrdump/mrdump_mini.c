@@ -21,7 +21,6 @@
 #include <linux/vmalloc.h>
 #include <linux/bug.h>
 #include <linux/compiler.h>
-#include <linux/printk.h>
 #include <linux/sizes.h>
 #include <linux/spinlock.h>
 #include <linux/stacktrace.h>
@@ -73,11 +72,12 @@ static char modules_info_buf[MODULES_INFO_BUF_SIZE];
 
 static bool dump_all_cpus;
 
+#if defined(CONFIG_GZ_LOG)
 __weak void get_gz_log_buffer(unsigned long *addr, unsigned long *paddr,
 			unsigned long *size, unsigned long *start)
 {
-	*addr = *paddr = *size = *start = 0;
 }
+#endif
 
 __weak void get_disp_err_buffer(unsigned long *addr, unsigned long *size,
 		unsigned long *start)
@@ -778,6 +778,7 @@ static void mrdump_mini_build_elf_misc(void)
 	unsigned long task_info_va =
 	    (unsigned long)((void *)mrdump_mini_ehdr + MRDUMP_MINI_HEADER_SIZE);
 	unsigned long task_info_pa = 0;
+#if defined(CONFIG_GZ_LOG)
 	unsigned long gz_log_pa = 0;
 
 	memset_io(&misc, 0, sizeof(struct mrdump_mini_elf_misc));
@@ -785,6 +786,7 @@ static void mrdump_mini_build_elf_misc(void)
 	if (gz_log_pa != 0)
 		mrdump_mini_add_misc_pa(misc.vaddr, gz_log_pa, misc.size,
 					misc.start, "_GZ_LOG_");
+#endif
 	if (mrdump_mini_addr != 0
 		&& mrdump_mini_size != 0
 		&& MRDUMP_MINI_HEADER_SIZE < mrdump_mini_size) {
@@ -826,12 +828,6 @@ static void mrdump_mini_build_elf_misc(void)
 	get_pidmap_aee_buffer(&misc.vaddr, &misc.size);
 	misc.start = 0;
 	mrdump_mini_add_misc(misc.vaddr, misc.size, misc.start, "_PIDMAP_");
-
-	memset_io(&misc, 0, sizeof(struct mrdump_mini_elf_misc));
-	misc.vaddr = (unsigned long)(void *)linux_banner;
-	misc.size = strlen(linux_banner);
-	misc.start = 0;
-	mrdump_mini_add_misc(misc.vaddr, misc.size, misc.start, "_VERSION_BR");
 }
 
 static void mrdump_mini_add_loads(void)
@@ -914,11 +910,14 @@ static void *remap_lowmem(phys_addr_t start, phys_addr_t size)
 	struct page **pages;
 	phys_addr_t page_start;
 	unsigned int page_count;
+	pgprot_t prot;
 	unsigned int i;
 	void *vaddr;
 
 	page_start = start - offset_in_page(start);
 	page_count = DIV_ROUND_UP(size + offset_in_page(start), PAGE_SIZE);
+
+	prot = pgprot_noncached(PAGE_KERNEL);
 
 	pages = kmalloc_array(page_count, sizeof(struct page *), GFP_KERNEL);
 	if (!pages) {
@@ -932,7 +931,7 @@ static void *remap_lowmem(phys_addr_t start, phys_addr_t size)
 
 		pages[i] = pfn_to_page(addr >> PAGE_SHIFT);
 	}
-	vaddr = vmap(pages, page_count, VM_MAP, PAGE_KERNEL);
+	vaddr = vmap(pages, page_count, VM_MAP, prot);
 	kfree(pages);
 	if (!vaddr) {
 		LOGE("%s: Failed to map %u pages\n", __func__, page_count);

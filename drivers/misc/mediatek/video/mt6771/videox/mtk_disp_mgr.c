@@ -80,6 +80,24 @@
 #include "ddp_irq.h"
 #include "ddp_rsz.h"
 
+#ifdef VENDOR_EDIT
+/* Yongpeng.Yi@PSW.MultiMedia.Display.LCD.Feature, 2018/09/10, Add for sau and silence close backlight */
+#include <mt-plat/mtk_boot_common.h>
+/*
+ * Hao.lin@PSW.MM.Display.LCD.Stability, 2019/11/07,
+ * modify for fingerprint notify frigger
+ */
+#include <soc/oppo/oppo_project.h>
+#include <linux/fb.h>
+extern bool flag_lcd_off;
+extern bool oppo_fp_notify_down_delay;
+extern bool oppo_fp_notify_up_delay;
+extern void fingerprint_send_notify(struct fb_info *fbi, uint8_t fingerprint_op_mode);
+extern bool ds_rec_fpd;
+extern bool doze_rec_fpd;
+extern unsigned long silence_mode;
+extern unsigned int fp_silence_mode;
+#endif /*VENDOR_EDIT*/
 #define DDP_OUTPUT_LAYID 4
 
 #if defined(MTK_FB_SHARE_WDMA0_SUPPORT)
@@ -921,8 +939,9 @@ static int do_frame_config(struct frame_queue_t *frame_node)
 	struct disp_frame_cfg_t *cfg = &frame_node->frame_cfg;
 	int s_type = DISP_SESSION_TYPE(cfg->session_id);
 
-	if (s_type == DISP_SESSION_PRIMARY)
+	if (s_type == DISP_SESSION_PRIMARY){
 		primary_display_frame_cfg(cfg);
+	}
 #if ((defined CONFIG_MTK_HDMI_SUPPORT) || \
 	(defined(CONFIG_MTK_DUAL_DISPLAY_SUPPORT) && \
 	(CONFIG_MTK_DUAL_DISPLAY_SUPPORT == 2)))
@@ -935,6 +954,16 @@ static int do_frame_config(struct frame_queue_t *frame_node)
 		DISPWARN("invalid session:0x%08x\n", cfg->session_id);
 		return -1;
 	}
+        #ifdef VENDOR_EDIT
+	/*
+	* Ling.Guo@PSW.MM.Display.LCD.Stability, 2019/01/21,
+	* add for fingerprint notify frigger
+	*/
+	if (oppo_fp_notify_up_delay && ((cfg->hbm_en & 0x2) == 0)) {
+		oppo_fp_notify_up_delay = false;
+		fingerprint_send_notify(NULL, 0);
+	}
+	#endif
 
 	return 0;
 }
@@ -1151,6 +1180,12 @@ int _ioctl_get_display_caps(unsigned long arg)
 	if (disp_helper_get_option(DISP_OPT_RPO))
 		caps_info.disp_feature |= DISP_FEATURE_RPO;
 
+	#ifdef VENDOR_EDIT
+	/*Yongpeng.Yi@PSW.MM.Display.Feature,2018/10/08,Add for Aod feature */
+	/* add read HW config to decide enable AOD or not */
+	if (disp_helper_get_option(DISP_OPT_AOD) == 0)
+		caps_info.disp_feature |= DISP_FEATURE_FORCE_DISABLE_AOD;
+	#endif /*VENDOR_EDIT*/
 	if (disp_helper_get_option(DISP_OPT_RSZ) ||
 	    disp_helper_get_option(DISP_OPT_RPO)) {
 		caps_info.rsz_in_max[0] = RSZ_TILE_LENGTH -
@@ -1532,6 +1567,13 @@ long mtk_disp_mgr_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		return _ioctl_get_info(arg);
 	case DISP_IOCTL_GET_DISPLAY_CAPS:
 		return _ioctl_get_display_caps(arg);
+#ifdef VENDOR_EDIT
+/* Xinqin.Yang@Cam.Tuning.Display, 2018/11/17, add for multi-lcms */
+	case DISP_IOCTL_GET_LCM_MODULE_INFO:
+		{
+			return _ioctl_get_lcm_module_info(arg);
+		}
+#endif /* VENDOR_EDIT */
 	case DISP_IOCTL_GET_VSYNC_FPS:
 		return _ioctl_get_vsync(arg);
 	case DISP_IOCTL_SET_VSYNC_FPS:
@@ -1782,6 +1824,19 @@ static int mtk_disp_mgr_probe(struct platform_device *pdev)
 	class_dev = (struct class_device *)device_create(mtk_disp_mgr_class,
 						NULL, mtk_disp_mgr_devno,
 						NULL, DISP_SESSION_DEVICE);
+
+	#ifdef VENDOR_EDIT
+
+/* Yongpeng.Yi@PSW.MultiMedia.Display.LCD.Feature, 2018/09/10, Add for sau and silence close backlight */
+	if ((oppo_boot_mode == OPPO_SILENCE_BOOT)
+			||(get_boot_mode() == OPPO_SAU_BOOT))
+	{
+		printk("%s OPPO_SILENCE_BOOT set silence_mode to 1\n", __func__);
+		silence_mode = 1;
+		fp_silence_mode = 1;
+	}
+#endif /*VENDOR_EDIT*/
+
 	disp_sync_init();
 
 	external_display_control_init();

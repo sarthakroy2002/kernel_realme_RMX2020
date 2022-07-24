@@ -63,7 +63,12 @@
 /* ADC resistor  */
 #define R_BAT_SENSE	4
 #define R_I_SENSE	4
+#ifdef VENDOR_EDIT
+/* Jianchao.Shi@PSW.BSP.CHG.Basic, 2018/10/15, sjc Modify for charging */
+#define R_CHARGER_1	300
+#else
 #define R_CHARGER_1	330
+#endif
 #define R_CHARGER_2	39
 
 
@@ -100,8 +105,15 @@
 #define CALI_CAR_TUNE_AVG_NUM	60
 
 /* Aging Compensation 1*/
-#define AGING_FACTOR_MIN 75
+#ifndef VENDOR_EDIT
+/* Yichun.Chen  PSW.BSP.CHG  2019-07-23  for aging issue */
+#define AGING_FACTOR_MIN 10
+#define AGING_FACTOR_DIFF 90
+#else
+#define AGING_FACTOR_MIN 85
 #define AGING_FACTOR_DIFF 10
+#endif
+
 #define DIFFERENCE_VOLTAGE_UPDATE 50
 #define AGING_ONE_EN 1
 #define AGING1_UPDATE_SOC 30

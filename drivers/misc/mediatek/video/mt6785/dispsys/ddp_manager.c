@@ -918,11 +918,7 @@ int dpmgr_path_start(disp_path_handle dp_handle, int encmdq)
 	struct ddp_path_handle *handle;
 	struct cmdqRecStruct *cmdqHandle;
 
-	if (!dp_handle) {
-		ASSERT(0);
-		return -1;
-	}
-
+	ASSERT(dp_handle != NULL);
 	handle = (struct ddp_path_handle *)dp_handle;
 	cmdqHandle = encmdq ? handle->cmdqhandle : NULL;
 
@@ -934,11 +930,7 @@ int dpmgr_path_init(disp_path_handle dp_handle, int encmdq)
 	struct ddp_path_handle *handle;
 	struct cmdqRecStruct *cmdqHandle;
 
-	if (!dp_handle) {
-		ASSERT(0);
-		return -1;
-	}
-
+	ASSERT(dp_handle != NULL);
 	handle = (struct ddp_path_handle *)dp_handle;
 	cmdqHandle = encmdq ? handle->cmdqhandle : NULL;
 
@@ -1487,11 +1479,7 @@ int dpmgr_path_power_off_bypass_pwm(disp_path_handle dp_handle,
 	struct DDP_MANAGER_CONTEXT *c = _get_context();
 	struct DDP_MODULE_DRIVER *m_drv;
 
-	if (!dp_handle) {
-		ASSERT(0);
-		return -1;
-	}
-
+	ASSERT(dp_handle != NULL);
 	phandle = (struct ddp_path_handle *)dp_handle;
 	list = ddp_get_scenario_list(phandle->scenario);
 	m_num = ddp_get_module_num(phandle->scenario);

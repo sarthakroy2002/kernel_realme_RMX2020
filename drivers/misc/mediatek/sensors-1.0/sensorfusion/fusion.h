@@ -56,6 +56,14 @@ enum fusion_handle {
 	unmag,
 	pdr,
 	ungyro_temperature,
+#ifdef VENDOR_EDIT
+/*tangjh@PSW.BSP.Sensor, 2019/7/1, Add for oppo algo*/
+	ffd,
+	free_fall,
+	pickup_motion,
+	action_detect,
+	lux_aod,
+#endif /*VENDOR_EDIT*/
 	max_fusion_support,
 };
 
@@ -157,4 +165,23 @@ int uncali_gyro_temperature_flush_report(void);
 int uncali_gyro_flush_report(void);
 int uncali_mag_data_report(int *data, int status, int64_t nt);
 int uncali_mag_flush_report(void);
+#ifdef VENDOR_EDIT
+/*tangjh@PSW.BSP.Sensor, 2019/7/1, Add for oppo algo*/
+extern int ffd_data_report(int x, int y, int64_t nt);
+extern int ffd_flush_report(void);
+
+extern int free_fall_data_report(int x, int y, int z, int64_t nt);
+extern int free_fall_flush_report(void);
+
+extern int pickup_motion_data_report(int x, int y, int64_t nt);
+extern int pickup_motion_flush_report(void);
+
+extern int action_detect_data_report(int x, int y, int64_t nt);
+extern int action_detect_flush_report(void);
+
+extern int lux_aod_data_report(int x, int y, int64_t nt);
+extern int lux_aod_flush_report(void);
+
+
+#endif /*VENDOR_EDIT*/
 #endif

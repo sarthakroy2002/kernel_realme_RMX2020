@@ -49,7 +49,12 @@ typedef int (*cust_set_brightness) (int level);
 /* 10bit backlight level */
 #define LED_INCREASE_LED_LEVEL_MTKPATCH
 #ifdef LED_INCREASE_LED_LEVEL_MTKPATCH
-#define MT_LED_INTERNAL_LEVEL_BIT_CNT 10
+#ifdef ODM_WT_EDIT
+//Hao.liang@ODM_WT.MM.Display.Lcd, 2019/10/30, LCD backlight switch 8bit to 11bit
+	#define MT_LED_INTERNAL_LEVEL_BIT_CNT 11
+#else
+	#define MT_LED_INTERNAL_LEVEL_BIT_CNT 10
+#endif
 #endif
 
 /******************************************************************************

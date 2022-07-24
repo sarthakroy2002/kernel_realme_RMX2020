@@ -135,10 +135,6 @@ static ssize_t gz_test_store(struct device *dev,
 		KREE_DEBUG("test chunk memory\n");
 		th = kthread_run(chunk_memory_ut, NULL, "MCM UT");
 		break;
-	case '6':
-		KREE_DEBUG("test VReg\n");
-		th = kthread_run(vreg_test, NULL, "GZ VReg test");
-		break;
 	case 'C':
 		KREE_DEBUG("test GZ Secure Storage\n");
 		th = kthread_run(test_SecureStorageBasic, NULL,
@@ -184,14 +180,7 @@ static int get_gz_version(void *args)
 	int i;
 	int version_str_len;
 	char *version_str;
-	struct device *trusty_dev;
-
-	if (IS_ERR_OR_NULL(tz_system_dev)) {
-		KREE_ERR("GZ kree is not initialized\n");
-		return TZ_RESULT_ERROR_NO_DATA;
-	}
-
-	trusty_dev = tz_system_dev->dev.parent;
+	struct device *trusty_dev = tz_system_dev->dev.parent;
 
 	ret = trusty_fast_call32(trusty_dev,
 				MTEE_SMCNR(SMCF_FC_GET_VERSION_STR, trusty_dev),
@@ -403,11 +392,6 @@ static int _unregister_session_info(struct file *fp,
 
 int mtee_sdsp_enable(u32 on)
 {
-	if (IS_ERR_OR_NULL(tz_system_dev)) {
-		KREE_ERR("GZ kree is not initialized\n");
-		return TZ_RESULT_ERROR_NO_DATA;
-	}
-
 	return trusty_std_call32(tz_system_dev->dev.parent,
 			MTEE_SMCNR(MT_SMCF_SC_VPU, tz_system_dev->dev.parent),
 			on, 0, 0);
@@ -1542,8 +1526,6 @@ static int find_big_core(int *big_core_first, int *big_core_last)
 static int __init gz_init(void)
 {
 	int res;
-
-	tz_system_dev = NULL;
 
 	res = create_files();
 	if (res) {

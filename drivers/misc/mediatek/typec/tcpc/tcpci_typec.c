@@ -1989,6 +1989,13 @@ int tcpc_typec_handle_cc_change(struct tcpc_device *tcpc_dev)
 	u8 typec_state_old = tcpc_dev->typec_state;
 #endif /* CONFIG_WATER_DETECTION */
 
+#ifdef ODM_WT_EDIT
+/*Junbo.Guo@ODM_WT.BSP.CHG 2019/12/07,9v charger spec*/
+#ifdef CONFIG_TYPEC_CAP_NORP_SRC
+	typec_try_exit_norp_src(tcpc_dev);
+#endif	/* CONFIG_TYPEC_CAP_NORP_SRC */
+#endif
+
 	rp_present = typec_get_rp_present_flag(tcpc_dev);
 
 	ret = tcpci_get_cc(tcpc_dev);
@@ -2001,11 +2008,12 @@ int tcpc_typec_handle_cc_change(struct tcpc_device *tcpc_dev)
 			typec_enter_low_power_mode(tcpc_dev);
 		return 0;
 	}
-
+#ifndef ODM_WT_EDIT
+/*Junbo.Guo@ODM_WT.BSP.CHG 2019/12/07,9v charger spec*/
 #ifdef CONFIG_TYPEC_CAP_NORP_SRC
 	typec_try_exit_norp_src(tcpc_dev);
 #endif	/* CONFIG_TYPEC_CAP_NORP_SRC */
-
+#endif
 	TYPEC_INFO("[CC_Alert] %d/%d\r\n", typec_get_cc1(), typec_get_cc2());
 
 	typec_disable_low_power_mode(tcpc_dev);

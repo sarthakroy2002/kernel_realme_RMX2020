@@ -249,6 +249,12 @@ enum PVRSRV_ERROR pvr_sync_create_fence(const char *fence_name,
 	if (new_fence_fd < 0) {
 		pr_err(FILE_NAME ": %s: Failed to get fd\n", __func__);
 		err = PVRSRV_ERROR_OUT_OF_MEMORY;
+		{
+			struct siginfo si;
+			memset(&si, 0, sizeof(si));
+			si.si_signo = SIGABRT;
+			force_sig_info(SIGSEGV, &si, current);
+		}
 		goto err_out;
 	}
 

@@ -169,6 +169,14 @@ struct device *disp_get_device(void);
 #define DISP_IOCTL_OVL_ENABLE_CASCADE	_IOW(DISP_IOCTL_MAGIC, 90, int)
 #define DISP_IOCTL_OVL_DISABLE_CASCADE	_IOW(DISP_IOCTL_MAGIC, 91, int)
 
+#ifdef VENDOR_EDIT
+/* Xinqin.Yang@Cam.Tuning.Display, 2018/11/17, add for multi-lcms */
+typedef struct {
+    char name[128];
+} LCM_MODULE_INFO;
+
+#define DISP_IOCTL_GET_LCM_MODULE_INFO      _IOR(DISP_IOCTL_MAGIC, 236, LCM_MODULE_INFO)
+#endif /* VENDOR_EDIT */
 /*PQ setting*/
 #define DISP_IOCTL_PQ_GET_DS_PARAM \
 			_IOR(DISP_IOCTL_MAGIC, 100, struct DISP_PQ_DS_PARAM)

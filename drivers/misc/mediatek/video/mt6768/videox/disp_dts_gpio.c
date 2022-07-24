@@ -29,8 +29,18 @@ static const char *this_state_name[DTS_GPIO_STATE_MAX] = {
 	"lcm_rst_out1_gpio",
 	"lcm1_rst_out0_gpio",
 	"lcm1_rst_out1_gpio",
+#ifdef ODM_WT_EDIT
+//Hao.Liang@ODM_WT.MM.Display.Lcd, 2019/9/25, LCD voltage control
 	"lcd_bias_enp0_gpio",
 	"lcd_bias_enp1_gpio",
+	"lcd_bias_enn0_gpio",
+	"lcd_bias_enn1_gpio",
+	"lcd_vddio18_en0_gpio",
+	"lcd_vddio18_en1_gpio"
+#else
+	"lcd_bias_enp0_gpio",
+	"lcd_bias_enp1_gpio",
+#endif
 	"tp_rst_out1_gpio",
 	"tp_rst_out0_gpio"
 };

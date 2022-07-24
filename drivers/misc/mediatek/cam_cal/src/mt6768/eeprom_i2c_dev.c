@@ -11,7 +11,16 @@
  * See http://www.gnu.org/licenses/gpl-2.0.html for more details.
  */
 #include "eeprom_i2c_dev.h"
-
+#ifdef ODM_WT_EDIT
+/* Zhen.Quan@Camera.Driver, 2019/10/17, add for [otp bringup] */
+static enum EEPROM_I2C_DEV_IDX gi2c_dev_sel[IMGSENSOR_SENSOR_IDX_MAX_NUM] = {
+	I2C_DEV_IDX_1, /* main */
+	I2C_DEV_IDX_2, /* sub */
+	I2C_DEV_IDX_2, /* main2 */
+	I2C_DEV_IDX_2, /* sub2 */
+	I2C_DEV_IDX_2, /* main3 */
+};
+#else
 static enum EEPROM_I2C_DEV_IDX gi2c_dev_sel[IMGSENSOR_SENSOR_IDX_MAX_NUM] = {
 	I2C_DEV_IDX_1, /* main */
 	I2C_DEV_IDX_2, /* sub */
@@ -19,7 +28,7 @@ static enum EEPROM_I2C_DEV_IDX gi2c_dev_sel[IMGSENSOR_SENSOR_IDX_MAX_NUM] = {
 	I2C_DEV_IDX_1, /* sub2 */
 	I2C_DEV_IDX_3, /* main3 */
 };
-
+#endif /* ODM_WT_EDIT */
 enum EEPROM_I2C_DEV_IDX get_i2c_dev_sel(enum IMGSENSOR_SENSOR_IDX idx)
 {
 	if (idx < IMGSENSOR_SENSOR_IDX_MAX_NUM)

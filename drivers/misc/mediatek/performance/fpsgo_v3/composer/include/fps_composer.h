@@ -30,7 +30,10 @@ struct connect_api_info {
 	int pid;
 	int tgid;
 	unsigned long long buffer_id;
-	int buffer_key;
+#ifdef ODM_WT_EDIT
+//Baidabin@ODM_WT.BSP.Kernel.Boot, 2020/01/10, Add for Increase accuracy of buffer_key in composer rb_tree
+	unsigned long long buffer_key;
+#endif	
 	int api;
 };
 

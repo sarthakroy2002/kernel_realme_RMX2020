@@ -79,8 +79,6 @@ static unsigned int g_LogBufIdx = 1;
 static unsigned int AFg_LogBufIdx[2] = {1, 1};
 
 static int _ccu_powerdown(void);
-static int ccu_irq_enable(void);
-static int ccu_irq_disable(void);
 
 static inline unsigned int CCU_MsToJiffies(unsigned int Ms)
 {
@@ -131,12 +129,6 @@ irqreturn_t ccu_isr_handler(int irq, void *dev_id)
 
 	/*write clear mode*/
 	LOG_DBG("write clear mode\n");
-	if (!ccuInfo.IsCcuPoweredOn) {
-		LOG_DBG_MUST("CCU off no need to service isr (%d)",
-			ccuInfo.IsCcuPoweredOn);
-		return IRQ_HANDLED;
-	}
-
 	ccu_write_reg(ccu_base, EINTC_CLR, 0xFF);
 	LOG_DBG("read clear mode\n");
 	ccu_read_reg(ccu_base, EINTC_ST);
@@ -148,7 +140,7 @@ while (1) {
 	mailboxRet = mailbox_receive_cmd(&receivedCcuCmd);
 
 	if (mailboxRet == MAILBOX_QUEUE_EMPTY) {
-		LOG_DBG_MUST("MAIL_BOX IS EMPTY");
+		LOG_DBG("MAIL_BOX IS EMPTY");
 		goto ISR_EXIT;
 	}
 
@@ -578,7 +570,6 @@ int ccu_power(struct ccu_power_s *power)
 
 		ccuInfo.IsI2cPoweredOn = 1;
 		ccuInfo.IsCcuPoweredOn = 1;
-		ccu_irq_enable();
 
 	} else if (power->bON == 0) {
 		/*CCU Power off*/
@@ -632,7 +623,6 @@ int ccu_power(struct ccu_power_s *power)
 	} else if (power->bON == 4) {
 		/*CCU boot fail, just enable CG*/
 
-		ccu_irq_disable();
 		ccu_clock_disable();
 		ccuInfo.IsCcuPoweredOn = 0;
 
@@ -664,7 +654,10 @@ int ccu_force_powerdown(void)
 		if (ret < 0)
 			return ret;
 
+		#ifdef VENDOR_EDIT
+		/* Added by shileishu@Camera 20190106 for switching speed ALPS04222037 */
 		mdelay(60);
+		#endif
 		LOG_WARN("CCU force shutdown success\n");
 	}
 
@@ -697,7 +690,6 @@ static int _ccu_powerdown(void)
 	/*Set CCU_A_RESET. CCU_HW_RST=1*/
 	ccu_write_reg_bit(ccu_base, RESET, CCU_HW_RST, 1);
 	/*CCF*/
-	ccu_irq_disable();
 	ccu_clock_disable();
 
 	spin_lock_irqsave(&ccuInfo.SpinLockI2cPower, flags);
@@ -941,25 +933,4 @@ int ccu_read_info_reg(int regNo)
 int ccu_query_power_status(void)
 {
 	return ccuInfo.IsCcuPoweredOn;
-}
-
-int ccu_irq_enable(void)
-{
-	int ret = 0;
-
-	LOG_DBG_MUST("%s+.\n", __func__);
-	if (request_irq(ccu_dev->irq_num, ccu_isr_handler,
-		IRQF_TRIGGER_NONE, "ccu", NULL)) {
-		LOG_ERR("fail to request ccu irq!\n");
-		ret = -ENODEV;
-	}
-
-	return 0;
-}
-
-int ccu_irq_disable(void)
-{
-	LOG_DBG_MUST("%s+.\n", __func__);
-	free_irq(ccu_dev->irq_num, NULL);
-	return 0;
 }

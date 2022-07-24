@@ -499,6 +499,14 @@ static struct BTS_TEMPERATURE BTS_Temperature_Table7[] = {
 	{125, 2522}
 };
 
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/11/21, add for ap temp monitor*/
+static int ap_temp = 25000;
+int get_ap_temp(void)
+{
+	return ap_temp;
+}
+#endif /*ODM_WT_EDIT*/
 
 /* convert register to temperature  */
 static __s16 mtkts_bts_thermistor_conver_temp(__s32 Res)
@@ -726,7 +734,10 @@ int mtkts_bts_get_hw_temp(void)
 
 	if (t_ret > 40000)	/* abnormal high temp */
 		mtkts_bts_printk("T_AP=%d\n", t_ret);
-
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/11/21, add for ap temp monitor*/
+	ap_temp = t_ret;
+#endif /*ODM_WT_EDIT*/
 	mtkts_bts_dprintk("[%s] T_AP, %d\n", __func__, t_ret);
 	return t_ret;
 }

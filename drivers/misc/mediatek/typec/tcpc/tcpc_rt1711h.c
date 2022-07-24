@@ -28,8 +28,12 @@
 #include <linux/kthread.h>
 #include <linux/cpu.h>
 #include <linux/version.h>
-#include <linux/wakelock.h>
-
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/10, Monet X  charger bring up*/
+#include <linux/pm_wakeup.h>
+#include <linux/sched/clock.h>
+#include <uapi/linux/sched/types.h>
+#endif /*ODM_WT_EDIT*/
 #include "inc/pd_dbg_info.h"
 #include "inc/tcpci.h"
 #include "inc/rt1711h.h"
@@ -43,6 +47,12 @@
 #endif /* #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0)) */
 
 /* #define DEBUG_GPIO	66 */
+
+#ifdef ODM_WT_EDIT
+//Junbo.Guo@ODM_WT.BSP.CHG, 2019/11/11, Modify for TCPC 
+#include <soc/oppo/oppo_project.h>
+extern unsigned int is_project(OPPO_PROJECT project );
+#endif /*ODM_WT_EDIT*/
 
 #define RT1711H_DRV_VERSION	"2.0.1_MTK"
 
@@ -374,9 +384,11 @@ static int rt1711_regmap_init(struct rt1711_chip *chip)
 
 	if ((!props->name) || (!props->aliases))
 		return -ENOMEM;
-
-	strlcpy((char *)props->name, name, strlen(name)+1);
-	strlcpy((char *)props->aliases, name, strlen(name)+1);
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/10, Monet X  charger bring up*/
+	strlcpy((char *)props->name, name, len+1);
+	strlcpy((char *)props->aliases, name, len+1);
+#endif /*ODM_WT_EDIT*/
 	props->io_log_en = 0;
 
 	chip->m_dev = rt_regmap_device_register(props,
@@ -1207,11 +1219,39 @@ static int rt1711_set_bist_test_mode(struct tcpc_device *tcpc, bool en)
 	return rt1711_i2c_write8(tcpc, TCPC_V10_REG_TCPC_CTRL, data);
 }
 #endif /* CONFIG_USB_POWER_DELIVERY */
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/10, Monet X  charger bring up*/
+int rt1711_get_alert_mask(struct tcpc_device *tcpc, uint32_t *mask)
+{
+	int ret;
+#ifdef CONFIG_TCPC_VSAFE0V_DETECT_IC
+	uint8_t v2;
+#endif
 
+	ret = rt1711_i2c_read16(tcpc, TCPC_V10_REG_ALERT_MASK);
+	if (ret < 0)
+		return ret;
+	*mask = (uint16_t) ret;
+
+#ifdef CONFIG_TCPC_VSAFE0V_DETECT_IC
+	ret = rt1711_i2c_read8(tcpc, RT1711H_REG_RT_MASK);
+	if (ret < 0)
+		return ret;
+
+	v2 = (uint8_t) ret;
+	*mask |= v2 << 16;
+#endif
+	return 0;
+}
+#endif /*ODM_WT_EDIT*/
 static struct tcpc_ops rt1711_tcpc_ops = {
 	.init = rt1711_tcpc_init,
 	.alert_status_clear = rt1711_alert_status_clear,
 	.fault_status_clear = rt1711_fault_status_clear,
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/10, Monet X  charger bring up*/
+	.get_alert_mask = rt1711_get_alert_mask,
+#endif /*ODM_WT_EDIT*/
 	.get_alert_status = rt1711_get_alert_status,
 	.get_power_status = rt1711_get_power_status,
 	.get_fault_status = rt1711_get_fault_status,
@@ -1335,7 +1375,14 @@ static int rt1711_tcpcdev_init(struct rt1711_chip *chip, struct device *dev)
 	struct device_node *np = dev->of_node;
 	u32 val, len;
 	const char *name = "default";
-
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/10, Monet X  charger bring up*/	
+    np = of_find_node_by_name(NULL, "type_c_port0");
+    if (!np) {
+   		pr_err("%s find node rt1711 fail\n", __func__);
+		return -ENODEV;
+	}
+#endif /*ODM_WT_EDIT*/
 	desc = devm_kzalloc(dev, sizeof(*desc), GFP_KERNEL);
 	if (!desc)
 		return -ENOMEM;
@@ -1393,8 +1440,10 @@ static int rt1711_tcpcdev_init(struct rt1711_chip *chip, struct device *dev)
 	if (!desc->name)
 		return -ENOMEM;
 
-	strlcpy((char *)desc->name, name, strlen(name)+1);
-
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/10, Monet X  charger bring up*/
+	strlcpy((char *)desc->name, name, len+1);
+#endif /*ODM_WT_EDIT*/
 	chip->tcpc_desc = desc;
 
 	chip->tcpc = tcpc_device_register(dev,
@@ -1479,6 +1528,14 @@ static int rt1711_i2c_probe(struct i2c_client *client,
 	bool use_dt = client->dev.of_node;
 
 	pr_info("%s\n", __func__);
+	
+#ifdef ODM_WT_EDIT
+//Junbo.Guo@ODM_WT.BSP.CHG, 2019/11/11, Modify for TCPC 	
+	if(is_project(OPPO_19741)) {	
+		return -ENODEV;
+	}
+#endif /*ODM_WT_EDIT*/
+
 	if (i2c_check_functionality(client->adapter,
 			I2C_FUNC_SMBUS_I2C_BLOCK | I2C_FUNC_SMBUS_BYTE_DATA))
 		pr_info("I2C functionality : OK...\n");
@@ -1509,8 +1566,11 @@ static int rt1711_i2c_probe(struct i2c_client *client,
 	sema_init(&chip->suspend_lock, 1);
 	i2c_set_clientdata(client, chip);
 	INIT_DELAYED_WORK(&chip->poll_work, rt1711_poll_work);
-	wake_lock_init(&chip->irq_wake_lock, WAKE_LOCK_SUSPEND,
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/10, Monet X  charger bring up*/	
+	wakeup_source_init(&chip->irq_wake_lock,
 		"rt1711h_irq_wakelock");
+#endif /*ODM_WT_EDIT*/
 
 	chip->chip_id = chip_id;
 	pr_info("rt1711h_chipID = 0x%0x\n", chip_id);
@@ -1620,11 +1680,16 @@ static const struct dev_pm_ops rt1711_pm_ops = {
 	SET_SYSTEM_SLEEP_PM_OPS(
 			rt1711_i2c_suspend,
 			rt1711_i2c_resume)
+#ifdef ODM_WT_EDIT
+/*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/10, Monet X  charger bring up*/
+#ifdef CONFIG_PM_RUNTIME			
 	SET_RUNTIME_PM_OPS(
 		rt1711_pm_suspend_runtime,
 		rt1711_pm_resume_runtime,
 		NULL
 	)
+#endif
+#endif /*ODM_WT_EDIT*/
 };
 #define RT1711_PM_OPS	(&rt1711_pm_ops)
 #else
