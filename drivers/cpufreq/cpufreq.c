@@ -214,6 +214,13 @@ unsigned int cpufreq_generic_get(unsigned int cpu)
 	return clk_get_rate(policy->clk) / 1000;
 }
 EXPORT_SYMBOL_GPL(cpufreq_generic_get);
+#ifdef VENDOR_EDIT
+struct list_head *get_cpufreq_policy_list(void)
+{
+    return &cpufreq_policy_list;
+}
+EXPORT_SYMBOL(get_cpufreq_policy_list);
+#endif /* VENDOR_EDIT */
 
 /**
  * cpufreq_cpu_get: returns policy for a cpu and marks it busy.
