@@ -2116,13 +2116,27 @@ sd_spinup_disk(struct scsi_disk *sdkp)
 			 * doesn't have any media in it, don't bother
 			 * with any more polling.
 			 */
+#ifdef VENDOR_EDIT
+/* Jianchao.Shi@BSP.CHG.Basic, 2018/06/05, sjc Modify for OTG */
+			if (retries > 25) {
+				if (media_not_present(sdkp, &sshdr))
+					return;
+			}
+#else
 			if (media_not_present(sdkp, &sshdr))
 				return;
+#endif
 
 			if (the_result)
 				sense_valid = scsi_sense_valid(&sshdr);
 			retries++;
+#ifdef VENDOR_EDIT
+/* Jianchao.Shi@BSP.CHG.Basic, 2018/06/05, sjc Modify for OTG */
+		} while (retries < 30 &&
+
+#else
 		} while (retries < 3 && 
+#endif
 			 (!scsi_status_is_good(the_result) ||
 			  ((driver_byte(the_result) & DRIVER_SENSE) &&
 			  sense_valid && sshdr.sense_key == UNIT_ATTENTION)));
@@ -3088,52 +3102,6 @@ static void sd_read_security(struct scsi_disk *sdkp, unsigned char *buffer)
  * unless the reported value is unreasonably small, large, not a
  * multiple of the physical block size, or simply garbage.
  */
-static bool sd_validate_opt_xfer_size(struct scsi_disk *sdkp,
-				      unsigned int dev_max)
-{
-	struct scsi_device *sdp = sdkp->device;
-	unsigned int opt_xfer_bytes =
-		logical_to_bytes(sdp, sdkp->opt_xfer_blocks);
-
-	if (sdkp->opt_xfer_blocks == 0)
-		return false;
-
-	if (sdkp->opt_xfer_blocks > dev_max) {
-		sd_first_printk(KERN_WARNING, sdkp,
-				"Optimal transfer size %u logical blocks " \
-				"> dev_max (%u logical blocks)\n",
-				sdkp->opt_xfer_blocks, dev_max);
-		return false;
-	}
-
-	if (sdkp->opt_xfer_blocks > SD_DEF_XFER_BLOCKS) {
-		sd_first_printk(KERN_WARNING, sdkp,
-				"Optimal transfer size %u logical blocks " \
-				"> sd driver limit (%u logical blocks)\n",
-				sdkp->opt_xfer_blocks, SD_DEF_XFER_BLOCKS);
-		return false;
-	}
-
-	if (opt_xfer_bytes < PAGE_SIZE) {
-		sd_first_printk(KERN_WARNING, sdkp,
-				"Optimal transfer size %u bytes < " \
-				"PAGE_SIZE (%u bytes)\n",
-				opt_xfer_bytes, (unsigned int)PAGE_SIZE);
-		return false;
-	}
-
-	if (opt_xfer_bytes & (sdkp->physical_block_size - 1)) {
-		sd_first_printk(KERN_WARNING, sdkp,
-				"Optimal transfer size %u bytes not a " \
-				"multiple of physical block size (%u bytes)\n",
-				opt_xfer_bytes, sdkp->physical_block_size);
-		return false;
-	}
-
-	sd_first_printk(KERN_INFO, sdkp, "Optimal transfer size %u bytes\n",
-			opt_xfer_bytes);
-	return true;
-}
 
 /**
  *	sd_revalidate_disk - called the first time a new disk is seen,
