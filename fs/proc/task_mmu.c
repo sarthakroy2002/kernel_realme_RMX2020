@@ -862,6 +862,28 @@ static int show_smap(struct seq_file *m, void *v, int is_pid)
 	/* mmap_sem is held in m_start */
 	walk_page_vma(vma, &smaps_walk);
 
+	#ifdef VENDOR_EDIT //yixue.ge@bsp.drv modify for android.bg get pss too slow
+	if (strcmp(current->comm, "android.bg") == 0) {
+		if ((unsigned long)(mss->pss >> (10 + PSS_SHIFT)) > 0) {
+			seq_printf(m,
+				"Pss:            %8lu kB\n",
+			(	unsigned long)(mss->pss >> (10 + PSS_SHIFT)));
+		}
+		if ((mss->private_clean >> 10) > 0) {
+			seq_printf(m,
+				"Private_Clean:  %8lu kB\n",
+				mss->private_clean >> 10);
+		}
+		if ((mss->private_dirty >> 10) > 0) {
+			seq_printf(m,
+				"Private_Dirty:  %8lu kB\n",
+				mss->private_dirty >> 10);
+		}
+		m_cache_vma(m, vma);
+		return 0;
+	}
+	#endif /*VENDOR_EDIT*/
+
 	if (!rollup_mode) {
 		show_map_vma(m, vma, is_pid);
 		if (vma_get_anon_name(vma)) {
@@ -1675,16 +1697,39 @@ const struct file_operations proc_pagemap_operations = {
 #endif /* CONFIG_PROC_PAGE_MONITOR */
 
 #ifdef CONFIG_PROCESS_RECLAIM
+#if defined(VENDOR_EDIT) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
+/* Kui.Zhang@TEC.Kernel.Performance, 2019/03/04
+ * Each reclaim lasts up to 333ms, will stop immediately if overtime.
+ */
+#define RECLAIM_TIMEOUT_JIFFIES (HZ/3)
+#define RECLAIM_PAGE_NUM 1024ul
+#endif
+
 static int deactivate_pte_range(pmd_t *pmd, unsigned long addr,
 				unsigned long end, struct mm_walk *walk)
 {
+#if defined(VENDOR_EDIT) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
+	struct reclaim_param *rp = walk->private;
+	struct vm_area_struct *vma = rp->vma;
+	int ret = 0;
+#else
 	struct vm_area_struct *vma = walk->private;
+#endif
 	pte_t *pte, ptent;
 	spinlock_t *ptl;
 	struct page *page;
 
 	pte = pte_offset_map_lock(vma->vm_mm, pmd, addr, &ptl);
 	for (; addr < end; pte++, addr += PAGE_SIZE) {
+#if defined(VENDOR_EDIT) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
+		/* Kui.Zhang@PSW.BSP.Kernel.Performance, 2018-12-25, check whether the
+		 * reclaim process should cancel*/
+		if (rp->reclaimed_task &&
+				(ret = is_reclaim_addr_over(walk, addr))) {
+			ret = -ret;
+			break;
+		}
+#endif
 		ptent = *pte;
 
 		if (pte_none(ptent))
@@ -1718,17 +1763,40 @@ static int deactivate_pte_range(pmd_t *pmd, unsigned long addr,
 			ClearPageReferenced(page);
 		if (PageActive(page))
 			deactivate_file_page(page);
+
+#if defined(VENDOR_EDIT) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
+		rp->nr_reclaimed++;
+		rp->nr_to_reclaim--;
+		if (rp->nr_to_reclaim == 0)
+			break;
+#endif
 	}
 	pte_unmap_unlock(pte - 1, ptl);
 
 	cond_resched();
+#if defined(VENDOR_EDIT) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
+	/* Kui.Zhang@PSW.BSP.Kernel.Performance, 2018-12-25, if want to cancel,
+	 * if ret <0 means need jump out of the loop immediately
+	 */
+	if (ret < 0)
+		return ret;
+	if (!rp->nr_to_reclaim)
+		return -PR_FULL;
+#endif
 	return 0;
 }
 
 static int reclaim_pte_range(pmd_t *pmd, unsigned long addr,
-				unsigned long end, struct mm_walk *walk)
+		unsigned long end, struct mm_walk *walk)
 {
+#if defined(VENDOR_EDIT) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
+	struct reclaim_param *rp = walk->private;
+	struct vm_area_struct *vma = rp->vma;
+	int reclaimed;
+	int ret = 0;
+#else
 	struct vm_area_struct *vma = walk->private;
+#endif
 	pte_t *pte, ptent;
 	spinlock_t *ptl;
 	struct page *page;
@@ -1736,12 +1804,25 @@ static int reclaim_pte_range(pmd_t *pmd, unsigned long addr,
 	int isolated;
 
 	split_huge_pmd(vma, addr, pmd);
+#if defined(VENDOR_EDIT) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
+	if (pmd_trans_unstable(pmd) || !rp->nr_to_reclaim)
+#else
 	if (pmd_trans_unstable(pmd))
+#endif
 		return 0;
 cont:
 	isolated = 0;
 	pte = pte_offset_map_lock(vma->vm_mm, pmd, addr, &ptl);
 	for (; addr != end; pte++, addr += PAGE_SIZE) {
+#if defined(VENDOR_EDIT) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
+		/* Kui.Zhang@PSW.BSP.Kernel.Performance, 2018-12-25, check whether the
+		 * reclaim process should cancel*/
+		if (rp->reclaimed_task &&
+				(ret = is_reclaim_addr_over(walk, addr))) {
+			ret = -ret;
+			break;
+		}
+#endif
 		ptent = *pte;
 		if (!pte_present(ptent))
 			continue;
@@ -1750,19 +1831,50 @@ cont:
 		if (!page)
 			continue;
 
+#if defined(VENDOR_EDIT) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
+		/* Kui.Zhang@PSW.BSP.Kernel.Performance, 2018-11-07,
+		 * we don't reclaim page in active lru list */
+		if (rp->inactive_lru && (PageActive(page) ||
+					PageUnevictable(page)))
+			continue;
+#endif
+
 		if (isolate_lru_page(page))
 			continue;
 
 		list_add(&page->lru, &page_list);
 		isolated++;
+#if defined(VENDOR_EDIT) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
+		rp->nr_scanned++;
+		if ((isolated >= SWAP_CLUSTER_MAX) || !rp->nr_to_reclaim)
+			break;
+#else
 		if (isolated >= SWAP_CLUSTER_MAX)
 			break;
+#endif
 	}
 	pte_unmap_unlock(pte - 1, ptl);
+#if defined(VENDOR_EDIT) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
+	/* Kui.Zhang@PSW.BSP.Kernel.Performance, 2018-12-25, check whether the
+	 * reclaim process should cancel*/
+	reclaimed = reclaim_pages_from_list(&page_list, vma, walk);
+	rp->nr_reclaimed += reclaimed;
+	rp->nr_to_reclaim -= reclaimed;
+	if (rp->nr_to_reclaim < 0)
+		rp->nr_to_reclaim = 0;
+
+	/* Kui.Zhang@PSW.BSP.Kernel.Performance, 2018-12-25, if want to cancel,
+	 * if ret <0 means need jump out of the loop immediately
+	 */
+	if (ret < 0)
+		return ret;
+	if (!rp->nr_to_reclaim)
+		return -PR_FULL;
+#else
 	reclaim_pages_from_list(&page_list, vma);
+#endif
 	if (addr != end)
 		goto cont;
-
 	cond_resched();
 	return 0;
 }
@@ -1772,8 +1884,159 @@ enum reclaim_type {
 	RECLAIM_ANON,
 	RECLAIM_ALL,
 	RECLAIM_RANGE,
+#if defined(VENDOR_EDIT) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
+	/* Kui.Zhang@PSW.BSP.Kernel.Performance, 2018-11-07,
+	 * add three reclaim_type that only reclaim inactive pages */
+	RECLAIM_INACTIVE_FILE,
+	RECLAIM_INACTIVE_ANON,
+	RECLAIM_INACTIVE,
+#endif
 };
 
+#if defined(VENDOR_EDIT) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
+/* Kui.Zhang@PSW.BSP.Kernel.Performance, 2019-01-01,
+ * Extract the reclaim core code for /proc/process_reclaim use*/
+ssize_t reclaim_task_write(struct task_struct* task, char *buffer)
+{
+	struct mm_struct *mm;
+	struct vm_area_struct *vma;
+	enum reclaim_type type;
+	char *type_buf;
+	struct mm_walk reclaim_walk = {};
+	struct reclaim_param rp;
+	int err = 0;
+
+	/* Kui.Zhang@TEC.Kernel.Performance, 2019/03/04
+	 * Do not reclaim self
+	 */
+	if (task == current->group_leader)
+		return -EINVAL;
+
+	type_buf = strstrip(buffer);
+	if (!strcmp(type_buf, "file"))
+		type = RECLAIM_FILE;
+	else if (!strcmp(type_buf, "anon"))
+		type = RECLAIM_ANON;
+	else if (!strcmp(type_buf, "all"))
+		type = RECLAIM_ALL;
+	/* Kui.Zhang@PSW.BSP.Kernel.Performance, 2018-11-07,
+	 * Check the input reclaim option is inactive
+	 */
+	else if (!strcmp(type_buf, "inactive"))
+		type = RECLAIM_INACTIVE;
+	else if (!strcmp(type_buf, "inactive_file"))
+		type = RECLAIM_INACTIVE_FILE;
+	else if (!strcmp(type_buf, "inactive_anon"))
+		type = RECLAIM_INACTIVE_ANON;
+	else
+		return -EINVAL;
+
+	mm = get_task_mm(task);
+	if (!mm)
+		return -EINVAL;
+
+	/* Kui.Zhang@PSW.BSP.Kernel.Performance, 2018-11-07,
+	 * Flag that relcaim inactive pages only in reclaim_pte_range
+	 */
+	if ((type == RECLAIM_INACTIVE) ||
+			(type == RECLAIM_INACTIVE_FILE) ||
+			(type == RECLAIM_INACTIVE_ANON))
+		rp.inactive_lru = true;
+	else
+		rp.inactive_lru = false;
+
+	reclaim_walk.mm = mm;
+	reclaim_walk.pmd_entry = reclaim_pte_range;
+	reclaim_walk.private = &rp;
+
+	/* Kui.Zhang@PSW.BSP.Kernel.Performance, 2018-12-25,
+	 * record the reclaimed task
+	 */
+	current->flags |= PF_RECLAIM_SHRINK;
+	rp.reclaimed_task = task;
+	current->reclaim.stop_jiffies = jiffies + RECLAIM_TIMEOUT_JIFFIES;
+cont:
+	rp.nr_to_reclaim = RECLAIM_PAGE_NUM;
+	rp.nr_reclaimed = 0;
+	rp.nr_scanned = 0;
+
+	down_read(&mm->mmap_sem);
+	for (vma = mm->mmap; vma; vma = vma->vm_next) {
+
+		if (vma->vm_flags & VM_LOCKED)
+			continue;
+
+		if (is_vm_hugetlb_page(vma))
+			continue;
+
+		/* Kui.Zhang@PSW.BSP.Kernel.Performance, 2018-11-07,
+		 * Jump out of the reclaim flow immediately
+		 */
+		err = is_reclaim_addr_over(&reclaim_walk, vma->vm_start);
+		if (err) {
+			err = -err;
+			break;
+		}
+
+		/* Kui.Zhang@PSW.BSP.Kernel.Performance, 2018-11-07,
+		 * filter only reclaim anon pages
+		 */
+		if ((type == RECLAIM_ANON ||
+					type == RECLAIM_INACTIVE_ANON) && vma->vm_file)
+			continue;
+
+		/* Kui.Zhang@PSW.BSP.Kernel.Performance, 2018-11-07,
+		 * filter only reclaim file-backed pages
+		 */
+		if ((type == RECLAIM_FILE ||
+					type == RECLAIM_INACTIVE_FILE) && !vma->vm_file)
+			continue;
+
+		rp.vma = vma;
+		if (!vma->vm_file || rp.inactive_lru)
+			reclaim_walk.pmd_entry = reclaim_pte_range;
+		else
+			reclaim_walk.pmd_entry = deactivate_pte_range;
+
+		err = walk_page_range(vma->vm_start, vma->vm_end,
+				&reclaim_walk);
+		if (err < 0)
+			break;
+	}
+	if (err != -PR_ADDR_OVER)
+		task->reclaim.stop_scan_addr = vma ? vma->vm_start : 0;
+
+	flush_tlb_mm(mm);
+	up_read(&mm->mmap_sem);
+	mmput(mm);
+	return 0;
+}
+
+static ssize_t reclaim_write(struct file *file, const char __user *buf,
+		size_t count, loff_t *ppos)
+{
+	struct task_struct *task;
+	char buffer[200];
+	ssize_t ret;
+
+	memset(buffer, 0, sizeof(buffer));
+	if (count > sizeof(buffer) - 1)
+		count = sizeof(buffer) - 1;
+
+	if (copy_from_user(buffer, buf, count))
+		return -EFAULT;
+
+	task = get_proc_task(file->f_path.dentry->d_inode);
+	if (!task)
+		return -ESRCH;
+
+	ret = reclaim_task_write(task, buffer);
+	put_task_struct(task);
+	if (ret < 0)
+		return ret;
+	return count;
+}
+#else
 static ssize_t reclaim_write(struct file *file, const char __user *buf,
 				size_t count, loff_t *ppos)
 {
@@ -1843,6 +2106,7 @@ static ssize_t reclaim_write(struct file *file, const char __user *buf,
 
 	return count;
 }
+#endif /* defined(VENDOR_EDIT) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE) */
 
 const struct file_operations proc_reclaim_operations = {
 	.write		= reclaim_write,

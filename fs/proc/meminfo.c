@@ -19,6 +19,11 @@
 #include <asm/page.h>
 #include <asm/pgtable.h>
 #include "internal.h"
+#ifdef VENDOR_EDIT
+/* Huacai.Zhou@PSW.BSP.Kernel.MM, 2018-06-26, add ion total used account*/
+#include <linux/ion.h>
+#include <linux/oppo_ion.h>
+#endif /*VENDOR_EDIT*/
 
 void __attribute__((weak)) arch_report_meminfo(struct seq_file *m)
 {
@@ -154,6 +159,19 @@ static int meminfo_proc_show(struct seq_file *m, void *v)
 	show_val_kb(m, "CmaFree:        ",
 		    global_zone_page_state(NR_FREE_CMA_PAGES));
 #endif
+#if defined(VENDOR_EDIT) && defined(CONFIG_ION)
+#ifdef ODM_WT_EDIT
+/*weihuan.zhao@ODM_WT.BSP.Kernel.stability, 2019/12/17,Using correct api to compute IonTotalCache*/
+    show_val_kb(m, "IonTotalCache:       ", global_zone_page_state(NR_IONCACHE_PAGES));
+#else
+    show_val_kb(m, "IonTotalCache:       ", global_node_page_state(NR_IONCACHE_PAGES));
+#endif /*ODM_WT_EDIT*/
+	show_val_kb(m, "IonTotalUsed:       ", ion_total() >> PAGE_SHIFT);
+#endif /* VENDOR_EDIT */
+#ifdef VENDOR_EDIT
+/* Huacai.Zhou@PSW.BSP.Kernel.MM, 2018-3-15 */
+	show_val_kb(m, "Oppo2Free:        ",global_zone_page_state(NR_FREE_OPPO2_PAGES));
+#endif /* VENDOR_EDIT */
 
 	hugetlb_report_meminfo(m);
 
