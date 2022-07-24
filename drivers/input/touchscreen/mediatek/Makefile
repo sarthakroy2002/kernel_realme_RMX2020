@@ -21,3 +21,11 @@ obj-$(CONFIG_TOUCHSCREEN_FT5X26)	+=  FT5X26/
 obj-$(CONFIG_TOUCHSCREEN_MTK_GT5688)	+=  GT5688/
 obj-$(CONFIG_TOUCHSCREEN_HIMAX_I2C)	+=  hxchipset/
 obj-$(CONFIG_TOUCHSCREEN_MTK_FOCALTECH_FHD)	+=  focaltech_fhd_touch/
+#ifdef ODM_WT_EDIT
+# Tongxing.Liu@ODM_WT.BSP.Touchscreen.Base,2019/10/04,bringup add for xl and hlt touchscreen mould config.
+obj-y      += tp_usb_notifier.o
+obj-y      += update_tpfw_notifier.o
+obj-$(CONFIG_INPUT_TOUCHSCREEN)      += headset_notifier.o
+obj-$(CONFIG_TOUCHSCREEN_NT36xxx_HOSTDL_SPI)	 += NT36525B/
+obj-$(CONFIG_TOUCHSCREEN_ILI9881H)	 += ili9881h/
+#endif /* ODM_WT_EDIT */
