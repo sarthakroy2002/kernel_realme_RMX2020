@@ -2613,6 +2613,14 @@ static void sock_def_error_report(struct sock *sk)
 static void sock_def_readable(struct sock *sk)
 {
 	struct socket_wq *wq;
+#if defined(VENDOR_EDIT) && defined(CONFIG_ELSA_STUB)
+// zhoumingjun@Swdp.shanghai, 2017/07/06, add process_event_notifier_atomic support
+// and notify related modules when socket is received
+	struct process_event_data pe_data;
+	pe_data.priv = sk;
+	pe_data.reason = -1;
+	process_event_notifier_call_chain_atomic(PROCESS_EVENT_SOCKET, &pe_data);
+#endif
 
 	rcu_read_lock();
 	wq = rcu_dereference(sk->sk_wq);
