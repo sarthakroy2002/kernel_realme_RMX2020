@@ -42,12 +42,13 @@ export DRVGEN_OUT
 
 ALL_DRVGEN_FILE := $(MTK_PROJECT)/cust.dtsi
 
-DWS_FILE := $(srctree)/$(DRVGEN_PATH)/$(MTK_PROJECT).dws
+#DWS_FILE := $(srctree)/$(DRVGEN_PATH)/$(MTK_PROJECT).dws
 ifneq ($(wildcard $(DWS_FILE)),)
 DRVGEN_FILE_LIST := $(addprefix $(DRVGEN_OUT)/,$(ALL_DRVGEN_FILE))
 DRVGEN_FILE_LIST += $(PROJ_DTB_FILES)
 else
 DRVGEN_FILE_LIST :=
+DRVGEN_FILE_LIST += $(PROJ_DTB_FILES)
 endif
 DRVGEN_TOOL := $(srctree)/tools/dct/DrvGen.py
 DRVGEN_FIG := $(wildcard $(dir $(DRVGEN_TOOL))config/*.fig)
@@ -90,7 +91,6 @@ endef
 $(objtree)/dtboimg.cfg: FORCE
 	rm -f $@.tmp
 	$(foreach f,$(ABS_DTB_FILES),$(call mk_dtboimg_cfg,$(f),$@.tmp))
-	touch $@.tmp
 	if ! cmp -s $@.tmp $@; then \
 		mv $@.tmp $@; \
 	else \
@@ -100,7 +100,6 @@ $(objtree)/dtboimg.cfg: FORCE
 $(objtree)/dtbimg.cfg: FORCE
 	rm -f $@.tmp
 	$(foreach f,$(ABS_DTB2_FILES),$(call mk_dtbimg_cfg,$(f),$@.tmp))
-	touch $@.tmp
 	if ! cmp -s $@.tmp $@; then \
 		mv $@.tmp $@; \
 	else \
