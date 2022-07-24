@@ -624,5 +624,12 @@ config ARCH_ZYNQMP
 	bool "Xilinx ZynqMP Family"
 	help
 	  This enables support for Xilinx ZynqMP Family
+	  
+# Jianfeng.Liang@ODM_WT.BSP.Kernel.Boot,2019/10/02,Add for ODM_WT_EDIT macro for kernel usage
+config ODM_WT_EDIT
+	bool "Enable Support for ODM WT Projects"
+	help
+	  This enables support for the ODM Wingtech projects. If you do not
+	  wish to build a kernel that runs on this chipset, say 'N' here.
 
 endmenu

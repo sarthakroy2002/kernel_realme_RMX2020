@@ -37,7 +37,7 @@
 			cgroup.memory=nosocket,nokmem \
 			androidboot.hardware=mt6771 \
 			firmware_class.path=/vendor/firmware \
-			page_owner=on loop.max_part=7";
+			page_owner=on";
 	};
 
 	cpus {
@@ -328,7 +328,7 @@
 			no-map;
 #if defined(CONFIG_MTK_SEC_VIDEO_PATH_SUPPORT) || \
 	defined(CONFIG_MTK_CAM_SECURITY_SUPPORT)
-			size = <0 0x800000>;
+			size = <0 0x2000000>;
 			alignment = <0 0x1000000>;
 #else
 			size = <0 0x200000>;
@@ -3087,11 +3087,9 @@
 		interrupts = <GIC_SPI 264 IRQ_TYPE_LEVEL_LOW>;
 
 		clocks = <&camsys CAMSYS_CCU_CGPDN>,
-			<&mmsys_config MMSYS_GALS_CCU2MM>,
-			<&scpsys SCP_SYS_CAM>;
+			 <&mmsys_config MMSYS_GALS_CCU2MM>;
 		clock-names = "CCU_CLK_CAM_CCU",
-			    "CCU_CLK_MMSYS_CCU",
-			    "CAM_PWR";
+			      "CCU_CLK_MMSYS_CCU";
 	};
 
 	alc@60000000 {
