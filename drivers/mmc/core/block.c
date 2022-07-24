@@ -71,6 +71,11 @@
 #include "dbg.h"
 #endif
 
+#ifdef VENDOR_EDIT
+//xiaohua.tian@Prd6.BaseDrv.Sensor,2016/10/31, Add for eMMC and DDR device information
+#include <soc/oppo/device_info.h>
+#endif /* VENDOR_EDIT */
+
 MODULE_ALIAS("mmc:block");
 #ifdef MODULE_PARAM_PREFIX
 #undef MODULE_PARAM_PREFIX
@@ -1404,6 +1409,10 @@ static int card_busy_detect(struct mmc_card *card, unsigned int timeout_ms,
 			pr_err("%s: Card stuck in programming state! %s %s\n",
 				mmc_hostname(card->host),
 				req->rq_disk->disk_name, __func__);
+#ifdef VENDOR_EDIT
+            //yh@bsp, 2015-10-21 Add for special card compatible
+            card->host->card_stuck_in_programing_status = true;
+#endif /* VENDOR_EDIT */
 			return -ETIMEDOUT;
 		}
 
@@ -2953,6 +2962,8 @@ static enum blk_eh_timer_return mmc_blk_cmdq_req_timed_out(struct request *req)
 	struct mmc_cmdq_req *cmdq_req;
 	struct mmc_cmdq_context_info *ctx_info = &host->cmdq_ctx;
 
+	WARN_ON(!host); /*bug*/
+
 	if (host->cmdq_ops->dumpstate)
 		host->cmdq_ops->dumpstate(host, true);
 	/*
@@ -4357,11 +4368,54 @@ static int mmc_blk_probe(struct mmc_card *card)
 	struct mmc_blk_data *md, *part_md;
 	char cap_str[10];
 
+    #ifdef VENDOR_EDIT
+    //xiaohua.tian@Prd6.BaseDrv.Sensor,2016/10/31, Add for eMMC and DDR device information
+    char * manufacturerid;
+    static char temp_version[30] = {0};
+    #endif /* VENDOR_EDIT */
+
 	/*
 	 * Check that the card supports the command class(es) we need.
 	 */
+#ifndef VENDOR_EDIT
+	//yh@bsp, 2015/08/03, remove for can not initialize specific sdcard(CSD info mismatch card real capability)
 	if (!(card->csd.cmdclass & CCC_BLOCK_READ))
 		return -ENODEV;
+#endif
+
+#ifdef VENDOR_EDIT
+    //xiaohua.tian@Prd6.BaseDrv.Sensor,2016/10/31, Add for eMMC and DDR device information
+    switch (card->cid.manfid) {
+    case  0x11:
+        manufacturerid = "TOSHIBA";
+        break;
+    case  0x15:
+        manufacturerid = "SAMSUNG";
+        break;
+    case  0x45:
+        manufacturerid = "SANDISK";
+        break;
+    case  0x90:
+        manufacturerid = "HYNIX";
+        break;
+    case 0xFE:
+        manufacturerid = "ELPIDA";
+        break;
+    case 0x13:
+        manufacturerid = "MICRON";
+        break;
+    default:
+        printk("mmc_blk_probe unknown card->cid.manfid is %x\n",card->cid.manfid);
+        manufacturerid = "unknown";
+        break;
+    }
+
+    if ((!strcmp(mmc_card_id(card), "mmc0:0001"))&&(!mmc_card_is_removable(card->host))) {
+        sprintf(temp_version,"0x%02x,0x%llx",card->cid.prv,*(unsigned long long*)card->ext_csd.fwrev);
+        register_device_proc("emmc", mmc_card_name(card), manufacturerid);
+        register_device_proc("emmc_version", mmc_card_name(card), temp_version);
+    }
+#endif
 
 	mmc_fixup_device(card, mmc_blk_fixups);
 

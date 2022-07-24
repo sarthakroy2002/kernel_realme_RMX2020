@@ -30,12 +30,31 @@ struct mmc_gpio {
 	char cd_label[0];
 };
 
+#ifdef ODM_WT_EDIT
+//Mingyao.Xie@ODM_WT.BSP.Storage.Emmc, 2019/10/31, Modify for Sdcard
+extern unsigned int pmic_config_interface_nolock(unsigned int RegNum, unsigned int val, unsigned int MASK, unsigned int SHIFT);
+#endif
+
 static irqreturn_t mmc_gpio_cd_irqt(int irq, void *dev_id)
 {
 	/* Schedule a card detection after a debounce timeout */
 	struct mmc_host *host = dev_id;
-
+#ifdef ODM_WT_EDIT
+//Mingyao.Xie@ODM_WT.BSP.Storage.Emmc, 2019/10/31, Modify for Sdcard
+	pmic_config_interface_nolock(0x1CD8, 0x0, 0x1, 0x0); //new add to disable VMCH
+#endif
 	host->trigger_card_event = true;
+	
+#ifdef VENDOR_EDIT
+        //Lycan.Wang@Prd.BasicDrv, 2014-07-10 Add for retry 5 times when new sdcard init error
+        host->detect_change_retry = 5;
+#endif /* VENDOR_EDIT */
+
+#ifdef VENDOR_EDIT
+       //yh@bsp, 2015-10-21 Add for special card compatible
+        host->card_stuck_in_programing_status = false;
+#endif /* VENDOR_EDIT */
+
 	mmc_detect_change(host, msecs_to_jiffies(200));
 
 	return IRQ_HANDLED;

@@ -284,6 +284,177 @@ void mmc_remove_host_debugfs(struct mmc_host *host)
 	debugfs_remove_recursive(host->debugfs_root);
 }
 
+#ifdef VENDOR_EDIT
+//Chunyi.Mei@PSW.BSP.Storage.EMMC,2018/9/12,2016/10/31,add for emmc life&size display
+#define SECTOR_COUNT_BUF_LEN 16
+
+static int mmc_sector_count_open(struct inode *inode, struct file *filp)
+{
+	struct mmc_card *card = inode->i_private;
+	char *buf;
+	ssize_t n = 0;
+	u8 *ext_csd;
+	int err;
+	unsigned int sector_count = 0;
+
+	buf = kmalloc(SECTOR_COUNT_BUF_LEN, GFP_KERNEL);
+	if (!buf)
+		return -ENOMEM;
+
+	memset(buf,0,SECTOR_COUNT_BUF_LEN);
+#if 0
+	ext_csd = kmalloc(512, GFP_KERNEL);
+	if (!ext_csd) {
+		err = -ENOMEM;
+		goto out_free;
+	}
+
+	memset(ext_csd,0,512);
+#endif
+	mmc_claim_host(card->host);
+#if 0
+	err = mmc_send_ext_csd(card, ext_csd);
+#else
+	err = mmc_get_ext_csd(card, &ext_csd);
+#endif
+	mmc_release_host(card->host);
+	if (err)
+		goto out_free;
+	sector_count = (ext_csd[215]<<24) |(ext_csd[214]<<16)|
+			(ext_csd[213]<<8)|(ext_csd[212]);
+	n = sprintf(buf, "0x%08x", sector_count);
+
+	BUG_ON(n > SECTOR_COUNT_BUF_LEN);
+
+	filp->private_data = buf;
+	kfree(ext_csd);
+	return 0;
+out_free:
+	kfree(buf);
+#if 0
+	kfree(ext_csd);
+#endif
+	return err;
+}
+
+static ssize_t mmc_sector_count_read(struct file *filp, char __user *ubuf,
+	size_t cnt, loff_t *ppos)
+{
+	char *buf = filp->private_data;
+	int len = strlen(buf);
+	return simple_read_from_buffer(ubuf, cnt, ppos,
+		buf, len);
+}
+
+static int mmc_sector_count_release(struct inode *inode, struct file *file)
+{
+	kfree(file->private_data);
+	return 0;
+}
+
+static const struct file_operations mmc_dbg_sector_count_fops = {
+	.open		= mmc_sector_count_open,
+	.read		= mmc_sector_count_read,
+	.release	= mmc_sector_count_release,
+	.llseek		= default_llseek,
+};
+
+
+#define LIFE_TIME_BUF_LEN 256
+static char* life_time_table[]={
+	"Not defined",
+	"0%-10% device life time used",
+	"10%-20% device life time used",
+	"20%-30% device life time used",
+	"30%-40% device life time used",
+	"30%-40% device life time used",
+	"40%-50% device life time used",
+	"60%-70% device life time used",
+	"80%-90% device life time used",
+	"90%-100% device life time used",
+	"Exceeded its maximum estimated device life time",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+};
+
+static int mmc_life_time_open(struct inode *inode, struct file *filp)
+{
+	struct mmc_card *card = inode->i_private;
+	char *buf;
+	ssize_t n = 0;
+	u8 *ext_csd;
+	int err;
+	unsigned char life_time_A = 0;
+	unsigned char life_time_B = 0;
+
+	buf = kmalloc(LIFE_TIME_BUF_LEN, GFP_KERNEL);
+	if (!buf)
+		return -ENOMEM;
+
+	memset(buf,0,LIFE_TIME_BUF_LEN);
+#if 0
+	ext_csd = kmalloc(512, GFP_KERNEL);
+	if (!ext_csd) {
+		err = -ENOMEM;
+		goto out_free;
+	}
+
+	memset(ext_csd,0,512);
+#endif
+	mmc_claim_host(card->host);
+#if 0
+	err = mmc_send_ext_csd(card, ext_csd);
+#else
+	err = mmc_get_ext_csd(card, &ext_csd);
+#endif
+	mmc_release_host(card->host);
+	if (err)
+		goto out_free;
+	life_time_A = ext_csd[268];
+	life_time_B = ext_csd[269];
+	n = sprintf(buf, "type A:%s\n\rtype B:%s\n\r",
+		life_time_table[life_time_A],life_time_table[life_time_B]);
+
+	BUG_ON(n > LIFE_TIME_BUF_LEN);
+
+	filp->private_data = buf;
+	kfree(ext_csd);
+	return 0;
+out_free:
+	kfree(buf);
+#if 0
+	kfree(ext_csd);
+#endif
+	return err;
+}
+
+static ssize_t mmc_life_time_read(struct file *filp, char __user *ubuf,
+	size_t cnt, loff_t *ppos)
+{
+	char *buf = filp->private_data;
+	int len = strlen(buf);
+
+	return simple_read_from_buffer(ubuf, cnt, ppos,
+		buf, len);
+	}
+
+static int mmc_life_time_release(struct inode *inode, struct file *file)
+{
+	kfree(file->private_data);
+	return 0;
+}
+
+static const struct file_operations mmc_dbg_life_time_fops = {
+	.open		= mmc_life_time_open,
+	.read		= mmc_life_time_read,
+	.release	= mmc_life_time_release,
+	.llseek		= default_llseek,
+};
+#endif /*VENDOR_EDIT*/
+
 void mmc_add_card_debugfs(struct mmc_card *card)
 {
 	struct mmc_host	*host = card->host;
@@ -305,6 +476,19 @@ void mmc_add_card_debugfs(struct mmc_card *card)
 
 	if (!debugfs_create_x32("state", S_IRUSR, root, &card->state))
 		goto err;
+
+#ifdef VENDOR_EDIT
+//Chunyi.Mei@PSW.BSP.Storage.EMMC,2018/9/12,add for emmc life&size display
+	if (mmc_card_mmc(card))
+		if (!debugfs_create_file("sector_count", S_IRUSR, root, card,
+						&mmc_dbg_sector_count_fops))
+			goto err;
+
+	if (mmc_card_mmc(card))
+		if (!debugfs_create_file("life_time", S_IRUSR, root, card,
+						&mmc_dbg_life_time_fops))
+			goto err;
+#endif
 
 	return;
 
