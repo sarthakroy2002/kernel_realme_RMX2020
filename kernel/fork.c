@@ -105,7 +105,10 @@
 #include <trace/events/task.h>
 
 #include <mt-plat/mtk_pidmap.h>
-
+#ifdef VENDOR_EDIT
+// Liujie.Xie@TECH.Kernel.Sched, 2019/05/22, add for ui first
+#include <linux/oppocfs/oppo_cfs_fork.h>
+#endif
 /*
  * Minimum number of threads to boot the kernel
  */
@@ -1792,6 +1795,10 @@ static __latent_entropy struct task_struct *copy_process(
 	p->sequential_io	= 0;
 	p->sequential_io_avg	= 0;
 #endif
+#ifdef VENDOR_EDIT
+// Liujie.Xie@TECH.Kernel.Sched, 2019/05/22, add for ui first
+	init_task_ux_info(p);
+#endif
 
 	/* Perform scheduler related setup. Assign this task to a CPU. */
 	retval = sched_fork(clone_flags, p);
@@ -2111,6 +2118,10 @@ long _do_fork(unsigned long clone_flags,
 	struct task_struct *p;
 	int trace = 0;
 	long nr;
+#if defined(VENDOR_EDIT) && defined(CONFIG_ELSA_STUB)
+//zhoumingjun@Swdp.shanghai, 2017/04/19, add process_event_notifier support
+	struct process_event_data pe_data;
+#endif
 
 	/*
 	 * Determine whether and which event to report to ptracer.  When
@@ -2148,6 +2159,14 @@ long _do_fork(unsigned long clone_flags,
 		pid = get_task_pid(p, PIDTYPE_PID);
 		nr = pid_vnr(pid);
 
+#if defined(VENDOR_EDIT) && defined(CONFIG_ELSA_STUB)
+//zhoumingjun@Swdp.shanghai, 2017/04/19, add process_event_notifier support
+//zhoumingjun@Swdp.shanghai, 2018/01/04, move these before wake_up_new_task to avoid compete
+		pe_data.pid = nr;
+		pe_data.uid = p->real_cred->uid;
+		pe_data.reason = -1;
+		process_event_notifier_call_chain(PROCESS_EVENT_CREATE, &pe_data);
+#endif
 		if (clone_flags & CLONE_PARENT_SETTID)
 			put_user(nr, parent_tidptr);
 

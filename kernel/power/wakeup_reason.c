@@ -27,6 +27,9 @@
 #include <linux/notifier.h>
 #include <linux/suspend.h>
 
+//Yongyao.Song@PSW.NW.PWR.1053636, 2017/08/01, add for modem wake up source
+#define MODEM_WAKEUP_SRC_NUM 10
+//Yongyao.Song@PSW.NW.PWR add end
 
 #define MAX_WAKEUP_REASON_IRQS 32
 static int irq_list[MAX_WAKEUP_REASON_IRQS];
@@ -40,7 +43,13 @@ static ktime_t last_monotime; /* monotonic time before last suspend */
 static ktime_t curr_monotime; /* monotonic time after last suspend */
 static ktime_t last_stime; /* monotonic boottime offset before last suspend */
 static ktime_t curr_stime; /* monotonic boottime offset after last suspend */
+#ifdef VENDOR_EDIT
+//Wenxian.zhen@Prd.BaseDrv, 2016/07/19, add for analysis power consumption
+void wakeup_src_clean(void);
+#endif /* VENDOR_EDIT */
 
+
+//Yongyao.Song@PSW.NW.PWR add end
 static ssize_t last_resume_reason_show(struct kobject *kobj, struct kobj_attribute *attr,
 		char *buf)
 {
@@ -97,6 +106,7 @@ static struct kobj_attribute suspend_time = __ATTR_RO(last_suspend_time);
 
 static struct attribute *attrs[] = {
 	&resume_reason.attr,
+    //Yongyao.Song@PSW.NW.PWR add end
 	&suspend_time.attr,
 	NULL,
 };
