@@ -6721,7 +6721,14 @@ void selinux_complete_init(void)
 	printk(KERN_DEBUG "SELinux:  Setting up existing superblocks.\n");
 	iterate_supers(delayed_superblock_init, NULL);
 }
-
+#ifdef VENDOR_EDIT
+//Ke.Li@ROM.Security, 2019-9-30, Add for prevent root check
+int get_current_security_context(char **context, u32 *context_len)
+{
+	u32 sid = current_sid();
+	return security_sid_to_context(sid, context, context_len);
+}
+#endif /* VENDOR_EDIT */
 /* SELinux requires early initialization in order to label
    all processes and objects when they are created. */
 security_initcall(selinux_init);
