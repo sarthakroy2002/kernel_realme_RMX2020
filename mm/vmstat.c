@@ -1062,6 +1062,16 @@ const char * const vmstat_text[] = {
 	"numa_other",
 #endif
 
+#ifdef VENDOR_EDIT
+/* Hui.Fan@PSW.BSP.Kernel.MM, 2017-8-21
+ * Account free pages for MIGRATE_OPPO
+ */
+#ifdef ODM_WT_EDIT
+/*weihuan.zhao@ODM_WT.BSP.Kernel.performace, 2019/12/23,adjust nr_free_oppo2 seq to fix page account issue*/
+	"nr_ioncache_pages",
+#endif /* ODM_WT_EDIT */
+	"nr_free_oppo2",
+#endif /* VENDOR_EDIT */
 	/* Node-based counters */
 	"nr_inactive_anon",
 	"nr_active_anon",
@@ -1092,7 +1102,13 @@ const char * const vmstat_text[] = {
 	"nr_dirtied",
 	"nr_written",
 	"", /* nr_indirectly_reclaimable */
-
+#ifdef VENDOR_EDIT
+/*Huacai.Zhou@PSW.BSP.Kernel.MM, 2018-09-25, add ion cached account*/
+#ifndef ODM_WT_EDIT
+/*weihuan.zhao@ODM_WT.BSP.Kernel.performace, 2019/12/23,adjust nr_free_oppo2 seq to fix page account issue*/
+	"nr_ioncache_pages",
+#endif /*ODM_WT_EDIT*/
+#endif /*VENDOR_EDIT*/
 	/* enum writeback_stat_item counters */
 	"nr_dirty_threshold",
 	"nr_dirty_background_threshold",
