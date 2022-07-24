@@ -539,5 +539,15 @@ enum binder_driver_command_protocol {
 	 */
 };
 
+#ifdef VENDOR_EDIT
+//zhoumingjun@Swdp.shanghai, 2017/07/10, notify user space when binder transaction starts
+struct process_event_binder {
+    struct task_struct *src;
+    struct task_struct *dst;
+    __u32 code;
+    __u32 flags;
+};
+#endif
+
 #endif /* _UAPI_LINUX_BINDER_H */
 

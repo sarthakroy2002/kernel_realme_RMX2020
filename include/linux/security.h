@@ -1801,5 +1801,16 @@ static inline void free_secdata(void *secdata)
 { }
 #endif /* CONFIG_SECURITY */
 
+#ifdef VENDOR_EDIT
+//Ke.Li@ROM.Security, 2019-9-30, Add for execve blocking(root defence)
+#ifdef CONFIG_SECURITY
+extern int get_current_security_context(char **context, u32 *context_len);
+#else
+static inline int get_current_security_context(char **context, u32 *context_len)
+{
+	return -EOPNOTSUPP;
+}
+#endif
+#endif /* VENDOR_EDIT */
 #endif /* ! __LINUX_SECURITY_H */
 

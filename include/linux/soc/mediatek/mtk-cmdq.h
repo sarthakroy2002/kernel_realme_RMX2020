@@ -109,7 +109,6 @@ struct cmdq_client {
 	struct mbox_client client;
 	struct mbox_chan *chan;
 	void *cl_priv;
-	struct mutex chan_mutex;
 };
 
 struct cmdq_buf_pool {
