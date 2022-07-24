@@ -266,12 +266,20 @@ void RingBuf_writeDataValue(struct RingBuf *RingBuf1, const char value,
 
 void RingBuf_update_writeptr(struct RingBuf *RingBuf1, unsigned int count)
 {
-	if (count == 0 || count > RingBuf1->bufLen) {
+#ifdef VENDOR_EDIT
+	/* Yongzhi.Zhang@PSW.MM.AudioDriver.Platform.2054896, 2019/05/29,
+	* modify for data of more than 1 ringbuffer length which will
+	* caused the wrong result updating write/read pointer */
+	if ((count == 0) || (count > RingBuf1->bufLen)) {
 		AUD_LOG_W("%s count[%u] datacount[%d] Len[%d]\n",
 			  __func__, count,
 			  RingBuf1->datacount, RingBuf1->bufLen);
 		return;
 	}
+#else /* VENDOR_EDIT */
+	if (count == 0)
+		return;
+#endif /* VENDOR_EDIT */
 
 	if (RingBuf1->pRead <= RingBuf1->pWrite) {
 		unsigned int w2e = RingBuf1->pBufEnd - RingBuf1->pWrite;
@@ -310,12 +318,20 @@ void RingBuf_update_writeptr(struct RingBuf *RingBuf1, unsigned int count)
 
 void RingBuf_update_readptr(struct RingBuf *RingBuf1, unsigned int count)
 {
-	if (count == 0 || count > RingBuf1->bufLen) {
+#ifdef VENDOR_EDIT
+	/* Yongzhi.Zhang@PSW.MM.AudioDriver.Platform.2054896, 2019/05/29,
+	* modify for data of more than 1 ringbuffer length which will
+	* caused the wrong result updating write/read pointer */
+	if ((count == 0) || (count > RingBuf1->bufLen)) {
 		AUD_LOG_W("%s count[%u] datacount[%d] Len[%d]\n",
 			  __func__, count,
 			  RingBuf1->datacount, RingBuf1->bufLen);
 		return;
 	}
+#else /* VENDOR_EDIT */
+	if (count == 0)
+		return;
+#endif /* VENDOR_EDIT */
 
 	if (RingBuf1->pRead <= RingBuf1->pWrite) {
 		RingBuf1->pRead += count;

@@ -483,7 +483,6 @@ obj-$(CONFIG_SND_SOC_WM9713)	+= snd-soc-wm9713.o
 obj-$(CONFIG_SND_SOC_WM_ADSP)	+= snd-soc-wm-adsp.o
 obj-$(CONFIG_SND_SOC_WM_HUBS)	+= snd-soc-wm-hubs.o
 obj-$(CONFIG_SND_SOC_ZX_AUD96P22) += snd-soc-zx-aud96p22.o
-obj-$(CONFIG_SND_SOC_TFA9874)	+= tfa98xx/
 
 # Amp
 obj-$(CONFIG_SND_SOC_DIO2125)	+= snd-soc-dio2125.o
@@ -504,3 +503,9 @@ ifeq ($(CONFIG_SND_SOC_MT6359),y)
   subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
   subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/accdet/mt6359
 endif
+
+#ifdef VENDOR_EDIT
+# hongxiang.jin@PSW.MM.AudioDriver.Machine, 2019/08/26, add TFA9890 ALSA driver
+obj-$(CONFIG_SND_SOC_ALSACODEC_TFA9890) += tfa98xx-v6/
+obj-$(CONFIG_SND_SOC_ALSACODEC_TFA9890) += tfa98xx/
+#endif /* VENDOR_EDIT */

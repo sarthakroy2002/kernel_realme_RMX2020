@@ -406,7 +406,13 @@ static int mtk_uldlloopback_pcm_prepare(struct snd_pcm_substream *substream)
 	/* start I2S DAC out */
 	if (GetMemoryPathEnable(Soc_Aud_Digital_Block_I2S_OUT_DAC) == false) {
 		SetMemoryPathEnable(Soc_Aud_Digital_Block_I2S_OUT_DAC, true);
+#ifdef VENDOR_EDIT
+		/* Yongpei.Yao@PSW.MM.AudioDriver.Machine, 2018/09/17,
+		 * modify for enable low-jitter mode of I2S1 for smartpa in loopback scenes */
+		SetI2SDacOut(substream->runtime->rate, true, mI2SWLen);
+#else /* VENDOR_EDIT */
 		SetI2SDacOut(substream->runtime->rate, false, mI2SWLen);
+#endif /* VENDOR_EDIT */
 		SetI2SDacEnable(true);
 	} else
 		SetMemoryPathEnable(Soc_Aud_Digital_Block_I2S_OUT_DAC, true);

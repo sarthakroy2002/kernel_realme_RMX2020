@@ -1765,7 +1765,10 @@ static int mtk_hp_disable(struct mt6358_priv *priv)
 
 	/* Set HPL/HPR gain to mute */
 	regmap_write(priv->regmap, MT6358_ZCD_CON2, DL_GAIN_N_10DB_REG);
-
+#ifdef ODM_WT_EDIT
+    // Zengchao.Duan@ODM_WT.mm.audiodriver.Machine, 2019/11/12, remove hpl & hpr inside 470 ohm
+	regmap_update_bits(priv->regmap, MT6358_AUDDEC_ANA_CON2, 0xff, 0x0);
+#endif
 	/* Increase ESD resistance of AU_REFN */
 	regmap_update_bits(priv->regmap, MT6358_AUDDEC_ANA_CON2,
 			   0x1 << 14, 0x0);
@@ -2062,6 +2065,10 @@ static int mtk_hp_spk_disable(struct mt6358_priv *priv)
 
 	/* Set HPL/HPR gain to mute */
 	regmap_write(priv->regmap, MT6358_ZCD_CON2, DL_GAIN_N_40DB_REG);
+#ifdef ODM_WT_EDIT
+    // Zengchao.Duan@ODM_WT.mm.audiodriver.Machine, 2019/11/12, remove hpl & hpr inside 470 ohm
+	regmap_update_bits(priv->regmap, MT6358_AUDDEC_ANA_CON2, 0xff, 0x0);
+#endif
 	/* Increase ESD resistance of AU_REFN */
 	regmap_update_bits(priv->regmap, MT6358_AUDDEC_ANA_CON2,
 			0x1 << 14, 0x0);
@@ -2187,7 +2194,11 @@ static int mtk_hp_impedance_disable(struct mt6358_priv *priv)
 	regmap_write(priv->regmap, MT6358_ZCD_CON2, DL_GAIN_N_10DB_REG);
 
 	/* Set HPP/N STB enhance circuits */
+#ifndef ODM_WT_EDIT
 	regmap_update_bits(priv->regmap, MT6358_AUDDEC_ANA_CON2, 0xff, 0x33);
+#else
+	regmap_update_bits(priv->regmap, MT6358_AUDDEC_ANA_CON2, 0xff, 0x0);
+#endif
 
 	/* Increase ESD resistance of AU_REFN */
 	regmap_update_bits(priv->regmap, MT6358_AUDDEC_ANA_CON2,
@@ -2671,8 +2682,6 @@ static int mt_vow_aud_lpw_event(struct snd_soc_dapm_widget *w,
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
-		/* add delay for RC Calibration */
-		usleep_range(1000, 1200);
 		/* Enable audio uplink LPW mode */
 		/* Enable Audio ADC 1st Stage LPW */
 		/* Enable Audio ADC 2nd & 3rd LPW */
@@ -2837,8 +2846,14 @@ static int mt6358_amic_enable(struct mt6358_priv *priv)
 			break;
 		}
 		/* Enable MICBIAS0, MISBIAS0 = 1P9V */
+#ifdef ODM_WT_EDIT
+// Zengchao.Duan@ODM_WT.MM.Audiodriver.Machine, 2019/11/05, Add for change MICBIAS to 2.5V
 		regmap_update_bits(priv->regmap, MT6358_AUDENC_ANA_CON9,
-				   0xff, 0x21);
+				   0xff, 0x51);
+#else
+        regmap_update_bits(priv->regmap, MT6358_AUDENC_ANA_CON9,
+                   0xff, 0x21);
+#endif
 	}
 
 	/* mic bias 1 */
@@ -4402,6 +4417,10 @@ static void stop_trim_hardware(struct mt6358_priv *priv)
 
 	/* Set HPL/HPR gain to mute */
 	regmap_write(priv->regmap, MT6358_ZCD_CON2, DL_GAIN_N_40DB_REG);
+#ifdef ODM_WT_EDIT
+    // Zengchao.Duan@ODM_WT.mm.audiodriver.Machine, 2019/11/12, remove hpl & hpr inside 470 ohm
+	regmap_update_bits(priv->regmap, MT6358_AUDDEC_ANA_CON2, 0xff, 0x0);
+#endif
 	/* Increase ESD resistance of AU_REFN */
 	regmap_update_bits(priv->regmap, MT6358_AUDDEC_ANA_CON2,
 			0x1 << 14, 0x0);
@@ -4745,7 +4764,10 @@ static void stop_trim_hardware_with_lo(struct mt6358_priv *priv)
 
 	/* Set HPL/HPR gain to mute */
 	regmap_write(priv->regmap, MT6358_ZCD_CON2, DL_GAIN_N_40DB_REG);
-
+#ifdef ODM_WT_EDIT
+    // Zengchao.Duan@ODM_WT.mm.audiodriver.Machine, 2019/11/12, remove hpl & hpr inside 470 ohm
+	regmap_update_bits(priv->regmap, MT6358_AUDDEC_ANA_CON2, 0xff, 0x0);
+#endif
 	/* Increase ESD resistance of AU_REFN */
 	regmap_update_bits(priv->regmap, MT6358_AUDDEC_ANA_CON2,
 			0x1 << 14, 0x0);

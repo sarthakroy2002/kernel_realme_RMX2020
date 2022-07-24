@@ -675,8 +675,20 @@ static struct snd_soc_dai_link mt_soc_extspk_dai[] = {
 			   SND_SOC_DAIFMT_NB_NF,
 		.ops = &cs35l35_ops,
 #else
+#ifdef VENDOR_EDIT
+		/* hongxiang.jin@PSW.MM.AudioDriver.Machine, 2019/08/26,
+		 * add TFA9890 ALSA driver for MT6763 */
+#ifdef CONFIG_SND_SOC_ALSACODEC_TFA9890
+		.codec_dai_name = "tfa98xx-aif-3-35",
+		.codec_name = "tfa98xx.3-0035",
+#else /* CONFIG_SND_SOC_ALSACODEC_TFA9890 */
 		.codec_dai_name = "snd-soc-dummy-dai",
 		.codec_name = "snd-soc-dummy",
+#endif /* CONFIG_SND_SOC_ALSACODEC_TFA9890 */
+#else /* VENDOR_EDIT */
+		.codec_dai_name = "snd-soc-dummy-dai",
+		.codec_name = "snd-soc-dummy",
+#endif /* VENDOR_EDIT */
 #endif
 	},
 	{
@@ -710,20 +722,139 @@ static void get_ext_dai_codec_name(void)
 	get_exthp_dai_codec_name(mt_soc_exthp_dai);
 }
 #endif
+#ifdef VENDOR_EDIT
+/* Yongzhi.Zhang@PSW.MM.AudioDriver.feature.1209435, 2017/08/01,
+ * add for KTV */
+#ifdef CONFIG_OPPO_KTV_DEV
+DEFINE_SPINLOCK(ktv_dl_data_lock);
+DEFINE_SPINLOCK(ktv_dl_ctrl_lock);
+
+
+char ktv_dl_data_unit[3840] = {0};
+struct afe_block_t user_dl_block;
+
+int write_access = 0;
+int dl_init_done = 0;
+int dl_drop_size = 25;
+
+
+static int ktvdevw_open(struct inode *inode, struct file *fp)
+{
+	unsigned long flags;
+	spin_lock_irqsave(&ktv_dl_ctrl_lock, flags);
+	dl_init_done = 0;
+	dl_drop_size = 25;	//200ms
+	spin_unlock_irqrestore(&ktv_dl_ctrl_lock, flags);
+
+	pr_info("%s: \n", __func__);
+	return 0;
+}
+
+static long ktvdevw_ioctl(struct file *fp, unsigned int cmd, unsigned long arg)
+{
+	int ret = 0;
+
+	switch (cmd) {
+	default: {
+		ret = -1;
+		break;
+	}
+	}
+	return ret;
+}
+
+static ssize_t ktvdev_write(struct file *fp, const char __user *data, size_t count, loff_t *offset)
+{
+	int ret = 0;
+	char *tmp = NULL;
+	char *data_w_ptr = (char *)data;
+	unsigned long flags;
+	int ktvUnitSize = 1920;
+
+	spin_lock_irqsave(&ktv_dl_ctrl_lock, flags);
+	if(write_access == 0) {
+		pr_info("%s: playback not start yet, return\n", __func__);
+		spin_unlock_irqrestore(&ktv_dl_ctrl_lock, flags);
+		return count;
+	}
+	spin_unlock_irqrestore(&ktv_dl_ctrl_lock, flags);
+
+	spin_lock_irqsave(&ktv_dl_ctrl_lock, flags);
+	if(dl_drop_size > 0) {
+		pr_info("%s: Drop periods to avoid pop when init\n", __func__);
+		dl_drop_size--;
+		spin_unlock_irqrestore(&ktv_dl_ctrl_lock, flags);
+		return count;
+	}
+	if(!dl_init_done) {
+		dl_init_done = 1;
+		spin_lock_irqsave(&ktv_dl_data_lock, flags);
+		auddrv_dl1_write_init();
+		spin_unlock_irqrestore(&ktv_dl_data_lock, flags);
+	}
+	spin_unlock_irqrestore(&ktv_dl_ctrl_lock, flags);
+
+	/* Yongzhi.Zhang@PSW.MM.AudioDriver.Feature, 2018/03/01,
+	 * we do not need memset 0 value in this routine
+	 * because the voice data comes from UL.
+	 * Unnecessary memset 0 will cause consumption */
+
+	tmp = kmalloc(ktvUnitSize, GFP_KERNEL);
+	if (tmp == NULL) {
+		pr_info("%s: kmalloc error, return\n", __func__);
+		return -ENOMEM;
+	}
+
+	if (copy_from_user(tmp, data_w_ptr, count)) {
+		pr_info("%s: copy_from_user error, return\n", __func__);
+		kfree(tmp);
+		return -EFAULT;
+	}
+
+	spin_lock_irqsave(&ktv_dl_data_lock, flags);
+	memcpy(ktv_dl_data_unit, tmp, count);
+	spin_unlock_irqrestore(&ktv_dl_data_lock, flags);
+
+	auddrv_dl1_write_handler(ktvUnitSize);
+
+	ret = count;
+
+	kfree(tmp);
+
+	return ret;
+
+}
+
+static const struct file_operations ktvdevw_fops = {
+	.owner   = THIS_MODULE,
+	.open    = ktvdevw_open,
+	.unlocked_ioctl   = ktvdevw_ioctl,
+	.write   = ktvdev_write,
+};
+
+static struct miscdevice ktvw_device = {
+	.minor = MISC_DYNAMIC_MINOR,
+	.name = "ktvdevw",
+	.fops = &ktvdevw_fops,
+};
+
+#endif /* CONFIG_OPPO_KTV_DEV */
+#endif /* VENDOR_EDIT */
 static int mt_soc_snd_probe(struct platform_device *pdev)
 {
 	struct snd_soc_card *card = &mt_snd_soc_card_mt;
 	struct device_node *btcvsd_node;
 	int ret;
 	int daiLinkNum = 0;
-
+	#ifndef VENDOR_EDIT
+	//hongxiang.jin@PSW.MM.AudioDriver.Machine, 2019/08/26, Remove for load tfa98xx
 	ret = mtk_spk_update_dai_link(mt_soc_extspk_dai, pdev);
 	if (ret) {
 		dev_err(&pdev->dev, "%s(), mtk_spk_update_dai_link error\n",
 			__func__);
 		return -EINVAL;
 	}
-
+	#endif /* VENDOR_EDIT */
 	/*get_ext_dai_codec_name();*/
 	pr_debug("dai_link = %p\n",
 		mt_snd_soc_card_mt.dai_link);
@@ -777,6 +908,18 @@ static int mt_soc_snd_probe(struct platform_device *pdev)
 		DEBUG_ANA_FS_NAME, S_IFREG | 0444, NULL,
 		(void *)DEBUG_ANA_FS_NAME, &mtaudio_ana_debug_ops);
 
+#ifdef VENDOR_EDIT
+#ifdef CONFIG_OPPO_KTV_DEV
+	/* Yongzhi.Zhang@PSW.MM.AudioDriver.feature.1209435, 2017/08/01,
+	 * add for KTV */
+	/* register KTV MISC device */
+	ret = misc_register(&ktvw_device);
+	if (ret) {
+		pr_debug("ktvw_device misc_register Fail:%d\n", ret);
+		return ret;
+	}
+#endif /* CONFIG_OPPO_KTV_DEV */
+#endif /* VENDOR_EDIT */
 	return ret;
 }
 

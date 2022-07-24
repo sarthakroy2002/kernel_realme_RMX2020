@@ -79,4 +79,11 @@ int AudDrv_GPIO_RCVSPK_Select(int bEnable);
 int AudDrv_GPIO_HPDEPOP_Select(int bEnable);
 
 int audio_drv_gpio_aud_clk_pull(bool high);
+
+#ifdef VENDOR_EDIT
+/* hongxiang.jin@PSW.MM.AudioDriver.Machine, 2019/08/26, */
+int auddrv_gpio_i2s0_select(int b_enable);
+int auddrv_gpio_i2s1_select(int bEnable);
+#endif /* VENDOR_EDIT */
+
 #endif

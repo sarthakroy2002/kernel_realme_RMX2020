@@ -227,6 +227,18 @@ config SND_SOC_MTK_SCP_SMARTPA
 	  Select Y to enable CONFIG_SND_SOC_MTK_SCP_SMARTPA for
 	  speaker protection in SCP.
 
+#ifeq ($(strip $(ODM_WT_EDIT)),yes)
+# Zengchao.Duan@ODM_WT.MM.AudioDriver.Machine 2019/10/12, MonetX audio sia8108 bringup
+config SND_SIA81XX_PA
+	bool "Silicon SIA8101 PA"
+	help
+	  SIA8101 provides on-chip speaker excursion protection,
+	  a signal magnitude controller for clipping avoidance
+	  and speaker temperature protection.
+	  Select Y to enable CONFIG_SND_SIA81XX_PA for adding
+	  Silicon SIA8101 PA.
+#endif # ODM_WT_EDIT
+
 config MTK_SND_SOC_NEW_ARCH
 	bool "Support new audio architecture"
 	select REGMAP_MMIO
@@ -262,3 +274,12 @@ config SND_SOC_MTK_AUDIO_DSP
 	  that can be used with other platforms
 	  Select Y if you have such device.
 	  If unsure select "N".
+
+#ifdef VENDOR_EDIT
+#Yongzhi.Zhang@PSW.MM.AudioDriver.feature.1209435, 2017/08/01, add for KTV
+config OPPO_KTV_DEV
+    bool "KTV feature"
+	default n
+	help
+	    This will enable KTV feature
+#endif /*VENDOR_EDIT*/

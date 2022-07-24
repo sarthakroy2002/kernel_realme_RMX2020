@@ -30,6 +30,12 @@ enum mt6768_afe_gpio {
 	MT6768_AFE_GPIO_VOW_DAT_ON,
 	MT6768_AFE_GPIO_VOW_CLK_OFF,
 	MT6768_AFE_GPIO_VOW_CLK_ON,
+#if defined(ODM_WT_EDIT) && !defined(CONFIG_SND_SIA81XX_PA)
+//Zengchao.Duan@ODM_WT.MM.Audiodriver.Machine, 2019/10/04, Add for odm audio
+//Zengchao.Duan@ODM_WT.MM.AudioDriver.Machine, 2019/10/19, MonetX audio sia8108 bringup
+	MT6768_AFE_GPIO_EXT_AMP_OFF,
+	MT6768_AFE_GPIO_EXT_AMP_ON,
+#endif
 	MT6768_AFE_GPIO_GPIO_NUM
 };
 
@@ -56,6 +62,12 @@ static struct audio_gpio_attr aud_gpios[MT6768_AFE_GPIO_GPIO_NUM] = {
 	[MT6768_AFE_GPIO_VOW_DAT_ON] = {"vow_dat_miso_on", false, NULL},
 	[MT6768_AFE_GPIO_VOW_CLK_OFF] = {"vow_clk_miso_off", false, NULL},
 	[MT6768_AFE_GPIO_VOW_CLK_ON] = {"vow_clk_miso_on", false, NULL},
+#if defined(ODM_WT_EDIT) && !defined(CONFIG_SND_SIA81XX_PA)
+//Zengchao.Duan@ODM_WT.MM.Audiodriver.Machine, 2019/10/04, Add for odm audio
+//Zengchao.Duan@ODM_WT.MM.AudioDriver.Machine, 2019/10/19, MonetX audio sia8108 bringup
+	[MT6768_AFE_GPIO_EXT_AMP_OFF] = {"aud_pins_extamp_pulllow", false, NULL},
+	[MT6768_AFE_GPIO_EXT_AMP_ON] = {"aud_pins_extamp_pullhigh", false, NULL},
+#endif
 };
 
 static DEFINE_MUTEX(gpio_request_mutex);
@@ -176,6 +188,16 @@ int mt6768_afe_gpio_request(struct mtk_base_afe *afe, bool enable,
 		else
 			mt6768_afe_gpio_select(afe, MT6768_AFE_GPIO_I2S3_OFF);
 		break;
+#if defined(ODM_WT_EDIT) && !defined(CONFIG_SND_SIA81XX_PA)
+//Zengchao.Duan@ODM_WT.MM.AudioDriver.Machine, 2019/10/19, MonetX audio sia8108 bringup
+//Zengchao.Duan@ODM_WT.MM.Audiodriver.Machine, 2019/10/04, Add for odm audio
+    case MT6768_EXT_AMP:
+        if (enable)
+            mt6768_afe_gpio_select(afe, MT6768_AFE_GPIO_EXT_AMP_ON);
+        else
+            mt6768_afe_gpio_select(afe, MT6768_AFE_GPIO_EXT_AMP_OFF);
+        break;
+#endif
 	case MT6768_DAI_VOW:
 		if (enable) {
 			mt6768_afe_gpio_select(afe,
