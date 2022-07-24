@@ -84,7 +84,7 @@ struct mtu3_request;
 #define MTU3_U3_IP_SLOT_DEFAULT 1
 #define MTU3_LTSSM_INTR_EN (U3_RESUME_INTR | U3_LFPS_TMOUT_INTR | \
 		VBUS_FALL_INTR | VBUS_RISE_INTR | \
-		/*RXDET_SUCCESS_INTR |*/ EXIT_U3_INTR | \
+		RXDET_SUCCESS_INTR | EXIT_U3_INTR | \
 		ENTER_U3_INTR | ENTER_U0_INTR | \
 		RECOVERY_INTR | WARM_RST_INTR | \
 		HOT_RST_INTR | LOOPBACK_INTR | \
@@ -287,6 +287,14 @@ struct ssusb_mtk {
 	struct clk *wk_deb_p1;
 	struct regmap *pericfg;
 	void *priv_data;
+
+	#ifdef VENDOR_EDIT
+	/* Qiao.Hu@@Prd6.BaseDrv.USB.Basic, 2017/07/28, Add for otg */
+	spinlock_t		change_irq_lock;
+	bool		user_request_polling;
+	struct delayed_work	start_polling_delay;
+	struct delayed_work	stop_polling_delay;
+	#endif /* VENDOR_EDIT */
 };
 
 /**

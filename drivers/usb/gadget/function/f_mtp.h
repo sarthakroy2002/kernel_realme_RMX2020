@@ -72,4 +72,8 @@ struct __compat_mtp_event {
 
 #define COMPAT_MTP_SEND_EVENT   _IOW('M', 3, struct __compat_mtp_event)
 
-
+#ifdef VENDOR_EDIT
+//yan.chen@Swdp.shanghai, 2015/12/3, add mtp callback for hypnus
+extern int mtp_register_notifier(struct notifier_block *nb);
+extern int mtp_unregister_notifier(struct notifier_block *nb);
+#endif /*VENDOR_EDIT*/
