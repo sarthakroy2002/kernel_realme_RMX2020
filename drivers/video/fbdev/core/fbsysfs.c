@@ -396,7 +396,60 @@ static ssize_t show_name(struct device *device,
 
 	return snprintf(buf, PAGE_SIZE, "%s\n", fb_info->fix.id);
 }
+#ifdef ODM_WT_EDIT
+extern char Lcm_name1[256];
+static ssize_t show_panel_name(struct device *device,
+			 struct device_attribute *attr, char *buf)
+{
 
+	return snprintf(buf, PAGE_SIZE, "%s\n", Lcm_name1);
+}
+
+#endif
+
+#ifdef ODM_WT_EDIT
+//Hao.liang@ODM_WT.MM.Display.Lcd, 2019/10/11 Add cabc read & write interface,
+#define SYSFS_SET_LCM_CABC_MODE _IOW('O', 29, unsigned int)
+#define SYSFS_GET_LCM_CABC_MODE _IOW('O', 30, unsigned int)
+extern int fb_lcm_cabc_op(struct fb_info *info, unsigned int cmd, unsigned long arg);
+
+static ssize_t store_lcm_cabc(struct device *device,
+				struct device_attribute *attr,
+				const char *buf, size_t count)
+{
+	struct fb_info *fb_info = dev_get_drvdata(device);
+	int data, err;
+
+	if (!fb_info)
+		return -ENODEV;
+
+	err = kstrtoint(buf, 10, &data);
+	if (err)
+		return err;
+
+	console_lock();
+
+	err = fb_lcm_cabc_op(fb_info, SYSFS_SET_LCM_CABC_MODE, (unsigned long)&data);
+
+	console_unlock();
+
+	return count;
+}
+
+static ssize_t show_lcm_cabc(struct device *device,
+				struct device_attribute *attr, char *buf)
+{
+	struct fb_info *fb_info = dev_get_drvdata(device);
+	int data, err;
+
+	if (!fb_info)
+		return -ENODEV;
+
+	err = fb_lcm_cabc_op(fb_info, SYSFS_GET_LCM_CABC_MODE, (unsigned long)&data);
+
+	return(snprintf(buf, PAGE_SIZE, "%d\n", data));
+}
+#endif
 static ssize_t store_fbstate(struct device *device,
 			     struct device_attribute *attr,
 			     const char *buf, size_t count)
@@ -506,6 +559,13 @@ static struct device_attribute device_attrs[] = {
 	__ATTR(pan, S_IRUGO|S_IWUSR, show_pan, store_pan),
 	__ATTR(virtual_size, S_IRUGO|S_IWUSR, show_virtual, store_virtual),
 	__ATTR(name, S_IRUGO, show_name, NULL),
+	#ifdef ODM_WT_EDIT
+	__ATTR(panel_name, S_IRUGO, show_panel_name, NULL),
+	#endif
+	#ifdef ODM_WT_EDIT
+	//Hao.liang@ODM_WT.MM.Display.Lcd, 2019/10/11 Add cabc read & write interface,
+	__ATTR(cabc, S_IRUGO|S_IWUSR, show_lcm_cabc, store_lcm_cabc),
+	#endif
 	__ATTR(stride, S_IRUGO, show_stride, NULL),
 	__ATTR(rotate, S_IRUGO|S_IWUSR, show_rotate, store_rotate),
 	__ATTR(state, S_IRUGO|S_IWUSR, show_fbstate, store_fbstate),

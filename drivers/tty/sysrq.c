@@ -166,6 +166,21 @@ static struct sysrq_key_op sysrq_reboot_op = {
 	.enable_mask	= SYSRQ_ENABLE_BOOT,
 };
 
+#ifdef VENDOR_EDIT
+//jason.tang@TECH.BSP.Kernel.Storage, 2019-09-10, add ext4 urgent flush
+extern int panic_flush_device_cache(int timeout);
+static void sysrq_handle_flush(int key)
+{
+	panic_flush_device_cache(0);
+}
+static struct sysrq_key_op sysrq_flush_op = {
+	.handler	= sysrq_handle_flush,
+	.help_msg	= "flush(y)",
+	.action_msg	= "Emergency Flush",
+	.enable_mask	= SYSRQ_ENABLE_SYNC,
+};
+#endif
+
 static void sysrq_handle_sync(int key)
 {
 	emergency_sync();
@@ -322,11 +337,67 @@ static struct sysrq_key_op sysrq_ftrace_dump_op = {
 #else
 #define sysrq_ftrace_dump_op (*(struct sysrq_key_op *)NULL)
 #endif
+#ifdef ODM_WT_EDIT
+/*weihuan.zhao@ODM_WT.BSP.Kernel.stability, 2019/12/05,print process pss to kernel log when memory below 200M*/
+#define CONVERT_ADJ(x) ((x * OOM_SCORE_ADJ_MAX) / -OOM_DISABLE)
+#define REVERT_ADJ(x)  (x * (-OOM_DISABLE + 1) / OOM_SCORE_ADJ_MAX)
+
+static int dump_processes(void)
+{
+    int i, j;
+    int score_adj[37]={0};
+    short oom_score_adj;
+    struct task_struct *tsk;
+
+    for(i = 0, j=-18; i < 37; i++, j++)
+        score_adj[i] = CONVERT_ADJ(j);
+
+    printk("======   hang detect show processes   =====\n");
+#ifdef CONFIG_ZRAM
+    printk(" [pid]  adj    score_adj   rss    rswap      name\n");
+#else
+    printk(" [pid]  adj    score_adj   rss      name\n");
+#endif
+
+    rcu_read_lock();
+    for_each_process(tsk) {
+        struct task_struct *p;
+
+        if (tsk->flags & PF_KTHREAD)
+            continue;
+
+        p = find_lock_task_mm(tsk);
+        if (!p)
+            continue;
+
+        oom_score_adj = p->signal->oom_score_adj;
+
+        printk(
+
+#ifdef CONFIG_ZRAM
+                " [%5d] %5d%11d%8lu%8lu        %s\n", p->pid,
+                REVERT_ADJ(oom_score_adj), oom_score_adj,
+                get_mm_rss(p->mm),
+                get_mm_counter(p->mm, MM_SWAPENTS), p->comm);
+#else /* CONFIG_ZRAM */
+                " [%5d] %5d%11d%8lu        %s\n", p->pid,
+                REVERT_ADJ(oom_score_adj), oom_score_adj,
+                get_mm_rss(p->mm), p->comm);
+#endif
+        task_unlock(p);
+    }
+    rcu_read_unlock();
+
+    return 0;
+}
 
 static void sysrq_handle_showmem(int key)
 {
+    dump_processes();
 	show_mem(0, NULL);
 }
+#endif /*ODM_WT_EDIT*/
+
 static struct sysrq_key_op sysrq_showmem_op = {
 	.handler	= sysrq_handle_showmem,
 	.help_msg	= "show-memory-usage(m)",
@@ -489,7 +560,12 @@ static struct sysrq_key_op *sysrq_key_table[36] = {
 	/* x: May be registered on sparc64 for global PMU dump */
 	NULL,				/* x */
 	/* y: May be registered on sparc64 for global register dump */
+#ifdef VENDOR_EDIT
+//jason.tang@TECH.BSP.Kernel.Storage, 2019-09-10, add ext4 urgent flush
+	&sysrq_flush_op,                 /* y */
+#else
 	NULL,				/* y */
+#endif
 	&sysrq_ftrace_dump_op,		/* z */
 };
 

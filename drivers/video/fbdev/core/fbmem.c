@@ -1895,6 +1895,30 @@ void fb_set_suspend(struct fb_info *info, int state)
 	}
 }
 EXPORT_SYMBOL(fb_set_suspend);
+#ifdef ODM_WT_EDIT
+//Hao.liang@ODM_WT.MM.Display.Lcd, 2019/10/11 Add cabc read & write interface,
+/**
+ *	fb_lcm_cabc_op - op set cabc args or read cabc args
+ *	@info: framebuffer affected
+ *	@cmds:29=set cabc mode cmd
+ *		30=get cabc mode cmd
+ *    @arg:0/1/2/3=cabc mode
+ *	This is meant to be used by low level drivers to
+ * 	signal suspend/resume to the core & clients.
+ *	It must be called with the console semaphore held
+ */
+
+int fb_lcm_cabc_op(struct fb_info *info, unsigned int cmd, unsigned long arg)
+{
+	int err;
+
+	err = do_fb_ioctl(info, cmd, arg);
+
+	return err;
+}
+
+EXPORT_SYMBOL(fb_lcm_cabc_op);
+#endif
 
 /**
  *	fbmem_init - init frame buffer subsystem

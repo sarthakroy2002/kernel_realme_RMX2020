@@ -240,7 +240,7 @@ __weak int sdio_autok(void)
 void begin_autok_task(void)
 {
 	/* notify MM DVFS for msdc autok start */
-	mmdvfs_prepare_action(MMDVFS_PREPARE_CALIBRATION_START);
+	//mmdvfs_prepare_action(MMDVFS_PREPARE_CALIBRATION_START);
 }
 
 
@@ -250,7 +250,7 @@ void finish_autok_task(void)
 	int force = pm_qos_request(PM_QOS_VCORE_DVFS_FORCE_OPP);
 
 	/* notify MM DVFS for msdc autok finish */
-	mmdvfs_prepare_action(MMDVFS_PREPARE_CALIBRATION_END);
+	//mmdvfs_prepare_action(MMDVFS_PREPARE_CALIBRATION_END);
 
 	if (force >= 0 && force < 13)
 		pr_info("autok task not release force opp: %d\n", force);

@@ -87,6 +87,7 @@ enum mtk_encode_param {
 	MTK_ENCODE_PARAM_BITRATE_MODE = (1 << 11),
 	MTK_ENCODE_PARAM_ROI_ON = (1 << 12),
 	MTK_ENCODE_PARAM_GRID_SIZE = (1 << 13),
+	MTK_ENCODE_PARAM_SEC_ENCODE = (1 << 14)
 };
 
 /*
@@ -210,6 +211,7 @@ struct mtk_enc_params {
 	unsigned int    heif_grid_size;
 	unsigned int    max_w;
 	unsigned int    max_h;
+	unsigned int    svp_mode;
 };
 
 /*
@@ -252,6 +254,7 @@ struct venc_enc_param {
 	unsigned int sizeimage[MTK_VCODEC_MAX_PLANES];
 	unsigned int max_w;
 	unsigned int max_h;
+	unsigned int svp_mode;
 };
 
 /*

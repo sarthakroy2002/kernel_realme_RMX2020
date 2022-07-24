@@ -79,7 +79,10 @@ struct ion_platform_data {
  */
 struct ion_client *ion_client_create(struct ion_device *dev,
 				     const char *name);
-
+#ifdef VENDOR_EDIT
+/* Huacai.Zhou@PSW.BSP.Kernel.MM, 2018-06-26, add ion total used account*/
+unsigned long ion_total(void);
+#endif /*VENDOR_EDIT*/
 /**
  * ion_client_destroy() -  free's a client and all it's handles
  * @client:	the client
@@ -108,6 +111,11 @@ void ion_client_destroy(struct ion_client *client);
 struct ion_handle *ion_alloc(struct ion_client *client, size_t len,
 			     size_t align, unsigned int heap_id_mask,
 			     unsigned int flags);
+
+#ifdef VENDOR_EDIT
+/* Huacai.Zhou@PSW.BSP.Kernel.MM, 2018-06-26, add ion total used account*/
+unsigned long ion_total(void);
+#endif /*VENDOR_EDIT*/
 
 /**
  * ion_free - free a handle

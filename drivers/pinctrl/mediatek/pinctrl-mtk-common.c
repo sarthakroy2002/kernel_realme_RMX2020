@@ -47,12 +47,22 @@ struct mtk_pinctrl *pctl_alt;
 #define GPIO_MODE_BITS        3
 #define GPIO_MODE_PREFIX "GPIO"
 
+#ifdef VENDOR_EDIT
+/* ChaoYing.Chen@BSP.Power.Basic.1056413, 2017/12/11, Add for print wakeup source */
+#define LOG_BUF_SIZE    256
+extern	unsigned int g_eint_pmic_num;
+extern	char wakeup_source_buf[LOG_BUF_SIZE];
+extern  int pmic_int_check(char * wakeup_name);
+#endif /* VENDOR_EDIT */
+
 static const char * const mtk_gpio_functions[] = {
 	"func0", "func1", "func2", "func3",
 	"func4", "func5", "func6", "func7",
 	"func8", "func9", "func10", "func11",
 	"func12", "func13", "func14", "func15",
 };
+struct mtk_pinctrl *pctl;
+
 static const struct mtk_pin_info *mtk_pinctrl_get_gpio_array(int pin, int size,
 	const struct mtk_pin_info pArray[])
 {
@@ -1266,8 +1276,14 @@ static int mtk_gpio_set_debounce(struct gpio_chip *chip, unsigned int offset,
 
 	set_offset = (eint_num / 4) * 4 + pctl->devdata->eint_offsets.dbnc_set;
 	clr_offset = (eint_num / 4) * 4 + pctl->devdata->eint_offsets.dbnc_clr;
+#ifdef ODM_WT_EDIT
+	//Yong.Cheng@ODM_WT.NW.RF.SWTP.noBug, 2019/12/02, Add for SWTP - RF cable detection
+	mtk_eint_can_en_debounce(pctl, eint_num);
+	printk("mtk_gpio_set_debounce eintnum[%d]\n",eint_num);
+#else
 	if (!mtk_eint_can_en_debounce(pctl, eint_num))
 		return -EINVAL;
+#endif  /* ODM_WT_EDIT */
 
 	if (pctl->devdata->spec_debounce_select)
 		dbnc = pctl->devdata->spec_debounce_select(debounce);
@@ -1635,6 +1651,60 @@ mtk_eint_debounce_process(struct mtk_pinctrl *pctl, int index)
 	}
 }
 
+//#ifndef CONFIG_MTK_EIC
+
+//#ifdef VENDOR_EDIT
+/* ChaoYing.Chen@BSP.Power.Basic.1056413, 2017/12/11, Add for print wakeup source */
+#define EINT_WIDTH  		32
+#define EINT_REG_NUMBER  	18
+ u64 eint_wakesrc_x_count[EINT_REG_NUMBER][EINT_WIDTH] = {
+	 { 0 },
+	 { 0 },
+	 { 0 },
+	 { 0 },
+	 { 0 },
+	 { 0 },
+	 { 0 },
+	 { 0 },
+	 { 0 },
+	 { 0 },
+	 { 0 },
+	 { 0 },
+	 { 0 },
+	 { 0 },
+	 { 0 },
+	 { 0 },
+	 { 0 },
+	 { 0 },
+};
+
+/*
+ * mt_eint_print_status: clear the wakeup src count.
+ */
+void mt_eint_clear_wakesrc_count(void)
+{
+	int i = 0;
+	int j = 0;
+
+	for (i = 0; i < EINT_REG_NUMBER; i++) {
+		for (j = 0; j < EINT_WIDTH; j++) {
+			eint_wakesrc_x_count[i][j] = 0;
+		}
+	}
+}
+
+const char * mt_eint_get_name(int index)
+{
+	struct irq_desc *desc = NULL;
+	int virq = 0;
+
+	virq = irq_find_mapping(pctl->domain, index);
+	desc = irq_to_desc(virq);
+	return desc->action->name;
+}
+EXPORT_SYMBOL(mt_eint_get_name);
+//#endif /* VENDOR_EDIT */
+
 /*
  * mt_eint_print_status: Print the EINT status register.
  */
@@ -1649,6 +1719,11 @@ void mt_eint_print_status(void)
 		 mtk_eint_get_offset(pctl_alt, 0, eint_offsets->stat);
 	unsigned int triggered_eint;
 
+	#ifdef VENDOR_EDIT
+	/* ChaoYing.Chen@BSP.Power.Basic.1056413, 2017/12/11, Add for print wakeup source */
+	struct irq_desc *desc = NULL;
+	int virq = 0;
+	#endif /* VENDOR_EDIT */
 	pr_notice("EINT_STA:");
 	for (eint_num = 0; eint_num < pctl_alt->devdata->ap_num;
 		reg_base += 4, eint_num += 32) {
@@ -1665,6 +1740,20 @@ void mt_eint_print_status(void)
 			triggered_eint = eint_num + offset;
 			pr_notice("EINT %d is pending\n", triggered_eint);
 			status &= ~BIT(offset);
+			
+			#ifdef VENDOR_EDIT
+			/* ChaoYing.Chen@BSP.Power.Basic.1056413, 2017/12/11, Add for print wakeup source */
+			virq = irq_find_mapping(pctl->domain, triggered_eint);
+			desc = irq_to_desc(virq);
+			memset(wakeup_source_buf, 0, sizeof(wakeup_source_buf));
+			if (desc->action != NULL) {
+					strcpy(wakeup_source_buf, desc->action->name);
+			} else {
+					pr_err("desc->action == NULL\n");
+			}
+			if (g_eint_pmic_num == triggered_eint)
+					pmic_int_check(wakeup_source_buf);
+			#endif /* VENDOR_EDIT */
 		}
 	}
 #endif

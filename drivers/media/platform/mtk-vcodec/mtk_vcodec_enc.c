@@ -133,7 +133,6 @@ static void return_free_buffers(struct mtk_vcodec_ctx *ctx)
 		pfrm = NULL;
 		pbs = NULL;
 
-		memset(&rResult, 0, sizeof(rResult));
 		get_free_buffers(ctx, &rResult);
 
 		if (rResult.bs_va != 0 && virt_addr_valid(rResult.bs_va)) {
@@ -244,6 +243,13 @@ static int vidioc_venc_s_ctrl(struct v4l2_ctrl *ctrl)
 			       ctrl->val);
 		p->bitrate = ctrl->val;
 		ctx->param_change |= MTK_ENCODE_PARAM_BITRATE;
+		break;
+	case V4L2_CID_MPEG_MTK_SEC_ENCODE:
+		p->svp_mode = ctrl->val;
+		ctx->param_change |= MTK_ENCODE_PARAM_SEC_ENCODE;
+		mtk_v4l2_debug(0, "[%d] V4L2_CID_MPEG_MTK_SEC_ENCODE id %d val %d array[0] %d array[1] %d",
+			ctx->id, ctrl->id, ctrl->val,
+		ctrl->p_new.p_u32[0], ctrl->p_new.p_u32[1]);
 		break;
 	case V4L2_CID_MPEG_VIDEO_B_FRAMES:
 		mtk_v4l2_debug(2, "V4L2_CID_MPEG_VIDEO_B_FRAMES val = %d",
@@ -1010,8 +1016,6 @@ static int vidioc_venc_s_fmt_cap(struct file *file, void *priv,
 		if (ret) {
 			mtk_v4l2_err("venc_if_init failed=%d, codec type=%x",
 				     ret, q_data->fmt->fourcc);
-			ctx->state = MTK_STATE_ABORT;
-			mtk_venc_queue_error_event(ctx);
 			return -EBUSY;
 		}
 		ctx->state = MTK_STATE_INIT;
@@ -1551,7 +1555,7 @@ static int vb2ops_venc_start_streaming(struct vb2_queue *q, unsigned int count)
 	/* Once state turn into MTK_STATE_ABORT, we need stop_streaming
 	  * to clear it
 	  */
-	if (ctx->state == MTK_STATE_ABORT || ctx->state == MTK_STATE_FREE) {
+	if (ctx->state == MTK_STATE_ABORT) {
 		ret = -EIO;
 		goto err_set_param;
 	}
@@ -1652,6 +1656,7 @@ static void vb2ops_venc_stop_streaming(struct vb2_queue *q)
 		return;
 	}
 
+	ctx->state = MTK_STATE_FREE;
 }
 
 static const struct vb2_ops mtk_venc_vb2_ops = {
@@ -1674,7 +1679,6 @@ static int mtk_venc_encode_header(void *priv)
 	struct mtk_vcodec_mem bs_buf;
 	struct venc_done_result enc_result;
 
-	memset(&enc_result, 0, sizeof(enc_result));
 	dst_buf = v4l2_m2m_dst_buf_remove(ctx->m2m_ctx);
 	if (!dst_buf) {
 		mtk_v4l2_debug(1, "No dst buffer");
@@ -1749,6 +1753,15 @@ static int mtk_venc_param_change(struct mtk_vcodec_ctx *ctx)
 			       enc_prm.bitrate);
 		ret |= venc_if_set_param(ctx,
 					 VENC_SET_PARAM_ADJUST_BITRATE,
+					 &enc_prm);
+	}
+	if (mtk_buf->param_change & MTK_ENCODE_PARAM_SEC_ENCODE) {
+		enc_prm.svp_mode = mtk_buf->enc_params.svp_mode;
+		mtk_v4l2_debug(0, "[%d] change param svp=%d",
+				ctx->id,
+				enc_prm.svp_mode);
+		ret |= venc_if_set_param(ctx,
+					 VENC_SET_PARAM_SEC_MODE,
 					 &enc_prm);
 	}
 	if (!ret && mtk_buf->param_change & MTK_ENCODE_PARAM_FRAMERATE) {
@@ -1926,7 +1939,7 @@ static void mtk_venc_worker(struct work_struct *work)
 	struct mtk_video_enc_buf *dst_buf_info, *src_buf_info;
 
 	mutex_lock(&ctx->worker_lock);
-	memset(&enc_result, 0, sizeof(enc_result));
+
 	if (ctx->state == MTK_STATE_ABORT) {
 		v4l2_m2m_job_finish(ctx->dev->m2m_dev_enc, ctx->m2m_ctx);
 		mtk_v4l2_debug(1, " %d", ctx->state);
@@ -2249,6 +2262,8 @@ int mtk_vcodec_enc_ctrls_setup(struct mtk_vcodec_ctx *ctx)
 
 	v4l2_ctrl_new_std(handler, ops, V4L2_CID_MPEG_VIDEO_BITRATE,
 			  1, 400000000, 1, 20000000);
+	v4l2_ctrl_new_std(handler, ops, V4L2_CID_MPEG_MTK_SEC_ENCODE,
+			0, 2, 1, 0);
 	v4l2_ctrl_new_std(handler, ops, V4L2_CID_MPEG_VIDEO_B_FRAMES,
 			  0, 2, 1, 0);
 	v4l2_ctrl_new_std(handler, ops, V4L2_CID_MPEG_VIDEO_FRAME_RC_ENABLE,

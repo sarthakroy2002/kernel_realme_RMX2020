@@ -455,6 +455,7 @@ static inline void mt_i2c_wait_done(struct mt_i2c *i2c, u16 ch_off)
 
 static inline void mt_i2c_init_hw(struct mt_i2c *i2c)
 {
+
 	/* clear interrupt status */
 	i2c_writew_shadow(0, i2c, OFFSET_INTR_MASK);
 	i2c->irq_stat = i2c_readw_shadow(i2c, OFFSET_INTR_STAT);
@@ -488,6 +489,7 @@ static inline void mt_i2c_init_hw(struct mt_i2c *i2c)
 		dump_dma_regs();
 		WARN_ON(1);
 	}
+
 }
 
 /* calculate i2c port speed */
