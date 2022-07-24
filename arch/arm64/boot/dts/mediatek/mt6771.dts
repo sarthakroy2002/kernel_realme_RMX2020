@@ -33,10 +33,10 @@
 	/* chosen */
 	chosen: chosen {
 		bootargs = "console=tty0 console=ttyS0,921600n1 \
-vmalloc=400M slub_debug=OFZPU swiotlb=noforce page_owner=on \
+vmalloc=400M slub_debug=OFZPU swiotlb=noforce page_owner=on loop.max_part=7 \
 cgroup.memory=nosocket,nokmem \
 androidboot.hardware=mt6771 \
-firmware_class.path=/vendor/firmware loop.max_part=7";
+firmware_class.path=/vendor/firmware";
 		kaslr-seed = <0 0>;
 	};
 
@@ -335,7 +335,7 @@ firmware_class.path=/vendor/firmware loop.max_part=7";
 			no-map;
 #if defined(CONFIG_MTK_SEC_VIDEO_PATH_SUPPORT) || \
 	defined(CONFIG_MTK_CAM_SECURITY_SUPPORT)
-			size = <0 0x800000>;
+			size = <0 0x2000000>;
 			alignment = <0 0x1000000>;
 #else
 			size = <0 0x200000>;
@@ -1382,6 +1382,10 @@ firmware_class.path=/vendor/firmware loop.max_part=7";
 		camsys1_base = <0x180a0000 28 0xffff0000>;
 		camsys2_base = <0x180b0000 29 0xffff0000>;
 		pwm_sw_base = <0x11000000 99 0xffff0000>;
+		//#ifdef VENDOR_EDIT
+		/*Guoqiang.jiang@PSW.MM.Display.LCD.Stability, 2018/05/11, add for mipi clk change*/
+		mipitx0_base = <0x11e50000 99 0xffff0000>;
+		//#endif /* VENDOR_EDIT */
 		disp_rdma0_sof = <0>;
 		disp_rdma1_sof = <1>;
 		mdp_rdma0_sof = <2>;
@@ -1848,6 +1852,12 @@ firmware_class.path=/vendor/firmware loop.max_part=7";
 		reg-names = "sif_base", "ippc";
 		#phy-cells = <1>;
 	};
+//#ifdef VENDOR_EDIT
+/*Jianwei.Ye@BSP.CHG.BASIC 2019/11/21 add for phy_tuning*/
+	mediatek_phy_tuning:mediatek_phy_tuning {
+		//add for tuning arg;
+	};
+//#endif
 
 	extcon_usb: extcon_usb {
 		compatible = "mediatek,extcon-usb";
@@ -2089,6 +2099,10 @@ firmware_class.path=/vendor/firmware loop.max_part=7";
 		compatible = "mediatek,touch";
 	};
 
+	mtksmartpa: mtksmartpa {
+		compatible = "mediatek,mtksmartpa";
+	};
+
 	accdet: accdet {
 		compatible = "mediatek,pmic-accdet";
 		/* ACCDET GPIO standardization for AP EINT */
@@ -2122,13 +2136,13 @@ firmware_class.path=/vendor/firmware loop.max_part=7";
 		compatible = "mediatek,gauge_timer_service";
 	};
 
-#if (CONFIG_MTK_GAUGE_VERSION == 30)
-	#if (CONFIG_MTK_ADDITIONAL_BATTERY_TABLE == 1)
-		#include "bat_setting/mt6771_battery_prop_ext.dtsi"
-	#else
-		#include "bat_setting/mt6771_battery_prop.dtsi"
-	#endif
-#endif
+//#if (CONFIG_MTK_GAUGE_VERSION == 30)
+//	#if (CONFIG_MTK_ADDITIONAL_BATTERY_TABLE == 1)
+//		#include "bat_setting/mt6771_battery_prop_ext.dtsi"
+//	#else
+//		#include "bat_setting/mt6771_battery_prop.dtsi"
+//	#endif
+//#endif
 
 	mdp_rdma0: mdp_rdma0@14001000 {
 		compatible = "mediatek,mdp_rdma0";
@@ -2276,7 +2290,14 @@ firmware_class.path=/vendor/firmware loop.max_part=7";
 
 	dsi_te: dsi_te {
 		compatible = "mediatek, DSI_TE-eint";
-		status = "disabled";
+		/* #ifndef VENDOR_EDIT */
+		/* Ling.Guo@PSW.MM.Display.LCD.Machine, 2018/01/25, modify te esd check */
+		/* status = "disabled"; */
+		/* #else */
+		interrupt-parent = <&pio>;
+		interrupts = <44 IRQ_TYPE_LEVEL_HIGH 44 1>;
+		status = "okay";
+		/* #endif VENDOR_EDIT*/
 	};
 
 	mhl:mhl@0 {
@@ -3107,17 +3128,12 @@ firmware_class.path=/vendor/firmware loop.max_part=7";
 		compatible = "mediatek,flashlight_core";
 	};
 
-	flashlights_mt6370: flashlights_mt6370 {
-		compatible = "mediatek,flashlights_mt6370";
-		decouple = <0>;
+	flashlights_lm3642: flashlights_lm3642 {
+		compatible = "mediatek,flashlights_lm3642";
+		decouple = <1>;
 		channel@1 {
 			type = <0>;
 			ct = <0>;
-			part = <0>;
-		};
-		channel@2 {
-			type = <0>;
-			ct = <1>;
 			part = <0>;
 		};
 	};
@@ -3128,11 +3144,9 @@ firmware_class.path=/vendor/firmware loop.max_part=7";
 		interrupts = <GIC_SPI 264 IRQ_TYPE_LEVEL_LOW>;
 
 		clocks = <&camsys CAMSYS_CCU_CGPDN>,
-			<&mmsys_config MMSYS_GALS_CCU2MM>,
-			<&scpsys SCP_SYS_CAM>;
+			 <&mmsys_config MMSYS_GALS_CCU2MM>;
 		clock-names = "CCU_CLK_CAM_CCU",
-			    "CCU_CLK_MMSYS_CCU",
-			    "CAM_PWR";
+			      "CCU_CLK_MMSYS_CCU";
 	};
 
 	alc@60000000 {
@@ -4214,9 +4228,23 @@ firmware_class.path=/vendor/firmware loop.max_part=7";
 	subpmic_pmu_eint: mt6370_pmu_eint {
 	};
 
-	goodix_fp: fingerprint {
-		compatible = "mediatek,goodix-fp";
+//#ifdef VENDOR_EDIT
+/* Bin.Li@PSW.BSP.Fingerprint.Basic, 2017/11/22, Add for FPC driver baseon trustonic tee */
+	goodix_fp: goodix_fp {
+		compatible = "goodix,goodix_fp";
+                status = "okay";
 	};
+	fpc_interrupt:fpc_interrupt {
+		status        = "ok";
+		compatible    = "fpc,fpc_irq";
+	};
+	oppo_fp_common:oppo_fp_common {
+		compatible = "oppo,fp_common";
+	};
+	oppo_secure_common:oppo_secure_common {
+		compatible = "oppo,secure_common";
+	};
+//#endif //VENDOR_EDIT
 
 	tcpc_pd: mt6370_pd_eint {
 	};
@@ -4267,6 +4295,16 @@ firmware_class.path=/vendor/firmware loop.max_part=7";
 	};
 
 	als: als {
+	};
+
+	motor_pl: motor_pl {
+		compatible = "oppo-motor";
+		status = "disable";
+	};
+
+	motor_drv: motor_drv {
+		compatible = "motor_drv-8834";
+		status = "disable";
 	};
 
 	otg_iddig: otg_iddig {

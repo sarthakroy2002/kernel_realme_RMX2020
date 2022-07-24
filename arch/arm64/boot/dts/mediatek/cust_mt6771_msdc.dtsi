@@ -55,7 +55,12 @@
 	pinctl_ddr50 = <&msdc1_pins_ddr50>;
 	register_setting = <&msdc1_register_setting_default>;
 	host_function = /bits/ 8 <MSDC_SD>;
-	cd_level = /bits/ 8 <MSDC_CD_LOW>;
+//#ifndef VENDOR_EDIT
+//	/* chaochao.xie.BSP.bootloader.bootflow, 2019/10/19, Modify for T_card  eint */
+//	cd_level = /bits/ 8 <MSDC_CD_LOW>;
+//#else
+	cd_level = /bits/ 8 <MSDC_CD_HIGH>;
+//#endif /*VENDOR_EDIT*/
 	cd-gpios = <&pio 3 0>;
 	status = "okay";
 	vmmc-supply = <&mt_pmic_vmch_ldo_reg>;
@@ -112,7 +117,12 @@
 			drive-strength = /bits/ 8 <3>;
 		};
 		pins_clk {
-			drive-strength = /bits/ 8 <3>;
+//#ifndef VENDOR_EDIT
+//			/* chaochao.xie.BSP.bootloader.bootflow, 2019/10/19, Modify for T_card clk drive strength */
+//			drive-strength = /bits/ 8 <3>;
+//#else
+			drive-strength = /bits/ 8 <4>;
+//#endif/*VENDOR_EDIT*/
 		};
 	};
 

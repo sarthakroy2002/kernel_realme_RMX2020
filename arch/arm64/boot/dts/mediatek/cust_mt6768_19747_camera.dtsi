@@ -310,11 +310,12 @@
 &kd_camera_hw1 {
 //#ifdef ODM_WT_EDIT
 /*XingYu.Liu@ODM_WT.CAMERA.Driver.2019/10/11,modify camera name*/
-/*Zhen.Quan@Camera.Driver, 2019/11/7, add for [otp bringup] */
-	cam0_enable_sensor = "monet_truly_main_ov12a10 monetd_truly_main_ov12a10";
-	cam1_enable_sensor = "monet_hlt_front_gc5035 monet_txd_front_hi556 monet_hlt_custfront_gc5035";
-	cam3_enable_sensor = "monet_hlt_depth_ov02a1b";
-	cam4_enable_sensor = "monet_hlt_macro_gc2375h monet_lh_macro_gc2375h monetd_cxt_depth_gc2375h monetd_lh_depth_gc2375h";
+/*Zhen.Quan@Camera.Driver, 2019/11/20, add for [otp bringup] */
+	cam0_enable_sensor = "monetx_truly_main_s5kgm1sp";
+	cam1_enable_sensor = "monetx_ofilm_front_ov16a1q";
+	cam2_enable_sensor = "monetx_shengtai_wide_ov8856";
+	cam3_enable_sensor = "monetx_hlt_depth_ov02a1b";
+	cam4_enable_sensor = "monetx_hlt_macro_gc2375h monetx_hlt_macro_gc2385";
 //#endif /*ODM_WT_EDIT*/
 	pinctrl-names = "default",
 			"cam0_rst0", "cam0_rst1",
@@ -399,12 +400,12 @@
 	pinctrl-46 = <&camera3_mclk_8mA>;
 	pinctrl-47 = <&camera4_rst_low>;
 	pinctrl-48 = <&camera4_rst_high>;
-	pinctrl-49 = <&camera2_mclk_off>;
-	pinctrl-50 = <&camera2_mclk_2mA>;
-	pinctrl-51 = <&camera2_mclk_4mA>;
-	pinctrl-52 = <&camera2_mclk_6mA>;
-	pinctrl-53 = <&camera2_mclk_8mA>;
-
+	pinctrl-49 = <&camera3_mclk_off>;
+	pinctrl-50 = <&camera3_mclk_2mA>;
+	pinctrl-51 = <&camera3_mclk_4mA>;
+	pinctrl-52 = <&camera3_mclk_6mA>;
+	pinctrl-53 = <&camera3_mclk_8mA>;
+	
 	cam0_vcama-supply = <&mt_pmic_vcama1_ldo_reg>;
 	cam2_vcama-supply = <&mt_pmic_vcama1_ldo_reg>;
 	cam1_vcama-supply = <&mt_pmic_vcama1_ldo_reg>;
