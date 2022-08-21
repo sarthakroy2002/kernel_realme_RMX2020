@@ -27,7 +27,7 @@
 #include <vibrator_hal.h>
 #include <mt-plat/upmu_common.h>
 
-#define MAX_VIBR 9
+#define MAX_VIBR 11
 #define MIN_VIBR 0
 
 #define ENGINE_VERSION  1
