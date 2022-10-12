@@ -606,7 +606,6 @@ void usb_sg_cancel(struct usb_sg_request *io)
 			dev_warn(&io->dev->dev, "%s, unlink --> %d\n",
 				 __func__, retval);
 	}
-
 	spin_lock_irqsave(&io->lock, flags);
 	io->count--;
 	if (!io->count)

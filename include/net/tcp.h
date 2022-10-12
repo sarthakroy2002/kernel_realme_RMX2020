@@ -114,6 +114,13 @@ void tcp_time_wait(struct sock *sk, int state, int timeo);
 				 * 63secs of retransmission with the
 				 * current initial RTO.
 				 */
+#ifdef VENDOR_EDIT
+//Yongyao.Song@PSW.NW.DATA.1097684,2017/10/02
+//modify for connect timeout too long
+//add for fin retrans too many
+#define TCP_ORPHAN_RETRIES 3
+#endif /*VENDOR_EDIT*/
+
 
 #define TCP_SYNACK_RETRIES 5	/* This is how may retries are done
 				 * when passive opening a connection.

@@ -21,7 +21,12 @@
 //#define MAX_DISCARD_BLOCKS(sbi)		BLKS_PER_SEC(sbi)
 #define DEF_MAX_DISCARD_REQUEST		8	/* issue 8 discards per round */
 #define DEF_MAX_DISCARD_LEN		512	/* Max. 2MB per discard */
-#define DEF_MIN_DISCARD_ISSUE_TIME	300	/* 50 ms, if exists */
+#ifndef ODM_WT_EDIT
+//Haibo.Dong@ODM_WT.BSP.Kernel.Storage, 2020/07/31, Modify for ext4_discard run period
+#define DEF_MIN_DISCARD_ISSUE_TIME	50	/* 50 ms, if exists */
+#else
+#define DEF_MIN_DISCARD_ISSUE_TIME	300	/* 300 ms, if exists */
+#endif
 #define DEF_MID_DISCARD_ISSUE_TIME	500	/* 500 ms, if device busy */
 #define DEF_MAX_DISCARD_ISSUE_TIME	60000	/* 60 s, if no candidates */
 #define DEF_DISCARD_URGENT_UTIL		20	/* do more discard if free blocks under 20% */

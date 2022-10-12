@@ -284,7 +284,7 @@ static void *calc_ptr(struct ext4_attr *a, struct ext4_sb_info *sbi)
 #if defined(VENDOR_EDIT) && defined(CONFIG_EXT4_ASYNC_DISCARD_SUPPORT)
 //yh@PSW.BSP.Storage.EXT4, 2019-01-08 add for ext4 async discard suppot
 	case ptr_discard_cmd_control_offset:
-        if (!sysctl_ext4_async_discard_enable){
+        if (!test_opt(sbi->s_buddy_cache->i_sb, ASYNC_DISCARD)){
             return 0;    
         }
         

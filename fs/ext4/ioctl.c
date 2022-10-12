@@ -980,9 +980,15 @@ resizefs_out:
 		int ret = 0;
 //#if defined(VENDOR_EDIT) && defined(CONFIG_EXT4_ASYNC_DISCARD_SUPPORT)
 //yh@PSW.BSP.Storage.EXT4, 2018-11-26 add for ext4 async discard suppot
-//		if (sysctl_ext4_async_discard_enable) 
+//
+//		if (test_opt(sb, ASYNC_DISCARD))  
 //			return 0;
 //#endif
+
+
+
+
+
 		if (!capable(CAP_SYS_ADMIN))
 			return -EPERM;
 

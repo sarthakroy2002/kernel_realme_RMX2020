@@ -86,3 +86,8 @@ obj-y				+= l3mdev/
 endif
 obj-$(CONFIG_QRTR)		+= qrtr/
 obj-$(CONFIG_NET_NCSI)		+= ncsi/
+#ifdef VENDOR_EDIT
+#Junyuan.Huang@PSW.CN.WiFi.Network.internet.1197891, 2018/04/10,
+#Add code for appo sla function
+obj-y                   	+= oppo_sla/
+#endif /* VENDOR_EDIT */
