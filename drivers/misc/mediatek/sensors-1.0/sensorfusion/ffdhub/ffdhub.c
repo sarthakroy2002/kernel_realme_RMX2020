@@ -24,11 +24,6 @@
 
 static struct fusion_init_info ffdhub_init_info;
 
-// for motor down if free fall
-#ifdef CONFIG_OPPO_MOTOR
-extern void oppo_motor_downward(void);
-#endif
-
 static int ffd_get_data(int *x, int *y, int *z, int *scalar, int *status)
 {
     int err = 0;
@@ -99,13 +94,6 @@ static int ffd_recv_data(struct data_unit_t *event, void *reserved)
 
     FFD_LOG("ffd recv data, flush_action = %d, ffd value = %d, report_count = %d, timestamp = %lld\n",
         event->flush_action, event->ffd_data_t.value, event->ffd_data_t.report_count, (int64_t)event->time_stamp);
-
-#ifdef CONFIG_OPPO_MOTOR
-// for motor down if freefall
-    if (event->ffd_data_t.value) {
-        oppo_motor_downward();
-    }
-#endif
 
     if (event->flush_action == DATA_ACTION)
     {
