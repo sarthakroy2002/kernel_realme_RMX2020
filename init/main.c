@@ -99,11 +99,6 @@
 #include <mt-plat/mtk_ram_console.h>
 #endif
 
-#ifdef VENDOR_EDIT
-// Bin.Xu @ BSP.Kernel.Stability, 2019/12/03, Add for forcedump
-#include<linux/oppo_dump.h>
-#endif /* VENDOR_EDIT */
-
 static int kernel_init(void *);
 
 extern void init_IRQ(void);
@@ -458,12 +453,6 @@ static int __init do_early_param(char *param, char *val,
 				pr_warn("Malformed early option '%s'\n", param);
 		}
 	}
-#ifdef VENDOR_EDIT
-// Bin.Xu @ BSP.Kernel.Stability, 2019/12/02, Add for force dump.
-	if (strcmp(param, "fd_passwd") == 0)
-		get_fdump_passwd(val);
-#endif /* VENDOR_EDIT */
-
 
 	/* We accept everything at this stage. */
 	return 0;

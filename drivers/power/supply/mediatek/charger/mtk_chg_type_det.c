@@ -59,11 +59,6 @@
 extern unsigned int is_project(OPPO_PROJECT project );
 #endif /*ODM_WT_EDIT*/
 
-#ifdef VENDOR_EDIT
-//Bin.Xu@BSP.Kernel.Stability, 2019/11/11, Add for oppo dump
-#include <linux/oppo_dump.h>
-#endif
-
 void __attribute__((weak)) fg_charger_in_handler(void)
 {
 	pr_notice("%s not defined\n", __func__);
@@ -272,14 +267,6 @@ static int mt_charger_set_property(struct power_supply *psy,
 /*Sidong.Zhao@ODM_WT.BSP.CHG 2019/11/4,for gm30 baseline upgrade*/
 		oppo_chg_wake_update_work();
 #endif /*ODM_WT_EDIT*/
-#ifdef VENDOR_EDIT
-//Qicai.gu@BSP.TP.Function, 2019/11/12, Add for informing tp driver of usb
-               if (mtk_chg->chg_type == CHARGER_UNKNOWN){
-               } else {
-                   //Bin.Xu@BSP.Kernel.Stability, 2019/11/11, Add for oppo dump
-                   OPPO_DUMP(__func__);
-               }
-#endif /*VENDOR_EDIT*/
 #if defined(VENDOR_EDIT) && defined(CONFIG_OPPO_CHARGER_MT6370_TYPEC)
 /* Jianchao.Shi@BSP.CHG.Basic, 2019/06/15, sjc Add for charging */
 		if (battery_psy)

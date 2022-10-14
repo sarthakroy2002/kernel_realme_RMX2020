@@ -1,4 +1,0 @@
-config OPPO_FORCE_DUMP
-	bool "config oppo force dump"
-	help
-		define force dump functions
