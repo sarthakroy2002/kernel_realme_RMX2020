@@ -1325,5 +1325,5 @@
 //#endif /*ODM_WT_EDIT*/
 
 #include "mediatek/oppo6769_19741/cust.dtsi"
-#include "cust_mt6768_camera.dtsi"
+#include "mediatek/cust_mt6768_camera.dtsi"
 /*End of this file, DO NOT ADD ANYTHING HERE*/

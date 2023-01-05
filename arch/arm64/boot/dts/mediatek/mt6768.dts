@@ -3791,30 +3791,30 @@ defined(CONFIG_MTK_CAM_SECURITY_SUPPORT)
 };
 
 
-#include "mt6358.dtsi"
-#include "cust_mt6768_msdc.dtsi"
-#include "mt6370.dtsi"
-#include "mt6370_pd.dtsi"
+#include "mediatek/mt6358.dtsi"
+#include "mediatek/cust_mt6768_msdc.dtsi"
+#include "mediatek/mt6370.dtsi"
+#include "mediatek/mt6370_pd.dtsi"
 #ifndef CONFIG_ODM_WT_EDIT
 /*Shouli.Wang@ODM_WT.BSP.CHG 2019/10/19, add for charger bringup*/
 #ifdef CONFIG_CHARGER_RT9471
-#include "rt9471.dtsi"
+#include "mediatek/rt9471.dtsi"
 #endif
 #endif /*CONFIG_ODM_WT_EDIT*/
 #ifdef CONFIG_TCPC_CLASS
-#include "tcpc_config.dtsi"
+#include "mediatek/tcpc_config.dtsi"
 #endif
 #ifdef CONFIG_MTK_ENABLE_GENIEZONE
-#include "trusty.dtsi"
+#include "mediatek/trusty.dtsi"
 #endif
 //#ifdef ODM_WT_EDIT
 // Zengchao.Duan@ODM_WT.MM.AudioDriver.Machine, 2019/10/23, MonetX audio sia8108 bringup
 #ifdef CONFIG_SND_SIA81XX_PA
-#include "mt6768-sia81xx.dtsi"
+#include "mediatek/mt6768-sia81xx.dtsi"
 #endif
 //#endif
 //#ifdef ODM_WT_EDIT
 //Yuexiu.Wu@ODM_WT.WCN.NFC.Basic.1941873,2019/12/14,add for use MTK driver
-#include "pn553-nfc.dtsi"
+#include "mediatek/pn553-nfc.dtsi"
 //#endif
 
