@@ -177,7 +177,7 @@ static int monet_pinctrl_set(int pin, int state)
 		pr_err("set err, pin(%d) state(%d)\n", pin, state);
 		break;
 	}
-	pr_info("pin(%d) state(%d)\n", pin, state);
+	pr_debug("pin(%d) state(%d)\n", pin, state);
 
 	return ret;
 }
@@ -474,13 +474,13 @@ static unsigned int monet_timeout_ms[MONET_CHANNEL_NUM];
 
 static void monet_work_disable_ch1(struct work_struct *data)
 {
-	pr_info("ht work queue callback\n");
+	pr_debug("ht work queue callback\n");
 	monet_disable_ch1();
 }
 
 static void monet_work_disable_ch2(struct work_struct *data)
 {
-	pr_info("lt work queue callback\n");
+	pr_debug("lt work queue callback\n");
 	monet_disable_ch2();
 }
 
@@ -544,19 +544,19 @@ static int monet_ioctl(unsigned int cmd, unsigned long arg)
 	}
 	switch (cmd) {
 	case FLASH_IOC_SET_TIME_OUT_TIME_MS:
-		pr_info("FLASH_IOC_SET_TIME_OUT_TIME_MS(%d): %d\n",
+		pr_debug("FLASH_IOC_SET_TIME_OUT_TIME_MS(%d): %d\n",
 				channel, (int)fl_arg->arg);
 		monet_timeout_ms[channel] = fl_arg->arg;
 		break;
 
 	case FLASH_IOC_SET_DUTY:
-		pr_info("FLASH_IOC_SET_DUTY(%d): %d\n",
+		pr_debug("FLASH_IOC_SET_DUTY(%d): %d\n",
 				channel, (int)fl_arg->arg);
 		monet_set_level(channel, fl_arg->arg);
 		break;
 
 	case FLASH_IOC_SET_ONOFF:
-		pr_info("FLASH_IOC_SET_ONOFF(%d): %d\n",
+		pr_debug("FLASH_IOC_SET_ONOFF(%d): %d\n",
 				channel, (int)fl_arg->arg);
 		if (fl_arg->arg == 1) {
 			if (monet_timeout_ms[channel]) {
@@ -572,29 +572,29 @@ static int monet_ioctl(unsigned int cmd, unsigned long arg)
 		break;
 
 	case FLASH_IOC_GET_DUTY_NUMBER:
-		pr_info("FLASH_IOC_GET_DUTY_NUMBER(%d)\n", channel);
+		pr_debug("FLASH_IOC_GET_DUTY_NUMBER(%d)\n", channel);
 		fl_arg->arg = MONET_LEVEL_NUM;
 		break;
 
 	case FLASH_IOC_GET_MAX_TORCH_DUTY:
-		pr_info("FLASH_IOC_GET_MAX_TORCH_DUTY(%d)\n", channel);
+		pr_debug("FLASH_IOC_GET_MAX_TORCH_DUTY(%d)\n", channel);
 		fl_arg->arg = MONET_LEVEL_TORCH - 1;
 		break;
 
 	case FLASH_IOC_GET_DUTY_CURRENT:
 		fl_arg->arg = monet_verify_level(fl_arg->arg);
-		pr_info("FLASH_IOC_GET_DUTY_CURRENT(%d): %d\n",
+		pr_debug("FLASH_IOC_GET_DUTY_CURRENT(%d): %d\n",
 				channel, (int)fl_arg->arg);
 		fl_arg->arg = monet_current[fl_arg->arg];
 		break;
 
 	case FLASH_IOC_GET_HW_TIMEOUT:
-		pr_info("FLASH_IOC_GET_HW_TIMEOUT(%d)\n", channel);
+		pr_debug("FLASH_IOC_GET_HW_TIMEOUT(%d)\n", channel);
 		fl_arg->arg = MONET_HW_TIMEOUT;
 		break;
 
 	default:
-		pr_info("No such command and arg(%d): (%d, %d)\n",
+		pr_debug("No such command and arg(%d): (%d, %d)\n",
 				channel, _IOC_NR(cmd), (int)fl_arg->arg);
 		return -ENOTTY;
 	}
@@ -620,7 +620,7 @@ static int monet_release(void)
 		use_count = 0;
 	mutex_unlock(&monet_mutex);
 
-	pr_info("Release: %d\n", use_count);
+	pr_debug("Release: %d\n", use_count);
 */
 	return 0;
 }
@@ -635,14 +635,14 @@ static int monet_set_driver(int set)
 		if (!use_count)
 			ret = monet_init();
 		use_count++;
-		pr_info("Set driver: %d\n", use_count);
+		pr_debug("Set driver: %d\n", use_count);
 	} else {
 		use_count--;
 		if (!use_count)
 			ret = monet_uninit();
 		if (use_count < 0)
 			use_count = 0;
-		pr_info("Unset driver: %d\n", use_count);
+		pr_debug("Unset driver: %d\n", use_count);
 	}
 	mutex_unlock(&monet_mutex);
 
@@ -765,13 +765,13 @@ static int monet_parse_dt(struct device *dev,
 
 	pdata->channel_num = of_get_child_count(np);
 	if (!pdata->channel_num) {
-		pr_info("Parse no dt, node.\n");
+		pr_debug("Parse no dt, node.\n");
 		return 0;
 	}
-	pr_info("Channel number(%d).\n", pdata->channel_num);
+	pr_debug("Channel number(%d).\n", pdata->channel_num);
 
 	if (of_property_read_u32(np, "decouple", &decouple))
-		pr_info("Parse no dt, decouple.\n");
+		pr_debug("Parse no dt, decouple.\n");
 
 	pdata->dev_id = devm_kzalloc(dev,
 			pdata->channel_num *
@@ -792,7 +792,7 @@ static int monet_parse_dt(struct device *dev,
 		pdata->dev_id[i].channel = i;
 		pdata->dev_id[i].decouple = decouple;
 
-		pr_info("Parse dt (type,ct,part,name,channel,decouple)=(%d,%d,%d,%s,%d,%d).\n",
+		pr_debug("Parse dt (type,ct,part,name,channel,decouple)=(%d,%d,%d,%s,%d,%d).\n",
 				pdata->dev_id[i].type, pdata->dev_id[i].ct,
 				pdata->dev_id[i].part, pdata->dev_id[i].name,
 				pdata->dev_id[i].channel,
@@ -816,7 +816,7 @@ int high_cct_led_strobe_enable_part1(void)
 
     mdelay(1);
 
-    pr_info("!!!\n");
+    pr_debug("!!!\n");
     return 0;
 }
 
@@ -849,7 +849,7 @@ int low_cct_led_strobe_enable_part1(void)
 
     mdelay(1);
 
-    pr_info("!!!\n");
+    pr_debug("!!!\n");
     return 0;
 }
 
@@ -892,14 +892,14 @@ static int monet_chip_id(void)
 
 	monet_pinctrl_set(MONET_PINCTRL_PIN_HWEN, MONET_PINCTRL_PINSTATE_HIGH);
 	chip_id = monet_read_reg(monet_i2c_client, 0x0c);
-	pr_info("flashlight chip id: reg:0x0c, data:0x%x", chip_id);
+	pr_debug("flashlight chip id: reg:0x0c, data:0x%x", chip_id);
 	monet_pinctrl_set(MONET_PINCTRL_PIN_HWEN, MONET_PINCTRL_PINSTATE_LOW);
 
 	if (chip_id == AW3643_SM) {
-		pr_info(" the device's flashlight driver IC is AW3643\n");
+		pr_debug(" the device's flashlight driver IC is AW3643\n");
 		return USE_AW3643_IC;
 	} else if (chip_id == OCP81373_SM){
-		pr_info(" the device's flashlight driver IC is OCP81373\n");
+		pr_debug(" the device's flashlight driver IC is OCP81373\n");
 		return USE_OCP81373_IC;
 	} else {
 		pr_err(" the device's flashlight driver IC is not used in our project!\n");
@@ -914,7 +914,7 @@ static int monet_i2c_probe(struct i2c_client *client, const struct i2c_device_id
 	int i;
 	int chip_id;
 
-	pr_info("Probe start.\n");
+	pr_debug("Probe start.\n");
 
 	/* check i2c */
 	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
@@ -1001,7 +1001,7 @@ static int monet_i2c_probe(struct i2c_client *client, const struct i2c_device_id
 
     monet_create_sysfs(client);
 
-	pr_info("Probe done.\n");
+	pr_debug("Probe done.\n");
 
 	return 0;
 
@@ -1018,7 +1018,7 @@ static int monet_i2c_remove(struct i2c_client *client)
 	struct monet_chip_data *chip = i2c_get_clientdata(client);
 	int i;
 
-	pr_info("Remove start.\n");
+	pr_debug("Remove start.\n");
 
 	client->dev.platform_data = NULL;
 
@@ -1041,7 +1041,7 @@ static int monet_i2c_remove(struct i2c_client *client)
 		kfree(chip->pdata);
 	kfree(chip);
 
-	pr_info("Remove done.\n");
+	pr_debug("Remove done.\n");
 
 	return 0;
 }
@@ -1076,7 +1076,7 @@ static struct i2c_driver monet_i2c_driver = {
  *****************************************************************************/
 static int monet_probe(struct platform_device *dev)
 {
-	pr_info("Probe start.\n");
+	pr_debug("Probe start.\n");
 
 	/* init pinctrl */
 	if (monet_pinctrl_init(dev)) {
@@ -1089,18 +1089,18 @@ static int monet_probe(struct platform_device *dev)
 		return -1;
 	}
 
-	pr_info("Probe done.\n");
+	pr_debug("Probe done.\n");
 
 	return 0;
 }
 
 static int monet_remove(struct platform_device *dev)
 {
-	pr_info("Remove start.\n");
+	pr_debug("Remove start.\n");
 
 	i2c_del_driver(&monet_i2c_driver);
 
-	pr_info("Remove done.\n");
+	pr_debug("Remove done.\n");
 
 	return 0;
 }
@@ -1139,7 +1139,7 @@ static int __init flashlight_monet_init(void)
 {
 	int ret;
 
-	pr_info("flashlight_monet-Init start.\n");
+	pr_debug("flashlight_monet-Init start.\n");
 
 #ifndef CONFIG_OF
 	ret = platform_device_register(&monet_platform_device);
@@ -1155,18 +1155,18 @@ static int __init flashlight_monet_init(void)
 		return ret;
 	}
 
-	pr_info("flashlight_monet Init done.\n");
+	pr_debug("flashlight_monet Init done.\n");
 
 	return 0;
 }
 
 static void __exit flashlight_monet_exit(void)
 {
-	pr_info("flashlight_monet-Exit start.\n");
+	pr_debug("flashlight_monet-Exit start.\n");
 
 	platform_driver_unregister(&monet_platform_driver);
 
-	pr_info("flashlight_monet Exit done.\n");
+	pr_debug("flashlight_monet Exit done.\n");
 }
 
 
