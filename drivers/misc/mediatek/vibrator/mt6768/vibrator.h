@@ -14,6 +14,7 @@
 #ifndef __CUST_VIBRATOR_H__
 #define __CUST_VIBRATOR_H__
 
+#include <linux/platform_device.h>
 
 #define CUST_VIBR_LIMIT
 #define CUST_VIBR_VOL
