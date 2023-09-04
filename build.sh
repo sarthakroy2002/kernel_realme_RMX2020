@@ -8,10 +8,7 @@ export LC_ALL=C && export USE_CCACHE=1
 export ARCH=arm64
 export KBUILD_BUILD_HOST=neolit
 export KBUILD_BUILD_USER="sarthakroy2002"
-mkdir clang && cd clang
-bash <(curl -s https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman) -S=latest
-bash <(curl -s https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman) --patch=glibc
-cd ..
+git clone https://gitlab.com/arrowos-project/android_prebuilts_clang_host_linux-x86_clang-r468909 clang
 
 [ -d "out" ] && rm -rf out || mkdir -p out
 
@@ -19,18 +16,9 @@ make O=out ARCH=arm64 RMX2020_defconfig
 
 PATH="${PWD}/clang/bin:${PATH}" \
 make -j$(nproc --all) O=out \
-                      ARCH=arm64 \
                       CC="clang" \
-                      CROSS_COMPILE=aarch64-linux-gnu- \
-                      CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
                       LLVM=1 \
-                      LD=ld.lld \
-                      AS=llvm-as \
-		              AR=llvm-ar \
-			          NM=llvm-nm \
-			          OBJCOPY=llvm-objcopy \
-                      OBJDUMP=llvm-objdump \
-                      STRIP=llvm-strip \
+                      LLVM_IAS=1 \
                       CONFIG_NO_ERROR_ON_MISMATCH=y
 }
 
