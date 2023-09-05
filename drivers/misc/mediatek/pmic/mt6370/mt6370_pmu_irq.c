@@ -220,7 +220,7 @@ static const struct irq_domain_ops mt6370_pmu_irq_domain_ops = {
 static irqreturn_t mt6370_pmu_irq_handler(int irq, void *priv)
 {
 	struct mt6370_pmu_chip *chip = (struct mt6370_pmu_chip *)priv;
-	u8 irq_ind = 0, data[16] = { 0 }, mask[16] = {
+	u8 __maybe_unused irq_ind = 0, data[16] = { 0 }, mask[16] = {
 	0};
 	u8 stat_chg[16] = { 0 }, stat_old[16] = {
 	0}, stat_new[16] = {
