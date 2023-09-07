@@ -578,24 +578,7 @@ int incfs_read_file_header(struct backing_file_context *bfc,
 	if (!bfc || !first_md_off)
 		return -EFAULT;
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	bytes_read = incfs_kread(bfc, &fh, sizeof(fh), 0);
-=======
-	bytes_read = incfs_kread(bfc->bc_file, &fh, sizeof(fh), 0);
->>>>>>> 876a45bb805038c0aa4c4bdee122c79d98f3eadd
-=======
-	bytes_read = incfs_kread(bfc, &fh, sizeof(fh), 0);
->>>>>>> ead8ff726b4aa48b2fd2293ec92f71c0908b2ef7
-=======
-	LOCK_REQUIRED(bfc->bc_mutex);
-	bytes_read = incfs_kread(bfc->bc_file, &fh, sizeof(fh), 0);
->>>>>>> 3c710d1c1fd46bb38c165cca7964c996f44f4bb2
-=======
-	bytes_read = incfs_kread(bfc, &fh, sizeof(fh), 0);
->>>>>>> bfcc7d1f76223baf0afe83c5bd9997503acd5468
 	if (bytes_read < 0)
 		return bytes_read;
 
