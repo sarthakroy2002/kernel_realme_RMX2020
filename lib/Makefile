@@ -268,6 +268,8 @@ obj-$(CONFIG_SBITMAP) += sbitmap.o
 
 obj-$(CONFIG_PARMAN) += parman.o
 
+obj-y += crypto/
+
 # ifdef OPLUS_FEATURE_MEMLEAK_DETECT
 # /* Kui.Zhang@BSP.Kernel.MM, 2020-06-01, add memleak detect stack depot */
 obj-$(CONFIG_VMALLOC_DEBUG) += memleak_debug_stackdepot.o

@@ -3844,12 +3844,12 @@ int tcp_rtx_synack(const struct sock *sk, struct request_sock *req)
 	tcp_rsk(req)->txhash = net_tx_rndhash();
 	res = af_ops->send_synack(sk, NULL, &fl, req, NULL, TCP_SYNACK_NORMAL);
 	if (!res) {
-		__TCP_INC_STATS(sock_net(sk), TCP_MIB_RETRANSSEGS);
+		TCP_INC_STATS(sock_net(sk), TCP_MIB_RETRANSSEGS);
 		//#ifdef OPLUS_FEATURE_DATA_EVAL
 		//PengHao@NETWORK.DATA.8124, 2020/05/08, Add for network quality evaluation.
 		oplus_handle_retransmit(sk, 1);
 		//#endif /* OPLUS_FEATURE_DATA_EVAL */
-		__NET_INC_STATS(sock_net(sk), LINUX_MIB_TCPSYNRETRANS);
+		NET_INC_STATS(sock_net(sk), LINUX_MIB_TCPSYNRETRANS);
 		if (unlikely(tcp_passive_fastopen(sk)))
 			tcp_sk(sk)->total_retrans++;
 	}
