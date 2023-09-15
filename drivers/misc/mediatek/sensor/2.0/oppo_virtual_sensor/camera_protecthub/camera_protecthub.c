@@ -26,12 +26,6 @@
 
 static struct virtual_sensor_init_info camera_protecthub_init_info;
 
-// for motor down if free fall
-#ifdef CONFIG_OPPO_MOTOR
-extern void oppo_motor_downward(void);
-#endif
-
-
 static int camera_protect_open_report_data(int open)
 {
     return 0;
@@ -103,15 +97,6 @@ static int camera_protect_recv_data(struct data_unit_t *event, void *reserved)
         event->flush_action, event->oppo_data_t.camera_protect_data_t.value,
         event->oppo_data_t.camera_protect_data_t.report_count,
         (int64_t)event->time_stamp);
-
-#ifdef CONFIG_OPPO_MOTOR
-
-    // for motor down if freefall
-    if (event->oppo_data_t.camera_protect_data_t.value) {
-        oppo_motor_downward();
-    }
-
-#endif
 
     if (event->flush_action == DATA_ACTION) {
         camera_protect_data_report(event);

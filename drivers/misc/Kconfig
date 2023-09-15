@@ -569,7 +569,6 @@ source "drivers/misc/genwqe/Kconfig"
 source "drivers/misc/echo/Kconfig"
 source "drivers/misc/cxl/Kconfig"
 source "drivers/misc/mediatek/Kconfig"
-source "drivers/misc/oppo_motor/Kconfig"
 #ifdef VENDOR_EDIT//Fanhong.Kong@ProDrv.CHG,add 2018/10/25 for vib aw8697
 source "drivers/misc/aw8697_haptic/Kconfig"
 #endif

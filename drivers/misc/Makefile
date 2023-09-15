@@ -64,11 +64,6 @@ obj-$(CONFIG_MEDIATEK_SOLUTION) += mediatek/
 #ifdef VENDOR_EDIT//Fanhong.Kong@ProDrv.CHG,add 2018/10/25 for vib aw8697				+= lis3lv02d/
 obj-$(CONFIG_AW8697_HAPTIC)		+= aw8697_haptic/
 #endif
-#ifdef VENDOR_EDIT
-# xing.xiong@BSP.Kernel.Debug, 2018/10/01, Add for motor
-obj-$(CONFIG_OPPO_MOTOR)		+= motor.o
-obj-$(CONFIG_OPPO_MOTOR)		+= oppo_motor/
-#endif
 #ifdef OPLUS_FEATURE_TP_BASIC
 #Qicai.Gu@BSP.TP, 2020/08/10, modify for sim detect
 obj-$(CONFIG_SIM_DETECT)	+= sim_detect.o
