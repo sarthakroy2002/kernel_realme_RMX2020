@@ -1071,10 +1071,6 @@ struct task_struct {
 #endif
 #ifdef CONFIG_DETECT_HUNG_TASK
 	unsigned long			last_switch_count;
-
-#ifdef CONFIG_OPLUS_FEATURE_HUNG_TASK_ENHANCE
-	bool hang_detection_enabled;
-#endif /* CONFIG_OPLUS_FEATURE_HUNG_TASK_ENHANCE */
 #endif
 	/* Filesystem information: */
 	struct fs_struct		*fs;
