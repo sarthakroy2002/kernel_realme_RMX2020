@@ -158,31 +158,10 @@ __weak void aee_wdt_zap_locks(void)
 	pr_notice("%s:weak function\n", __func__);
 }
 
-#ifdef OPLUS_FEATURE_PHOENIX
-//Kun.Hu@PSW.TECH.RELIABILTY, 2019/03/03, Add for project phoenix
-extern void deal_fatal_err(void);
-extern int kernel_panic_happened;
-extern int hwt_happened;
-#endif /* OPLUS_FEATURE_PHOENIX */
 
 int __init mrdump_common_die(int fiq_step, int reboot_reason, const char *msg,
 		      struct pt_regs *regs)
 {
-
-#ifdef OPLUS_FEATURE_PHOENIX
-	//Kun.Hu@PSW.TECH.RELIABILTY, 2019/03/03, Add for project phoenix
-	if((AEE_REBOOT_MODE_KERNEL_OOPS == reboot_reason || AEE_REBOOT_MODE_KERNEL_PANIC == reboot_reason)
-		&& !kernel_panic_happened)
-	{
-		kernel_panic_happened = 1;
-		deal_fatal_err();
-	}
-	else if (AEE_REBOOT_MODE_WDT == reboot_reason && !hwt_happened)
-	{
-		hwt_happened = 1;
-		deal_fatal_err();
-	}
-#endif /* OPLUS_FEATURE_PHOENIX */
 
 #ifdef OPLUS_FEATURE_PERFORMANCE
 //ZuoTong@ANDROID.PERFORMANCE, 2020/06/28,Add for flushing device cache before go to dump mode!

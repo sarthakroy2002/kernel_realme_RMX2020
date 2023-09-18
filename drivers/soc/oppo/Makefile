@@ -12,15 +12,6 @@ obj-y += oppo_custom/
 #obj-$(CONFIG_OPPO_CRITICALLOG)  +=  oppo_criticallog/
 obj-y  +=  oppo_criticallog/
 
-#Kun.Hu@TECH.BSP.Stability.PHOENIX_PROJECT 2019/06/15, Add for PHOENIX_PROJECT
-#obj-$(CONFIG_OPPO_PHOENIX)     +=  oppo_phoenix/
-#endif /* VENDOR_EDIT */
-
-#ifdef VENDOR_EDIT
-#* Bin.Xu@BSP.Kernel.Stability, 2019/12/2, Add for oppo force dump */
-#obj-$(CONFIG_OPPO_KEY_HANDLE)    +=  oppo_key_handle/
-#endif /* VENDOR_EDIT */
-
 #ifdef OPLUS_FEATURE_NFC_CONSOFT
 #/* WangYukun@CONNECTIVITY.NFC.BASIC, 2020/03/24, Add for oppo nfc chipset */
 obj-$(CONFIG_OPPO_NFC)     +=  oppo_nfc/

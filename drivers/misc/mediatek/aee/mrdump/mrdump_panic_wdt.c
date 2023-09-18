@@ -56,12 +56,6 @@
 #define MAX_EXCEPTION_FRAME	16
 #define PRINTK_BUFFER_SIZE	512
 
-#ifdef OPLUS_FEATURE_PHOENIX
-//Liang.Zhang@PSW.TECH.BOOTUP, 2019/01/22, Add for monitor kernel error
-extern int hwt_happened;
-extern void deal_fatal_err(void);
-#endif  /*OPLUS_FEATURE_PHOENIX*/
-
 #ifdef OPLUS_FEATURE_PERFORMANCE
 //ZuoTong@ANDROID.PERFORMANCE, 2020/06/28,Add for flushing device cache before goto dump mode!
 extern bool is_triggering_hwt;
@@ -270,15 +264,6 @@ void aee_wdt_atf_info(unsigned int cpu, struct pt_regs *regs)
 	int res = 0;
 	struct wd_api *wd_api = NULL;
 #endif
-
-#ifdef OPLUS_FEATURE_PHOENIX
-//Liang.Zhang@PSW.TECH.BOOTUP, 2019/01/22, Add for monitor kernel error
-    if(!hwt_happened)
-    {
-        hwt_happened = 1;
-        deal_fatal_err();
-    }
-#endif  /*OPLUS_FEATURE_PHOENIX*/
 
 #ifdef OPLUS_FEATURE_PERFORMANCE
 //ZuoTong@ANDROID.PERFORMANCE, 2020/06/28,Add for flushing device cache before goto dump mode!

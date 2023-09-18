@@ -18,10 +18,6 @@ source "drivers/soc/oppo/oppo_devinfo/Kconfig"
 #source "drivers/soc/oppo/oppo_als_cali_value/Kconfig"
 #source "drivers/soc/oppo/oppo_hypnus/Kconfig"
 
-#Kun.Hu@TECH.BSP.Stability.PHOENIX_PROJECT 2019/06/15, Add for PHOENIX_PROJECT
-#source "drivers/soc/oppo/oppo_phoenix/Kconfig"
-#endif /* OPLUS_FEATURE_TP_BASIC */
-
 #ifdef VENDOR_EDIT
 #* Bin.Xu@BSP.Kernel.Stability, 2019/12/2, Add for oppo force dump */
 #source "drivers/soc/oppo/oppo_key_handle/Kconfig"
