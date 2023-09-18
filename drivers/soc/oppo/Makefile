@@ -6,8 +6,6 @@ obj-$(CONFIG_OPPO_DEVICE_IFNO)  +=  oppo_devinfo/
 obj-y += oppo_custom/
 #obj-$(CONFIG_OPPO_HYPNUS)       +=  oppo_hypnus/
 
-#Liang.Zhang@TECH.Storage.Stability.OPPO_SHUTDOWN_DETECT, 2019/04/28, Add for shutdown detect
-#obj-$(CONFIG_OPPO_SHUTDOWN_DETECT)  +=  oppo_shutdown_detect/
 #endif /* VENDOR_EDIT */
 #ifdef VENDOR_EDIT
 #Weican.Zhao@PSW.NW.EM, 2019/02/12, Add for OPPO Critical log

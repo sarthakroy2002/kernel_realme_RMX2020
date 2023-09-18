@@ -29,7 +29,6 @@ config OPPO_DEVICE_IFNO
 
 source "drivers/soc/oplus/system/feedback/Kconfig"
 source "drivers/soc/oplus/system/uboot_log/Kconfig"
-source "drivers/soc/oplus/system/shutdown_detect/Kconfig"
 source "drivers/soc/oplus/system/slabtrace/Kconfig"
 source "drivers/soc/oplus/system/oplus_project/Kconfig"
 source "drivers/soc/oplus/system/qcom_minidump/Kconfig"
