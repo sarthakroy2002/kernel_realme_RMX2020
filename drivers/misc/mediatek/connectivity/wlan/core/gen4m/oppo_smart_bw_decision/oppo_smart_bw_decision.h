@@ -16,7 +16,6 @@
 #ifdef OPLUS_FEATURE_WIFI_SMART_BW
 #ifndef _OPPO_SMART_BW_DECISION_H
 #define _OPPO_SMART_BW_DECISION_H
-#include <linux/oplus_kevent.h>
 
 //@2019/10/28: Gen4m missing too many define, define here to let core code needn't modify
 typedef struct BSS_DESC BSS_DESC_T, *P_BSS_DESC_T;
