@@ -654,11 +654,6 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 			prBssDesc->ucChannelNum);
 		return FALSE;
 	}
-#ifdef OPLUS_FEATURE_WIFI_SMART_BW
-	//gen3 & gen4m is different, modify for Gen4m, refer trigger2GBWSwitch()
-	/*Fenghua.Xu@PSW.TECH.WiFi.Connect.P00054039, 2019/10/26, for smart band-width decision, neeedn't check beacon phase out */
-	if (prAdapter->rSmartBW.eSmartBWSwitchState != SMART_BW_SWITCH_ONGOING)
-#endif
 	if (CHECK_FOR_TIMEOUT(kalGetTimeTick(), prBssDesc->rUpdateTime,
 		SEC_TO_SYSTIME(wlanWfdEnabled(prAdapter) ?
 			SCN_BSS_DESC_STALE_SEC_WFD : SCN_BSS_DESC_STALE_SEC))) {

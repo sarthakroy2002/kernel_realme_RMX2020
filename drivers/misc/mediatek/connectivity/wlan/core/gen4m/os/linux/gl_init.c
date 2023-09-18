@@ -4886,14 +4886,6 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		prAdapter = prGlueInfo->prAdapter;
 		prWifiVar = &prAdapter->rWifiVar;
 
-#ifdef OPLUS_FEATURE_WIFI_SMART_BW
-		//@2019/12/3, move from end of wlanProbe to here:
-		//let prWifiVar->ucSta2gBandwidth in wlanInitFeatureOption can be controlled by smart feature option
-		//which means when feature off, driver STA BW cap will same with the original code
-		/* Fenghua.Xu@PSW.TECH.WiFi.Connect.P00054039, 2019/10/26, add for smart band-width decision */
-		/* driver will call here every turn on WIFI */
-		smartBWGenericInit(prGlueInfo->prAdapter);
-#endif /* OPLUS_FEATURE_WIFI_SMART_BW */
 		wlanOnPreAdapterStart(prGlueInfo,
 			prAdapter,
 			&prRegInfo,
@@ -5339,11 +5331,6 @@ static void wlanRemove(void)
 #if CFG_MTK_MCIF_WIFI_SUPPORT
 	mddpNotifyWifiOffEnd();
 #endif
-#ifdef OPLUS_FEATURE_WIFI_SMART_BW
-	/* Fenghua.Xu@PSW.TECH.WiFi.Connect.P00054039, 2019/10/26, add for smart band-width decision */
-	/* driver will call here every turn off WIFI */
-	smartBWGenericUnInit();
-#endif /* OPLUS_FEATURE_WIFI_SMART_BW */
 }				/* end of wlanRemove() */
 
 /*----------------------------------------------------------------------------*/

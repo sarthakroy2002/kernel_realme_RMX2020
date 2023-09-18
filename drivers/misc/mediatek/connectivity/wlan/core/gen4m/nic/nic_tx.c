@@ -3497,10 +3497,6 @@ uint32_t nicTxEnqueueMsdu(IN struct ADAPTER *prAdapter,
 #if ARP_MONITER_ENABLE
 		if (prAdapter->cArpNoResponseIdx >= 0) {
 #if CFG_SUPPORT_DATA_STALL
-#ifdef OPLUS_FEATURE_WIFI_SMART_BW
-			/* Fenghua.Xu@PSW.TECH.WiFi.Connect.P00054039, 2019/7/3, add for smart band-width decision */
-			if (!prAdapter->rSmartBW.i24GBWManualSet) /* if not 0 stands for 2.4G BW switch */
-#endif
 			KAL_REPORT_ERROR_EVENT(prAdapter,
 				EVENT_ARP_NO_RESPONSE,
 				(uint16_t)sizeof(uint32_t),

@@ -408,11 +408,6 @@ else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
 ccflags-y += -I$(src)/os/$(os)/hif/none/include
 endif
 
-#ifdef OPLUS_FEATURE_WIFI_SMART_BW
-#//Fenghua.Xu@PSW.TECH.WiFi.Connect.P00054039, 2019/10/2, add for smart band-width decision
-ccflags-y += -I$(src)/oppo_smart_bw_decision
-#endif /* OPLUS_FEATURE_WIFI_SMART_BW */
-
 ifneq ($(PLATFORM_FLAGS), )
     ccflags-y += $(PLATFORM_FLAGS)
 endif
@@ -691,11 +686,6 @@ SYSDVT_OBJS += $(SYSDVT_DIR)dvt_dmashdl.o
 endif
 endif
 
-#ifdef OPLUS_FEATURE_WIFI_SMART_BW
-#//Fenghua.Xu@PSW.TECH.WiFi.Connect.P00054039, 2019/10/2, add for smart band-width decision
-SMART_BW_DECISION_OBJS += oppo_smart_bw_decision/oppo_smart_bw_decision.o
-#endif /* OPLUS_FEATURE_WIFI_SMART_BW */
-
 # ---------------------------------------------------
 # Service git List
 # ---------------------------------------------------
@@ -732,11 +722,6 @@ $(MODULE_NAME)-objs  += $(HIF_OBJS)
 $(MODULE_NAME)-objs  += $(MGMT_OBJS)
 $(MODULE_NAME)-objs  += $(CHIPS_OBJS)
 $(MODULE_NAME)-objs  += $(SYSDVT_OBJS)
-
-#ifdef OPLUS_FEATURE_WIFI_SMART_BW
-#//Fenghua.Xu@PSW.TECH.WiFi.Connect.P00054039, 2019/10/2, add for smart band-width decision
-$(MODULE_NAME)-objs  += $(SMART_BW_DECISION_OBJS)
-#endif /* OPLUS_FEATURE_WIFI_SMART_BW */
 
 ifneq ($(findstring UT_TEST_MODE,$(MTK_COMBO_CHIP)),)
 include $(src)/test/ut.make

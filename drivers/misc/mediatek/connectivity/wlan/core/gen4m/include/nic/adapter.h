@@ -74,10 +74,6 @@
 #endif /* CFG_SUPPORT_PASSPOINT */
 #include "gl_os.h"
 
-#ifdef OPLUS_FEATURE_WIFI_SMART_BW
-/* Fenghua.Xu@PSW.TECH.WiFi.Connect.P00054039, 2019/10/2, add for smart band-width decision */
-#include "oppo_smart_bw_decision.h"
-#endif
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -1770,10 +1766,6 @@ struct ADAPTER {
 #endif
 
 	int8_t cArpNoResponseIdx;
-#ifdef OPLUS_FEATURE_WIFI_SMART_BW
-	/* Fenghua.Xu@PSW.TECH.WiFi.Connect.P00054039, 2019/10/1, add for smart band-width decision */
-	SMART_BW_T rSmartBW;
-#endif
 	u_int8_t fgEnDbgPowerMode;
 
 	struct HIF_STATS rHifStats;

@@ -1353,10 +1353,6 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 
 	prDevHandler = wlanGetNetDev(prGlueInfo, ucBssIndex);
 
-#ifdef OPLUS_FEATURE_WIFI_SMART_BW
-	/* Fenghua.Xu@PSW.TECH.WiFi.Connect.P00054039, 2018/11/19, add for smart band-width decision */
-	handleSmartBWSwitchResult(eStatus);
-#endif
 	switch (eStatus) {
 	case WLAN_STATUS_ROAM_OUT_FIND_BEST:
 	case WLAN_STATUS_MEDIA_CONNECT:

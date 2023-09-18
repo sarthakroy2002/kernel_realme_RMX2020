@@ -1696,12 +1696,6 @@ static uint8_t cnmGetAPBwPermitted(struct ADAPTER
 				ucAPBandwidth = MAX_BW_40MHZ;
 			else
 				ucAPBandwidth = MAX_BW_20MHZ;
-#ifdef OPLUS_FEATURE_WIFI_SMART_BW
-			/* Fenghua.Xu@PSW.TECH.WiFi.Connect.P00054039, 2019/10/26, add for smart band-width decision */
-			/* ucAPBandwidth won't be modified if condition isn't match */
-			tuneSTABW(prBssInfo, prBssDesc, &ucAPBandwidth, ucBssIndex);
-			DBGLOG(SCN, TRACE, "prBssDesc 8, ucAPBandwidth = %d\n", ucAPBandwidth);
-#endif
 		} else {
 			ucAPBandwidth = prBssDesc->eChannelWidth + ucOffset;
 		}

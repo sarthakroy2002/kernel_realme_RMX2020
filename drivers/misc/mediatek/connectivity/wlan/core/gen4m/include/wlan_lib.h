@@ -1189,19 +1189,6 @@ struct WIFI_LINK_QUALITY_INFO {
 	uint64_t u8LastTxTotalCount;
 	uint64_t u8LastTxFailCount;
 	uint64_t u8LastIdleSlotCount;
-#ifdef OPLUS_FEATURE_WIFI_SMART_BW
-	/* Fenghua.Xu@PSW.TECH.WiFi.Connect.P00054039, 2019/6/7, add for smart band-width decision */
-	unsigned long long u8LastTxRetryCount;
-
-	unsigned long long u8LastRxTotalCount;	/* Rx total accumulated count */
-	unsigned long long u8LastRxErrCount;
-
-	/* L3 LQ status */
-	int iL3CSpeed; /* oppo_sla current_speed */
-	int iL3CongestionFlag; /* congestion_flag 0: normal, 1: middle, 2: high */
-
-	OS_SYSTIME rRecordLQSysTime;    /* the recorded connect sys time */
-#endif
 };
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 

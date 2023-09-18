@@ -1128,12 +1128,6 @@ __priv_set_int(IN struct net_device *prNetDev,
 	case PRIV_CMD_BAND_CONFIG: {
 		DBGLOG(INIT, INFO, "CMD set_band = %u\n",
 		       (uint32_t) pu4IntBuf[1]);
-#ifdef OPLUS_FEATURE_WIFI_SMART_BW
-		/* Fenghua.Xu@PSW.TECH.WiFi.Connect.P00054039, 2019/4/28, manual DBG code for smart band-width decision */
-		if (prGlueInfo->prAdapter->rSmartBW.smart_bw_params.SMART_BW_DBG) {
-				trigger2GBWSwitch(pu4IntBuf[1]);
-		}
-#endif
 	}
 	break;
 

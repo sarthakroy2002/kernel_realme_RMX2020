@@ -874,10 +874,6 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 			print_info(SCN, LOUD,
 				"ScanTime : %s\n", au2ChannelScanTime);
 #undef	print_scan_info
-#ifdef OPLUS_FEATURE_WIFI_SMART_BW
-		/* Fenghua.Xu@PSW.TECH.WiFi.Connect.P00054039, 2019/6/4, add for smart band-width decision */
-		saveScanWMBusyStatus(prScanDone);
-#endif
 	} else {
 		prScanInfo->fgIsSparseChannelValid = FALSE;
 	}

@@ -7240,23 +7240,8 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	 */
 	prWifiVar->ucStaBandwidth = (uint8_t) wlanCfgGetUint32(
 				prAdapter, "StaBw", MAX_BW_160MHZ);
-#ifndef OPLUS_FEATURE_WIFI_SMART_BW
-	/* Fenghua.Xu@PSW.TECH.WiFi.Connect.P00054039, 2018/11/2 */
-	/* Modify for smart band-width decision */
 	prWifiVar->ucSta2gBandwidth = (uint8_t) wlanCfgGetUint32(
 				prAdapter, "Sta2gBw", MAX_BW_20MHZ);
-#else
-	//@2019/12/3 let prWifiVar->ucSta2gBandwidth in wlanInitFeatureOption can be controlled by smart feature option
-	//which means when feature off, driver STA BW cap will same with the original code
-	if (prAdapter->rSmartBW.smart_bw_params.SELECT_BW_WHEN_CONNECT_FEATRUE_ENABLE) {
-			prWifiVar->ucSta2gBandwidth = (unsigned char) wlanCfgGetUint32(
-							prAdapter, "Sta2gBw", MAX_BW_40MHZ);
-	} else {
-			prWifiVar->ucSta2gBandwidth = (uint8_t) wlanCfgGetUint32(
-			prAdapter, "Sta2gBw", MAX_BW_20MHZ);
-	}
-#endif
-
 	prWifiVar->ucSta5gBandwidth = (uint8_t) wlanCfgGetUint32(
 				prAdapter, "Sta5gBw", MAX_BW_80MHZ);
 	/* GC,GO */
@@ -11972,16 +11957,6 @@ int wlanGetMaxTxRate(IN struct ADAPTER *prAdapter,
 	if (ucAPBwPermitted < ucBw)
 		ucBw = ucAPBwPermitted;
 
-#ifdef OPLUS_FEATURE_WIFI_SMART_BW
-	//Fenghua.Xu@PSW.TECH.WiFi.Connect.P00054039, 2019/12/3, add for smart band-width decision
-	//MTK code only check STA cap & AP cap, need check the real assoc BW
-	//@2019/12/4: fgAssoc40mBwAllowed will restore to 0 when connect success, fg40mBwAllowed keep the value
-	DBGLOG(SW4, TRACE, "prBssInfo->fgAssoc40mBwAllowed = %d, prBssInfo->fg40mBwAllowed = %d, prAdapter->rSmartBW.ucSelectBW = %d\n",
-			prBssInfo->fgAssoc40mBwAllowed, prBssInfo->fg40mBwAllowed, prAdapter->rSmartBW.ucSelectBW);
-	if (prAdapter->rSmartBW.smart_bw_params.SELECT_BW_WHEN_CONNECT_FEATRUE_ENABLE &&
-			!prBssInfo->fg40mBwAllowed) ucBw = MAX_BW_20MHZ;
-#endif /* OPLUS_FEATURE_WIFI_SMART_BW */
-
 	/* get Short GI Tx capability */
 	if ((prStaRec->u2HtCapInfo & HT_CAP_INFO_SHORT_GI_20M) ==
 	    HT_CAP_INFO_SHORT_GI_20M) {
@@ -12133,11 +12108,6 @@ uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid)
 	uint8_t arBssid[PARAM_MAC_ADDR_LEN];
 	uint32_t u4Status = WLAN_STATUS_FAILURE;
 	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
-#ifdef OPLUS_FEATURE_WIFI_SMART_BW
-	/* Fenghua.Xu@PSW.TECH.WiFi.Connect.P00054039, 2019/6/28, for smart band-width decision */
-	int payload[5];
-	int idleSlotRatio = 0;
-#endif
 
 	if (kalGetMediaStateIndicated(prGlueInfo,
 		ucBssIndex) !=
@@ -12193,48 +12163,6 @@ uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid)
 #if CFG_SUPPORT_DATA_STALL
 	wlanCustomMonitorFunction(prAdapter, prLinkQualityInfo, ucBssIndex);
 #endif
-#ifdef OPLUS_FEATURE_WIFI_SMART_BW
-	/* Fenghua.Xu@PSW.TECH.WiFi.Connect.P00054039, 2019/6/28, for smart band-width decision, porting from MTK @7/18, add AwakeDur for LinkQuality*/
-	/* Just get 100% ratio, so it caculate as: (100 * (slottime * 9/1000))/scan duration */
-	/* So it's (slottime * 9) / (10 * scan duration(ms) ) */
-	if (prLinkQualityInfo->u4HwMacAwakeDuration) {
-			idleSlotRatio = (prLinkQualityInfo->u8DiffIdleSlotCount * 9) / (10 * prLinkQualityInfo->u4HwMacAwakeDuration);
-	}
-	DBGLOG(SW4, INFO,
-	       "Link Quality: Tx(rate:%u, total:%lu, retry:%lu, fail:%lu, RTS fail:%lu, ACK fail:%lu), Rx(rate:%u, total:%lu, dup:%u, error:%lu), PER(%u), Congestion(idle slot:%lu, diff:%lu, AwakeDur:%u)\n",
-	       prLinkQualityInfo->u4CurTxRate, /* current tx link speed */
-	       prLinkQualityInfo->u8TxTotalCount, /* tx total packages */
-	       prLinkQualityInfo->u8TxRetryCount, /* tx retry count */
-	       prLinkQualityInfo->u8TxFailCount, /* tx fail count */
-	       prLinkQualityInfo->u8TxRtsFailCount, /* tx RTS fail count */
-	       prLinkQualityInfo->u8TxAckFailCount, /* tx ACK fail count */
-	       prLinkQualityInfo->u4CurRxRate, /* current rx link speed */
-	       prLinkQualityInfo->u8RxTotalCount, /* rx total packages */
-	       prLinkQualityInfo->u4RxDupCount, /* rx duplicate package count */
-	       prLinkQualityInfo->u8RxErrCount, /* rx fcs fail count */
-	       prLinkQualityInfo->u4CurTxPer, /* current Tx PER */
-	       /* congestion stats */
-	       prLinkQualityInfo->u8IdleSlotCount, /* idle slot */
-	       prLinkQualityInfo->u8DiffIdleSlotCount, /* idle slot diff */
-	       prLinkQualityInfo->u4HwMacAwakeDuration,
-           idleSlotRatio
-		);
-#endif
-#ifdef OPLUS_FEATURE_WIFI_SMART_BW
-		/* Fenghua.Xu@PSW.TECH.WiFi.Connect.P00054039, 2019/6/28, for smart band-width decision */
-		if (prAdapter->rSmartBW.fgIsNeedMonitorAPIOT || prAdapter->rSmartBW.fgIsNeedMonitorLink) {
-				DBGLOG(SW4, INFO,"fgIsNeedMonitorAPIOT: %d, fgIsNeedMonitorLinkTx: %d\n",
-						prAdapter->rSmartBW.fgIsNeedMonitorAPIOT, prAdapter->rSmartBW.fgIsNeedMonitorLink);
-				prLinkQualityInfo->rRecordLQSysTime = kalGetTimeTick();
-				get_L3_LQ_status(payload, sizeof(payload)/sizeof(payload[0]));
-				prLinkQualityInfo->iL3CSpeed = payload[1];
-				prLinkQualityInfo->iL3CongestionFlag = payload[3];
-				wlanSaveLinkQualitySmooth(prLinkQualityInfo);
-
-				wlanMonitorAPIOTIssue();
-				wlanMonitorLQStatus();
-		}
-#endif
 
 	return u4Status;
 }
@@ -12246,10 +12174,6 @@ void wlanFinishCollectingLinkQuality(struct GLUE_INFO *prGlueInfo)
 	uint32_t u4CurRxRate, u4MaxRxRate;
 	uint64_t u8TxFailCntDif, u8TxTotalCntDif;
 
-#ifdef OPLUS_FEATURE_WIFI_SMART_BW
-	/* Fenghua.Xu@PSW.TECH.WiFi.Connect.P00054039, 2019/6/7, add for smart band-width decision */
-	unsigned long long  u8TxRetryCntDif, u8RxTotalCntDif, u8RxErrCntDif;
-#endif
 	prAdapter = prGlueInfo->prAdapter;
 	if (prAdapter == NULL) {
 		DBGLOG(SW4, ERROR, "prAdapter is null\n");
@@ -12297,35 +12221,6 @@ void wlanFinishCollectingLinkQuality(struct GLUE_INFO *prGlueInfo)
 					prLinkQualityInfo->u8TxFailCount;
 	prLinkQualityInfo->u8LastIdleSlotCount =
 					prLinkQualityInfo->u8IdleSlotCount;
-#ifdef OPLUS_FEATURE_WIFI_SMART_BW
-	/* Fenghua.Xu@PSW.TECH.WiFi.Connect.P00054039, 2019/6/7, add for smart band-width decision */
-	/* Check packet diff purpose */
-	u8TxRetryCntDif = (prLinkQualityInfo->u8TxRetryCount >
-		   prLinkQualityInfo->u8LastTxRetryCount) ?
-		  (prLinkQualityInfo->u8TxRetryCount -
-		   prLinkQualityInfo->u8LastTxRetryCount) : 0;
-	u8RxTotalCntDif = (prLinkQualityInfo->u8RxTotalCount >
-		  prLinkQualityInfo->u8LastRxTotalCount) ?
-		 (prLinkQualityInfo->u8RxTotalCount -
-		  prLinkQualityInfo->u8LastRxTotalCount) : 0;
-	u8RxErrCntDif = (prLinkQualityInfo->u8RxErrCount >
-		  prLinkQualityInfo->u8LastRxErrCount) ?
-		 (prLinkQualityInfo->u8RxErrCount -
-		  prLinkQualityInfo->u8LastRxErrCount) : 0;
-
-	prLinkQualityInfo->u8LastTxRetryCount = prLinkQualityInfo->u8TxRetryCount;
-	prLinkQualityInfo->u8LastRxTotalCount = prLinkQualityInfo->u8RxTotalCount;
-	prLinkQualityInfo->u8LastRxErrCount = prLinkQualityInfo->u8RxErrCount;
-
-DBGLOG(SW4, TRACE,
-	   "Link Quality: Tx(u8TxTotalCntDif:%lu, u8TxFailCntDif:%lu, u8TxRetryCntDif:%lu), Rx(u8RxTotalCntDif:%lu, u8RxErrCntDif:%lu)\n",
-	   u8TxTotalCntDif,
-	   u8TxFailCntDif,
-	   u8TxRetryCntDif,
-	   u8RxTotalCntDif,
-	   u8RxErrCntDif
-);
-#endif
 }
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 

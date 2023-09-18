@@ -1694,14 +1694,6 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 				prBssDesc = scanSearchBssDescByPolicy
 				    (prAdapter, prAisBssInfo->ucBssIndex);
 #endif
-#ifdef OPLUS_FEATURE_WIFI_SMART_BW
-				/* Fenghua.Xu@PSW.TECH.WiFi.Connect.P00054039, 2018/12/6, add for smart band-width decision */
-				if (prBssDesc && preCheckBeforeConnect(ucBssIndex)) {
-						scanLogAllBufferedScanResult();
-						connectLogActiveBSSRSSI(prBssDesc);
-						connectLogSummary(prBssDesc, ucBssIndex);
-				}
-#endif
 			}
 #endif
 
@@ -4188,20 +4180,10 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 			u2ReasonCode =
 				prAisBssInfo->prStaRecOfAP->u2ReasonCode;
 		}
-#ifndef OPLUS_FEATURE_WIFI_SMART_BW
-/* Fenghua.Xu@PSW.TECH.WiFi.Connect.P00054039, 2019/7/6, for smart band-width decision, BW switch needn't remove it */
-//@2019/10/28, Gen4m aisBssBeaconTimeout=>aisBssBeaconTimeout_impl will also set u2DeauthReason, use other flag
 		if (prAisBssInfo->ucReasonOfDisconnect ==
 			DISCONNECT_REASON_CODE_RADIO_LOST ||
 		    prAisBssInfo->ucReasonOfDisconnect ==
 			DISCONNECT_REASON_CODE_RADIO_LOST_TX_ERR) {
-#else
-		if ((prAisBssInfo->ucReasonOfDisconnect ==
-			DISCONNECT_REASON_CODE_RADIO_LOST &&
-                    prAdapter->rSmartBW.eSmartBWSwitchState != SMART_BW_SWITCH_ONGOING) ||
-		    prAisBssInfo->ucReasonOfDisconnect ==
-			DISCONNECT_REASON_CODE_RADIO_LOST_TX_ERR) {
-#endif
 			scanRemoveBssDescByBssid(prAdapter,
 						 prAisBssInfo->aucBSSID);
 
