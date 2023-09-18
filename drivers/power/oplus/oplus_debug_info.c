@@ -10,10 +10,6 @@
 #include <linux/ktime.h>
 #include <linux/fs.h>
 
-#ifdef CONFIG_OPLUS_KEVENT_UPLOAD
-#include <linux/oplus_kevent.h>
-#endif
-
 #include "oplus_vooc.h"
 #include "oplus_charger.h"
 
@@ -24,11 +20,6 @@
 static int fake_soc = -1;
 static int fake_ui_soc = -1;
 static int aging_cap_test = -1;
-#endif
-
-#ifdef CONFIG_OPLUS_KEVENT_UPLOAD
-#define OPLUS_CHG_DEBUG_LOG_TAG      "OplusCharger"
-#define OPLUS_CHG_DEBUG_EVENT_ID     "charge_monitor"
 #endif
 
 struct oplus_chg_debug_info oplus_chg_debug_info;
@@ -235,14 +226,6 @@ struct oplus_chg_debug_info {
 	int chg_full_notified_flag;
 
 	struct workqueue_struct *oplus_chg_debug_wq;
-#ifdef CONFIG_OPLUS_KEVENT_UPLOAD
-	struct kernel_packet_info *dcs_info;
-	struct mutex dcs_info_lock;
-#define SEND_INFO_DELAY 3000
-	struct delayed_work send_info_dwork;
-#define SEND_INFO_MAX_CNT 5
-	int retry_cnt;
-#endif
 };
 
 struct oplus_chg_debug_notify_policy {
@@ -416,83 +399,6 @@ static int oplus_chg_debug_notify_flag_is_set(int flag);
 static int oplus_chg_debug_reset_notify_flag(void);
 static int oplus_chg_reset_chg_notify_type(void);
 static int oplus_chg_chg_batt_capacity_jump_check(struct oplus_chg_chip *chip);
-
-#ifdef CONFIG_OPLUS_KEVENT_UPLOAD
-static int oplus_chg_pack_debug_info(struct oplus_chg_chip *chip)
-{
-	char log_tag[] = OPLUS_CHG_DEBUG_LOG_TAG;
-	char event_id[] = OPLUS_CHG_DEBUG_EVENT_ID;
-	int len;
-
-	len = strlen(&oplus_chg_debug_msg[sizeof(struct kernel_packet_info)]);
-
-	if (len) {
-		mutex_lock(&oplus_chg_debug_info.dcs_info_lock);
-		memset(oplus_chg_debug_info.dcs_info, 0x0, sizeof(struct kernel_packet_info));
-
-		oplus_chg_debug_info.dcs_info->type = 1;
-		memcpy(oplus_chg_debug_info.dcs_info->log_tag, log_tag, strlen(log_tag));
-		memcpy(oplus_chg_debug_info.dcs_info->event_id, event_id, strlen(event_id));
-		oplus_chg_debug_info.dcs_info->payload_length = len + 1;
-
-#ifdef OPLUS_CHG_DEBUG_TEST
-		chg_err("%s\n", oplus_chg_debug_info.dcs_info->payload);
-#endif
-
-		mutex_unlock(&oplus_chg_debug_info.dcs_info_lock);
-
-		return 0;
-	}
-
-	return -1;
-}
-
-static int oplus_chg_debug_mask_notify_flag(int low, int high)
-{
-	unsigned long long mask = -1;
-	int bits = sizeof(mask) * 8 - 1;
-
-	mask = (mask >> low) << low;
-	mask = (mask << (bits - high)) >> (bits - high);
-	mutex_lock(&oplus_chg_debug_info.nflag_lock);
-	oplus_chg_debug_info.notify_flag &= ~mask;
-	mutex_unlock(&oplus_chg_debug_info.nflag_lock);
-
-	return 0;
-}
-
-static void oplus_chg_send_info_dwork(struct work_struct *work)
-{
-	int ret;
-
-	mutex_lock(&oplus_chg_debug_info.dcs_info_lock);
-	ret = kevent_send_to_user(oplus_chg_debug_info.dcs_info);
-	mutex_unlock(&oplus_chg_debug_info.dcs_info_lock);
-	if ((ret > 0) && (oplus_chg_debug_info.retry_cnt > 0)) {
-		queue_delayed_work(oplus_chg_debug_info.oplus_chg_debug_wq,
-				&oplus_chg_debug_info.send_info_dwork, msecs_to_jiffies(SEND_INFO_DELAY));
-	}
-	else {
-		//soc jump
-		oplus_chg_debug_mask_notify_flag(0, OPLUS_NOTIFY_BATT_SOC_JUMP);
-
-		//slow check
-		oplus_chg_debug_mask_notify_flag(OPLUS_NOTIFY_CHG_SLOW_CHECK_TIME, OPLUS_NOTIFY_CHG_SLOW_CHECK_TIME);
-
-		//batt full
-		oplus_chg_debug_mask_notify_flag(OPLUS_NOTIFY_CHG_SLOW_CHECK_TIME + 1, OPLUS_NOTIFY_CHG_FULL);
-
-		//batt aging
-		oplus_chg_debug_mask_notify_flag(OPLUS_NOTIFY_CHG_FULL + 1, OPLUS_NOTIFY_BATT_AGING);
-
-		oplus_chg_reset_chg_notify_type();
-	}
-
-	chg_err("retry_cnt: %d\n", oplus_chg_debug_info.retry_cnt);
-
-	oplus_chg_debug_info.retry_cnt--;
-}
-#endif
 
 static int oplus_chg_read_filedata(struct timespec *ts)
 {

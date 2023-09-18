@@ -60,12 +60,6 @@ static char *const _tag[FB_MAX_TYPE + 1] = {
 	"fb_boot",
 };
 
-#ifdef CONFIG_OPLUS_KEVENT_UPLOAD
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)) && !IS_ENABLED(CONFIG_OPLUS_KERNEL_SECURE_GUARD)
-int kevent_send_to_user(struct kernel_packet_info *userinfo) {return 0;}
-#endif
-#endif
-
 static struct packet * package_alloc(
 	fb_tag tag_id, const char *event_id, unsigned char *payload)
 {

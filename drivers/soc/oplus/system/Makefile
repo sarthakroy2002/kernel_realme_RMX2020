@@ -48,10 +48,6 @@ obj-$(CONFIG_OPLUS_FEATURE_ACM)     += acm/
 #yanggang@BSP.Kernel.Stability,2020/07/08, Add for theia
 obj-$(CONFIG_OPLUS_FEATURE_THEIA)     += theia/
 #endif /* OPLUS_FEATURE_THEIA */
-#ifdef OPLUS_FEATURE_SELINUX_CONTROL_LOG
-#Shuangquan.Du@ANDROID.SELINUX, 2018/01/13, Add for disable selinux denied logs in MP version
-obj-$(CONFIG_SECURITY_SELINUX) += selinux/
-#endif /* OPLUS_FEATURE_SELINUX_CONTROL_LOG */
 #ifdef OPLUS_FEATURE_MISC
 #terry.zhong@OPTI.Kernel.Stability, 2020/09/7, enable oplus misc feature
 obj-y += misc/

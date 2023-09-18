@@ -32,11 +32,6 @@ KERNEL_MAKE_DEPENDENCIES := $(filter-out %/.git %/.gitignore %/.gitattributes,$(
 $(TARGET_KERNEL_CONFIG): PRIVATE_DIR := $(KERNEL_DIR)
 $(TARGET_KERNEL_CONFIG): $(KERNEL_CONFIG_FILE) $(LOCAL_PATH)/Android.mk
 $(TARGET_KERNEL_CONFIG): $(KERNEL_MAKE_DEPENDENCIES)
-	#ifdef OPLUS_FEATURE_FORCE_SELINUX
-	#Haoran.Zhang@ANDROID.BUILD, 2020/01/10, add for unset SECURITY_SELINUX_DEVELOP, set it only for debug
-	OBSOLETE_KEEP_ADB_SECURE=$(OBSOLETE_KEEP_ADB_SECURE) \
-	$(KERNEL_DIR)/tools/changeConfig.sh $(KERNEL_CONFIG_FILE)
-	#endif OPLUS_FEATURE_FORCE_SELINUX
 	$(hide) mkdir -p $(dir $@)
 #ifdef OPLUS_ARCH_INJECT
 #Sunliang@ANDROID.BUILD, 2020/04/08, export global native features to kernel
