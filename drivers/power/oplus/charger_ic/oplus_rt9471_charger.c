@@ -1997,12 +1997,12 @@ static int __rt9471_dump_registers(struct rt9471_chip *chip)
 						   &regval);
 			if (ret < 0)
 				continue;
-			dev_info(chip->dev, "%s reg0x%02X = 0x%02X\n", __func__,
+			dev_dbg(chip->dev, "%s reg0x%02X = 0x%02X\n", __func__,
 					    rt9471_reg_addr[i], regval);
 		}
 	}
 
-	dev_info(chip->dev,
+	dev_dbg(chip->dev,
 		 "%s ICHG = %dmA, AICR = %dmA, MIVR = %dmV, IEOC = %dmA,CV = %dmV,"
 			"CHG_EN = %d, IC_STAT = %s, STAT0 = 0x%02X, STAT1 = 0x%02X, STAT2 = 0x%02X, STAT3 = 0x%02X\n",
 		 __func__, ichg / 1000, aicr / 1000, mivr / 1000, ieoc / 1000, cv / 1000, 
