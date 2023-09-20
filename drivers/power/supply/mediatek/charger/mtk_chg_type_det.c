@@ -997,17 +997,17 @@ bool pmic_chrdet_status(void)
 		return true;
 #else
 		if (mt_usb_is_device()) {
-			pr_err("[%s],Charger exist and USB is not host\n",__func__);
+			//pr_err("[%s],Charger exist and USB is not host\n",__func__);
 			notify_charger_status(true);
 			return true;
 		} else {
-			pr_err("[%s],Charger exist but USB is host, now skip\n",__func__);
+			//pr_err("[%s],Charger exist but USB is host, now skip\n",__func__);
 			notify_charger_status(false);
 			return false;
 		}
 #endif
 	}
-	pr_notice("%s: No charger\n", __func__);
+	//pr_notice("%s: No charger\n", __func__);
 #ifdef VENDOR_EDIT
 /* Yichun.Chen  PSW.BSP.CHG  2019-08-11  for aging issue */
 	notify_charger_status(false);
