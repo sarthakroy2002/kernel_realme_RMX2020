@@ -8,7 +8,8 @@ export LC_ALL=C && export USE_CCACHE=1
 export ARCH=arm64
 export KBUILD_BUILD_HOST=neolit
 export KBUILD_BUILD_USER="sarthakroy2002"
-git clone https://gitlab.com/arrowos-project/android_prebuilts_clang_host_linux-x86_clang-r468909 clang
+wget https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/tags/android-14.0.0_r2/clang-r487747c.tar.gz -O "aosp-clang.tar.gz"
+mkdir clang && tar -xf aosp-clang.tar.gz -C clang && rm -rf aosp-clang.tar.gz
 
 [ -d "out" ] && rm -rf out || mkdir -p out
 
