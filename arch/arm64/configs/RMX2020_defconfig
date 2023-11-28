@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 4.14.325 Kernel Configuration
+# Linux/arm64 4.14.330 Kernel Configuration
 #
 CONFIG_ARM64=y
 CONFIG_64BIT=y
@@ -1095,8 +1095,6 @@ CONFIG_NET_CLS=y
 CONFIG_NET_CLS_U32=y
 CONFIG_CLS_U32_PERF=y
 CONFIG_CLS_U32_MARK=y
-# CONFIG_NET_CLS_RSVP is not set
-# CONFIG_NET_CLS_RSVP6 is not set
 # CONFIG_NET_CLS_FLOW is not set
 # CONFIG_NET_CLS_CGROUP is not set
 CONFIG_NET_CLS_BPF=y
