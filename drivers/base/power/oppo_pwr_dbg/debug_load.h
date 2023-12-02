@@ -58,7 +58,9 @@ static struct kobj_attribute _name##_attr = {	\
 extern int is_heavy_task(struct task_struct *p);
 extern unsigned int mt_gpufreq_get_cur_freq(void);
 extern unsigned int mt_cpufreq_get_cpu_freq(int cpu, int idx);
+#ifdef CONFIG_MTK_SCHED_CPULOAD
 extern void sched_get_percpu_load2(int cpu, bool reset, unsigned int *rel_load, unsigned int *abs_load);
+#endif
 extern unsigned int mtk_dramc_get_data_rate(void); /* in Mhz */
 extern bool mtk_get_gpu_loading(unsigned int *pLoading);
 extern unsigned long boosted_cpu_util(int cpu);
