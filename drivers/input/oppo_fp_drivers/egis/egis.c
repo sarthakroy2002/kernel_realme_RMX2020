@@ -138,12 +138,12 @@ static void spi_clk_enable(u8 bonoff)
 
 
 	if (bonoff) {
-		pr_err("%s line:%d enable spi clk\n", __func__,__LINE__);
+		//pr_err("%s line:%d enable spi clk\n", __func__,__LINE__);
 		mt_spi_enable_master_clk(g_data->spi);
 //		count = 1;
 	} else //if ((count > 0) && (bonoff == 0)) 
 	{
-		pr_err("%s line:%d disable spi clk\n", __func__,__LINE__);
+		//pr_err("%s line:%d disable spi clk\n", __func__,__LINE__);
 
 		mt_spi_disable_master_clk(g_data->spi);
 
