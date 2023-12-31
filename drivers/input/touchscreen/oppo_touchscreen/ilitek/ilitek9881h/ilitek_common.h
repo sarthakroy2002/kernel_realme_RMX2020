@@ -131,29 +131,29 @@ enum {
 };
 
 #define ipio_info(fmt, arg...)	\
-	pr_info("ILITEK: (%s, %d): " fmt, __func__, __LINE__, ##arg);
+	pr_info_once("ILITEK: (%s, %d): " fmt, __func__, __LINE__, ##arg);
 
 #define ipio_err(fmt, arg...)	\
-	pr_err("ILITEK: (%s, %d): " fmt, __func__, __LINE__, ##arg);
+	pr_err_once("ILITEK: (%s, %d): " fmt, __func__, __LINE__, ##arg);
 
 #define ipio_debug(level, fmt, arg...)									\
 	do {																\
 		if (level & ipio_debug_level)									\
-		pr_info("ILITEK: (%s, %d): " fmt, __func__, __LINE__, ##arg);	\
+		pr_info_once("ILITEK: (%s, %d): " fmt, __func__, __LINE__, ##arg);	\
 	} while (0)
 
 #define TPD_DEVICE "ilitek,ili9881h"
-#define TPD_INFO(a, arg...)  pr_err("[TP]"TPD_DEVICE "(%s, %d): " a, __func__, __LINE__, ##arg)
+#define TPD_INFO(a, arg...)  pr_err_once("[TP]"TPD_DEVICE "(%s, %d): " a, __func__, __LINE__, ##arg)
 #define TPD_DEBUG(a, arg...)\
 			do{\
 				if (LEVEL_DEBUG == tp_debug)\
-					pr_err("[TP]"TPD_DEVICE "(%s, %d): " a, __func__, __LINE__, ##arg);\
+					pr_err_once("[TP]"TPD_DEVICE "(%s, %d): " a, __func__, __LINE__, ##arg);\
 			}while(0)
 		
 #define TPD_DETAIL(a, arg...)\
 			do{\
 				if (LEVEL_BASIC != tp_debug)\
-					pr_err("[TP]"TPD_DEVICE "(%s, %d): " a, __func__, __LINE__, ##arg);\
+					pr_err_once("[TP]"TPD_DEVICE "(%s, %d): " a, __func__, __LINE__, ##arg);\
 			}while(0)
 		
 #define TPD_DEBUG_NTAG(a, arg...)\

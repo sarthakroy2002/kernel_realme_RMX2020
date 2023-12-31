@@ -87,7 +87,7 @@
 #define ENABLE_GESTURE            DISABLE
 #define REGULATOR_POWER           DISABLE
 #define TP_SUSPEND_PRIO           ENABLE
-#define DEBUG_OUTPUT              1 /* DEBUG_ALL or DEBUG_NONE */
+#define DEBUG_OUTPUT              0 /* DEBUG_ALL or DEBUG_NONE */
 
 
 
@@ -117,16 +117,16 @@
 #endif
 #define BIT(x)    (1 << (x))
 
-#define TPD_INFO(fmt, arg...) pr_err("[TP]"TPD_DEVICE ": " fmt, ##arg)
+#define TPD_INFO(fmt, arg...) pr_err_once("[TP]"TPD_DEVICE ": " fmt, ##arg)
 #define TPD_DEBUG(a, arg...)\
 do{\
     if (LEVEL_DEBUG == tp_debug || ipio_debug_level)\
-        pr_err("[TP]"TPD_DEVICE ": (%s, %d): " a, __func__, __LINE__, ##arg);\
+        pr_err_once("[TP]"TPD_DEVICE ": (%s, %d): " a, __func__, __LINE__, ##arg);\
 }while(0)
 
 #define ipio_err(fmt, arg...)                        \
 ({                                    \
-    pr_err("ILITEK: (%s, %d): " fmt, __func__, __LINE__, ##arg);    \
+    pr_err_once("ILITEK: (%s, %d): " fmt, __func__, __LINE__, ##arg);    \
 })                                    \
 
 #define ERR_ALLOC_MEM(X)    ((IS_ERR(X) || X == NULL) ? 1 : 0)
