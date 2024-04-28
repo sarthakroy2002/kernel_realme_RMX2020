@@ -38,7 +38,7 @@
  *Local variable definition
  *=============================================================
  */
-int mtktspmic_debug_log;
+int mtktspmic_debug_log = 0;
 /* Cali */
 static __s32 g_o_vts;
 static __s32 g_o_vts_2;
