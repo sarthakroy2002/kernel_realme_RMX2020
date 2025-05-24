@@ -1,18 +1,30 @@
-Linux kernel
-============
+[KernelSU] Custom Kernel for Realme C3 | Android 15
 
-This file was moved to Documentation/admin-guide/README.rst
+Device: Realme C3 (RMX2020 / RMX2027)  
+Android Version: 15  
+Kernel Type: Non-GKI  
+Root Solution: KernelSU  
+Status: Tested and working  
+Build by: @rxtritik & @SZYRYJN
 
-Please notice that there are several guides for kernel developers and users.
-These guides can be rendered in a number of formats, like HTML and PDF.
+---
 
-In order to build the documentation, use ``make htmldocs`` or
-``make pdfdocs``.
+### Features:
+- KernelSU root (no Magisk needed)  
+- Built for non-GKI devices (MT6768)  
+- Stable and compatible with Android 15  
+- **Modifications in:** `exec.c`, `open.c`, `read_write.c`, `stat.c` & `RMX2020_defconfig`
 
-There are various text files in the Documentation/ subdirectory,
-several of them using the Restructured Text markup notation.
-See Documentation/00-INDEX for a list of what is contained in each file.
+---
 
-Please read the Documentation/process/changes.rst file, as it contains the
-requirements for building and running the kernel, and information about
-the problems which may result by upgrading your kernel.
+### Credits:
+- KernelSU by [@tiann](https://github.com/tiann/KernelSU)  
+- Base kernel source by [@sarthakroy2002](https://github.com/sarthakroy2002/kernel_realme_RMX2020)  
+- Built by @rxtritik & @SZYRYJN  
+- Thanks to the Realme C3 and MTK community
+
+---
+
+### Source Links:
+- KernelSU: https://github.com/tiann/KernelSU  
+- Kernel source: https://github.com/sarthakroy2002/kernel_realme_RMX2020
