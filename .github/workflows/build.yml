@@ -1,0 +1,24 @@
+name: Build Kernel
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Kernel
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Source
+      uses: actions/checkout@v4
+
+    - name: Setup Timezone
+      run: |
+        sudo timedatectl set-timezone Asia/Jakarta
+        echo "BUILD_TIME=$(TZ=Asia/Jakarta date '+%d%m%Y-%H%M')" >> $GITHUB_ENV
+
+    - name: Building
+      run: |
+        sudo apt install device-tree-compiler -y
+        bash build.sh
