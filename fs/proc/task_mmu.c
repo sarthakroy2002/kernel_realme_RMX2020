@@ -886,17 +886,6 @@ static void __show_smap(struct seq_file *m, const struct mem_size_stats *mss)
 		   mss->swap >> 10,
 		   (unsigned long)(mss->swap_pss >> (10 + PSS_SHIFT)),
 		   (unsigned long)(mss->pss_locked >> (10 + PSS_SHIFT)));
-
-#ifdef CONFIG_KSU_SUSFS_SUS_MAP
-		if (vma->vm_file &&
-			unlikely(file_inode(vma->vm_file)->i_mapping->flags & BIT_SUS_MAPS) &&
-			susfs_is_current_proc_umounted())
-		{
-			seq_puts(m, "VmFlags: mr mw me");
-			seq_putc(m, '\n');
-			goto bypass_orig_flow2;
-		}
-#endif
 }
 
 static int show_smap(struct seq_file *m, void *v)
@@ -963,8 +952,19 @@ bypass_orig_flow:
 #endif
 	__show_smap(m, &mss);
 
+#ifdef CONFIG_KSU_SUSFS_SUS_MAP
+		if (vma->vm_file &&
+			unlikely(file_inode(vma->vm_file)->i_mapping->flags & BIT_SUS_MAPS) &&
+			susfs_is_current_proc_umounted())
+		{
+			seq_puts(m, "VmFlags: mr mw me");
+			seq_putc(m, '\n');
+			goto bypass_orig_flow2;
+		}
+#endif
 	arch_show_smap(m, vma);
 	show_smap_vma_flags(m, vma);
+
 #ifdef CONFIG_KSU_SUSFS_SUS_MAP
 bypass_orig_flow2:
 #endif
