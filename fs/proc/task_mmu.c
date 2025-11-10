@@ -964,7 +964,6 @@ bypass_orig_flow:
 #endif
 	arch_show_smap(m, vma);
 	show_smap_vma_flags(m, vma);
-
 #ifdef CONFIG_KSU_SUSFS_SUS_MAP
 bypass_orig_flow2:
 #endif
