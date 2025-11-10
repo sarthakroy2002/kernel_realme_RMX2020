@@ -49,7 +49,7 @@ static LIST_HEAD(LH_SUS_PATH_ANDROID_DATA);
 static LIST_HEAD(LH_SUS_PATH_SDCARD);
 static struct st_android_data_path android_data_path = {0};
 static struct st_sdcard_path sdcard_path = {0};
-const struct qstr susfs_fake_qstr_name = QSTR_INIT("..5.u.S", 7); // used to re-test the dcache lookup, make sure you don't have file named like this!!
+const struct qstr susfs_fake_qstr_name = QSTR_INIT("..5ns5!F5", 9); // used to re-test the dcache lookup, make sure you don't have file named like this!!
 
 int susfs_set_i_state_on_external_dir(char __user* user_info, int cmd) {
 	struct path path;
@@ -354,8 +354,10 @@ void susfs_run_sus_path_loop(uid_t uid) {
 }
 
 static inline bool is_i_uid_in_android_data_not_allowed(uid_t i_uid) {
+	uid_t cur_uid = current_uid().val;
 	return (likely(susfs_is_current_proc_umounted()) &&
 		unlikely(current_uid().val != i_uid));
+
 }
 
 static inline bool is_i_uid_in_sdcard_not_allowed(void) {
@@ -363,6 +365,7 @@ static inline bool is_i_uid_in_sdcard_not_allowed(void) {
 }
 
 static inline bool is_i_uid_not_allowed(uid_t i_uid) {
+	uid_t cur_uid = current_uid().val;
 	return (likely(susfs_is_current_proc_umounted()) &&
 		unlikely(current_uid().val != i_uid));
 }
@@ -584,8 +587,8 @@ void susfs_auto_add_sus_ksu_default_mount(const char __user *to_pathname) {
 	}
 	if ((!strncmp(pathname, "/data/adb/modules", 17) ||
 		 !strncmp(pathname, "/debug_ramdisk", 14) ||
-		 !strncmp(pathname, "/system", 7) ||
 		 !strncmp(pathname, "/system_ext", 11) ||
+		 !strncmp(pathname, "/system", 7) ||
 		 !strncmp(pathname, "/vendor", 7) ||
 		 !strncmp(pathname, "/product", 8) ||
 		 !strncmp(pathname, "/odm", 4)) &&
@@ -1212,6 +1215,41 @@ static int copy_config_to_buf(const char *config_string, char *buf_ptr, size_t *
 	return 0;
 }
 
+/* sus_map */
+#ifdef CONFIG_KSU_SUSFS_SUS_MAP
+int susfs_add_sus_map(struct st_susfs_sus_map* __user user_info) {
+	struct st_susfs_sus_map info;
+	struct path path;
+	struct inode *inode = NULL;
+	int err = 0;
+
+	err = copy_from_user(&info, user_info, sizeof(info));
+	if (err) {
+		SUSFS_LOGE("failed copying from userspace\n");
+		return err;
+	}
+
+	err = kern_path(info.target_pathname, LOOKUP_FOLLOW, &path);
+	if (err) {
+		SUSFS_LOGE("Failed opening file '%s'\n", info.target_pathname);
+		return err;
+	}
+
+	if (!path.dentry->d_inode) {
+		err = -EINVAL;
+		goto out_path_put_path;
+	}
+	inode = d_inode(path.dentry);
+	spin_lock(&inode->i_lock);
+	set_bit(AS_FLAGS_SUS_MAP, &inode->i_mapping->flags);
+	SUSFS_LOGI("pathname: '%s', is flagged as AS_FLAGS_SUS_MAP\n", info.target_pathname);
+	spin_unlock(&inode->i_lock);
+out_path_put_path:
+	path_put(&path);
+	return err;
+}
+#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MAP
+
 int susfs_get_enabled_features(char __user* buf, size_t bufsize) {
 	char *kbuf = NULL, *buf_ptr = NULL;
 	size_t copied_size = 0;
@@ -1288,6 +1326,11 @@ int susfs_get_enabled_features(char __user* buf, size_t bufsize) {
 	if (err) goto out_kfree_kbuf;
 	buf_ptr = kbuf + copied_size;
 #endif
+#ifdef CONFIG_KSU_SUSFS_SUS_MAP
+	err = copy_config_to_buf("CONFIG_KSU_SUSFS_SUS_MAP\n", buf_ptr, &copied_size, bufsize);
+	if (err) goto out_kfree_kbuf;
+	buf_ptr = kbuf + copied_size;
+#endif
 #ifdef CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT
 	err = copy_config_to_buf("CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT\n", buf_ptr, &copied_size, bufsize);
 	if (err) goto out_kfree_kbuf;
@@ -1319,3 +1362,4 @@ void susfs_init(void) {
 
 /* No module exit is needed becuase it should never be a loadable kernel module */
 //void __init susfs_exit(void)
+
