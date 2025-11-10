@@ -48,9 +48,6 @@ function KERNEL_RESULT() {
 	rm -rf anykernel
 	git clone https://github.com/muhammmadnantaa-hub/AnyKernel.git anykernel
 
-	# Copying image
-	cp ${KERNEL_PATH}/Image.gz-dtb anykernel/
-
 	# Created zip kernel
 	cd anykernel && zip -r9 "${KERNEL_NAME}" *
 
