@@ -44,6 +44,13 @@ function KERNEL_COMPILE() {
 }
 
 function KERNEL_RESULT() {
+        # Check is build is successful
+	if [ ! -f ${KERNEL_PATH}/Image ]; then
+		exit 1
+	fi
+
+        # Copying image
+	cp ${KERNEL_PATH}/Image.gz-dtb AnyKernel/
 
 	# Create AnyKernel
 	rm -rf AnyKernel
