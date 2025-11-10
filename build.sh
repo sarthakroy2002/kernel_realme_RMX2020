@@ -8,6 +8,7 @@ export LC_ALL=C && export USE_CCACHE=1
 export ARCH=arm64
 export KBUILD_BUILD_HOST=codespace
 export KBUILD_BUILD_USER=anonim
+}
 
 # Clone SukiSU repo
 if [ ! -d "KernelSU" ]; then curl -LSs "https://raw.githubusercontent.com/kernel-build-from-rainyland/KernelSU-Next/next/kernel/setup.sh" | bash -s next; fi
