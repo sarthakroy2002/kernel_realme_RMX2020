@@ -376,16 +376,15 @@ show_map_vma(struct seq_file *m, struct vm_area_struct *vma)
 #ifdef CONFIG_KSU_SUSFS_SUS_MAP
 		if (unlikely(inode->i_mapping->flags & BIT_SUS_MAPS) && susfs_is_current_proc_umounted()) {
 			seq_setwidth(m, 25 + sizeof(void *) * 6 - 1);
-			seq_put_hex_ll_width(m, NULL, vma->vm_start, 8);
-                        seq_put_hex_ll_width(m, "-", vma->vm_end, 8);
+                        seq_printf(m, "%08lx-%08lx", vma->vm_start, vma->vm_end);
                         seq_putc(m, ' ');
                         seq_putc(m, '-');
                         seq_putc(m, '-');
                         seq_putc(m, '-');
                         seq_putc(m, 'p');
-                        seq_put_hex_ll_width(m, " ", pgoff, 8);
-                        seq_put_hex_ll_width(m, " ", MAJOR(dev), 2);
-                        seq_put_hex_ll_width(m, ":", MINOR(dev), 2);
+                        seq_printf(m, " %08lx", pgoff);
+                        seq_printf(m, " %02x", MAJOR(dev));
+                        seq_printf(m, ":%02x", MINOR(dev));
                         seq_put_decimal_ull(m, " ", ino);
                         seq_putc(m, ' ');
                         goto done;
@@ -890,14 +889,14 @@ static void __show_smap(struct seq_file *m, const struct mem_size_stats *mss)
 }
 
 #ifdef CONFIG_KSU_SUSFS_SUS_MAP
-		if (vma->vm_file &&
-			unlikely(file_inode(vma->vm_file)->i_mapping->flags & BIT_SUS_MAPS) &&
-			susfs_is_current_proc_umounted())
-		{
-			seq_puts(m, "VmFlags: mr mw me");
-			seq_putc(m, '\n');
-			goto bypass_orig_flow2;
-		}
+        if (vma->vm_file &&
+            unlikely((file_inode(vma->vm_file)->i_mapping->flags & BIT_SUS_MAPS) &&
+                     susfs_is_current_proc_umounted()))
+        {
+                seq_puts(m, "VmFlags: mr mw me");
+                seq_putc(m, '\n');
+                goto bypass_orig_flow2;
+        }
 #endif
 
 static int show_smap(struct seq_file *m, void *v)
