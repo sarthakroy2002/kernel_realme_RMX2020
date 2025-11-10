@@ -29,6 +29,7 @@
 #define CMD_SUSFS_IS_SUS_SU_READY 0x555f0
 #define CMD_SUSFS_SUS_SU 0x60000
 #define CMD_SUSFS_ENABLE_AVC_LOG_SPOOFING 0x60010
+#define CMD_SUSFS_ADD_SUS_MAP 0x60020
 
 #define SUSFS_MAX_LEN_PATHNAME 256 // 256 should address many paths already unless you are doing some strange experimental stuff, then set your own desired length
 #define SUSFS_FAKE_CMDLINE_OR_BOOTCONFIG_SIZE 4096
@@ -36,9 +37,13 @@
 #define TRY_UMOUNT_DEFAULT 0 /* used by susfs_try_umount() */
 #define TRY_UMOUNT_DETACH 1 /* used by susfs_try_umount() */
 
-#define DEFAULT_SUS_MNT_ID 300000 /* used by mount->mnt_id */
+#define SUS_SU_DISABLED 0
+#define SUS_SU_WITH_OVERLAY 1 /* deprecated */
+#define SUS_SU_WITH_HOOKS 2
+
+#define DEFAULT_SUS_MNT_ID 100000 /* used by mount->mnt_id */
 #define DEFAULT_SUS_MNT_ID_FOR_KSU_PROC_UNSHARE 1000000 /* used by vfsmount->susfs_mnt_id_backup */
-#define DEFAULT_SUS_MNT_GROUP_ID 3000 /* used by mount->mnt_group_id */
+#define DEFAULT_SUS_MNT_GROUP_ID 1000 /* used by mount->mnt_group_id */
 
 /*
  * mount->mnt.susfs_mnt_id_backup => storing original mnt_id of normal mounts or custom sus mnt_id of sus mounts
@@ -47,20 +52,23 @@
  * nd->flags => storing flag 'ND_FLAGS_'
  * task_struct->thread_info.flags => storing flag 'TIF_'
  */
+//#define TASK_STRUCT_NON_ROOT_USER_APP_PROC BIT(24)
+#define TIF_PROC_UMOUNTED 33 // thread_info->flags is unsigned long :D
 
-#define TIF_PROC_UMOUNTED 33
 #define AS_FLAGS_SUS_PATH 24
 #define AS_FLAGS_SUS_MOUNT 25
 #define AS_FLAGS_SUS_KSTAT 26
 #define AS_FLAGS_OPEN_REDIRECT 27
 #define AS_FLAGS_ANDROID_DATA_ROOT_DIR 28
 #define AS_FLAGS_SDCARD_ROOT_DIR 29
+#define AS_FLAGS_SUS_MAP 30
 #define BIT_SUS_PATH BIT(24)
 #define BIT_SUS_MOUNT BIT(25)
 #define BIT_SUS_KSTAT BIT(26)
 #define BIT_OPEN_REDIRECT BIT(27)
 #define BIT_ANDROID_DATA_ROOT_DIR BIT(28)
 #define BIT_ANDROID_SDCARD_ROOT_DIR BIT(29)
+#define BIT_SUS_MAPS BIT(30)
 
 #define ND_STATE_LOOKUP_LAST 32
 #define ND_STATE_OPEN_LAST 64
