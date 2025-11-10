@@ -56,7 +56,6 @@ function zipping() {
 	|| curl -s -F "file=@${KERNEL_NAME}" "https://store2.gofile.io/contents/uploadfile")
 	DOWNLOAD_LINK=$(echo "$RESPONSE" | grep -oP '"downloadPage":"\K[^"]+')
 	echo -e "\nDownload link: $DOWNLOAD_LINK"
-
 }
 
 # Run functions
