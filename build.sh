@@ -60,6 +60,8 @@ function KERNEL_RESULT() {
 	DOWNLOAD_LINK=$(echo "$RESPONSE" | grep -oP '"downloadPage":"\K[^"]+')
 	echo -e "\nDownload link: $DOWNLOAD_LINK"
 
+}
+
 # Run functions
 KERNEL_COMPILE "$1"
 KERNEL_RESULT
