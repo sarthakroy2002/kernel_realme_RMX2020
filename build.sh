@@ -44,13 +44,9 @@ function KERNEL_COMPILE() {
 }
 
 function KERNEL_RESULT() {
-	# Check is build is successful
-	if [ ! -f ${KERNEL_PATH}/Image ]; then
-		exit 1
-	fi
 
-	# Create anykernel
-	rm -rf anykernel
+	# Create AnyKernel
+	rm -rf AnyKernel
 	git clone https://github.com/muhammmadnantaa-hub/AnyKernel.git AnyKernel
 
 	# Created zip kernel
