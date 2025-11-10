@@ -53,6 +53,7 @@
 #include <linux/errno.h>
 #include <linux/time.h>
 #include <linux/proc_fs.h>
+#include <linux/susfs.h>
 #include <linux/stat.h>
 #include <linux/task_io_accounting_ops.h>
 #include <linux/init.h>
