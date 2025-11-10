@@ -8,7 +8,7 @@
 #include <linux/path.h>
 #include <linux/susfs_def.h>
 
-#define SUSFS_VERSION "v1.5.11"
+#define SUSFS_VERSION "v1.5.12"
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5,0,0)
 #define SUSFS_VARIANT "NON-GKI"
 #else
@@ -134,6 +134,13 @@ struct st_sus_su {
 };
 #endif
 
+/* sus_map */
+#ifdef CONFIG_KSU_SUSFS_SUS_MAP
+struct st_susfs_sus_map {
+	char                             target_pathname[SUSFS_MAX_LEN_PATHNAME];
+};
+#endif
+
 /***********************/
 /* FORWARD DECLARATION */
 /***********************/
@@ -191,6 +198,10 @@ struct filename* susfs_get_redirected_path(unsigned long ino);
 #ifdef CONFIG_KSU_SUSFS_SUS_SU
 int susfs_get_sus_su_working_mode(void);
 int susfs_sus_su(struct st_sus_su* __user user_info);
+#endif
+/* sus_map */
+#ifdef CONFIG_KSU_SUSFS_SUS_MAP
+int susfs_add_sus_map(struct st_susfs_sus_map* __user user_info);
 #endif
 
 int susfs_get_enabled_features(char __user* buf, size_t bufsize);
