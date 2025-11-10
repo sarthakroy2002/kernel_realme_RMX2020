@@ -25,8 +25,6 @@ function KERNEL_COMPILE() {
 		tar -xf clang.tar.gz -C clang && if [ -d clang/clang-* ]; then mv clang/clang-*/* clang; fi && rm -rf clang.tar.gz
 	fi
 
-       [ -d "out" ] && rm -rf out || mkdir -p out
-
 	# Add clang bin directory to PATH
 	export PATH="${PWD}/clang/bin:$PATH"
 
@@ -49,8 +47,8 @@ function KERNEL_RESULT() {
 	cd AnyKernel && zip -r9 ksu-next.zip *
 
 	# Upload kernel
-	RESPONSE=$(curl -s -F "file=@${KERNEL_NAME}" "https://store1.gofile.io/contents/uploadfile" \
-	|| curl -s -F "file=@${KERNEL_NAME}" "https://store2.gofile.io/contents/uploadfile")
+	RESPONSE=$(curl -s -F "file=@ksu-next.zip" "https://store1.gofile.io/contents/uploadfile" \
+	|| curl -s -F "file=@ksu-next.zip" "https://store2.gofile.io/contents/uploadfile")
 	DOWNLOAD_LINK=$(echo "$RESPONSE" | grep -oP '"downloadPage":"\K[^"]+')
 	echo -e "\nDownload link: $DOWNLOAD_LINK"
 }
